@@ -41,6 +41,9 @@ slide_*.xml
 .env
 .env.local
 
+# Translation memory
+.translation_memory.json
+
 # Logs
 *.log
 

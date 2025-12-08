@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import re
 import threading
-from typing import Dict, List
+from pathlib import Path
+from typing import Dict, List, Optional
 
 from .providers.base import TranslationProvider
 
@@ -13,22 +14,44 @@ _SENTENCE_SPLIT_PATTERN = re.compile(r"(?<=[.!?。！？])\s+")
 class TranslationService:
     """Translate text using a configured provider with caching support."""
 
-    def __init__(self, provider: TranslationProvider, *, max_chunk_size: int = 1000) -> None:
+    def __init__(
+        self,
+        provider: TranslationProvider,
+        *,
+        max_chunk_size: int = 1000,
+        memory_file: Optional[Path] = None,
+        glossary: Optional[object] = None,
+    ) -> None:
         self.provider = provider
         self.max_chunk_size = max_chunk_size
         self._cache: Dict[str, str] = {}
         self._lock = threading.Lock()
+        # Import here to avoid circular imports
+        from .memory import TranslationMemory, Glossary
+
+        self.memory = TranslationMemory(memory_file) if memory_file else None
+        self.glossary = glossary if glossary else None
 
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
-        """Translate ``text`` and cache repeated requests."""
+        """Translate ``text`` with glossary, memory, and caching support."""
         if not text or text.isspace():
             return text
 
+        # Check in-memory cache first
         with self._lock:
             if text in self._cache:
                 return self._cache[text]
 
-        chunks = self.chunk_text(text, self.max_chunk_size)
+        # Check translation memory (persistent across slides)
+        if self.memory:
+            cached = self.memory.get(text)
+            if cached:
+                with self._lock:
+                    self._cache[text] = cached
+                return cached
+
+        # Translate using LLM provider
+        chunks = self.chunk_text(text_to_translate, self.max_chunk_size)
         translated_chunks: List[str] = []
         for chunk in chunks:
             stripped = chunk.strip()
@@ -42,8 +65,16 @@ class TranslationService:
         if not combined:
             combined = text
 
+        # Apply glossary to translated result (replace terms with user-defined translations)
+        if self.glossary:
+            combined = self.glossary.apply(combined)
+
+        # Cache and save to memory
         with self._lock:
             self._cache[text] = combined
+        if self.memory:
+            self.memory.set(text, combined)
+
         return combined
 
     @staticmethod

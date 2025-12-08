@@ -12,7 +12,7 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.enum.text import PP_ALIGN
-from pptx.util import Pt
+from pptx.util import Inches, Pt
 
 from .translation import TranslationService
 
@@ -78,8 +78,59 @@ def get_shape_properties(shape):
     return shape_data
 
 
-def apply_shape_properties(shape, shape_data):
-    """Apply saved properties to a shape."""
+def estimate_text_dimensions(text: str, font_size_pt: float, font_name: str = "Arial", width_emu: int = None) -> tuple[float, float]:
+    """Estimate text dimensions in EMU (English Metric Units).
+    
+    Returns (estimated_width, estimated_height) in EMU.
+    This is a rough estimation - actual rendering may vary.
+    """
+    # Approximate character width: font_size * 0.6 (for most fonts)
+    # Approximate line height: font_size * 1.2
+    char_width_emu = font_size_pt * 0.6 * 12700  # Convert pt to EMU (1pt = 12700 EMU)
+    line_height_emu = font_size_pt * 1.2 * 12700
+    
+    if width_emu:
+        # Calculate how many characters fit per line
+        chars_per_line = max(1, int(width_emu / char_width_emu))
+        # Calculate number of lines needed
+        num_lines = max(1, (len(text) + chars_per_line - 1) // chars_per_line)
+        estimated_width = min(width_emu, len(text) * char_width_emu)
+        estimated_height = num_lines * line_height_emu
+    else:
+        # No width constraint, estimate single line
+        estimated_width = len(text) * char_width_emu
+        estimated_height = line_height_emu
+    
+    return (estimated_width, estimated_height)
+
+
+def check_text_fits(text: str, font_size_pt: float, box_width_emu: int, box_height_emu: int, font_name: str = "Arial") -> tuple[bool, float]:
+    """Check if text fits in the given box dimensions.
+    
+    Returns (fits, suggested_font_size).
+    If text doesn't fit, suggests a smaller font size.
+    """
+    estimated_width, estimated_height = estimate_text_dimensions(text, font_size_pt, font_name, box_width_emu)
+    
+    fits = estimated_width <= box_width_emu and estimated_height <= box_height_emu
+    
+    if not fits:
+        # Calculate scale factor needed
+        width_scale = box_width_emu / estimated_width if estimated_width > 0 else 1.0
+        height_scale = box_height_emu / estimated_height if estimated_height > 0 else 1.0
+        scale_factor = min(width_scale, height_scale, 1.0)  # Don't scale up
+        
+        # Suggest new font size (with some margin)
+        suggested_size = font_size_pt * scale_factor * 0.95  # 5% margin
+        suggested_size = max(8.0, suggested_size)  # Minimum 8pt
+    else:
+        suggested_size = font_size_pt
+    
+    return (fits, suggested_size)
+
+
+def apply_shape_properties(shape, shape_data, auto_adjust_font: bool = True):
+    """Apply saved properties to a shape with optional layout-aware font adjustment."""
     try:
         shape.width = shape_data["width"]
         shape.height = shape_data["height"]
@@ -89,9 +140,28 @@ def apply_shape_properties(shape, shape_data):
         paragraph = shape.text_frame.paragraphs[0]
         run = paragraph.add_run()
         run.text = shape_data["text"]
-        if shape_data.get("font_size"):
-            adjusted_size = shape_data["font_size"] * 0.7
+        
+        original_font_size = shape_data.get("font_size") or 12.0
+        font_size = original_font_size
+        
+        # Layout-aware adjustment: check if text fits
+        if auto_adjust_font and shape_data["text"]:
+            fits, suggested_size = check_text_fits(
+                shape_data["text"],
+                original_font_size,
+                shape_data["width"],
+                shape_data["height"],
+                shape_data.get("font_name") or "Arial"
+            )
+            if not fits:
+                font_size = suggested_size
+                print(f"  ⚠️  Text overflow detected, adjusting font size: {original_font_size:.1f}pt → {font_size:.1f}pt")
+        
+        # Apply font size (with default scaling for translation)
+        if font_size:
+            adjusted_size = font_size * 0.7  # Default scaling
             run.font.size = Pt(adjusted_size)
+        
         run.font.name = shape_data.get("font_name") or "Arial"
         if shape_data.get("font_color"):
             run.font.color.rgb = RGBColor.from_string(shape_data["font_color"])
@@ -293,7 +363,7 @@ def create_translated_ppt(original_ppt_path: str, translated_xml_path: str, outp
                         if props_element is not None and props_element.text:
                             try:
                                 shape_data = json.loads(props_element.text)
-                                apply_shape_properties(shape, shape_data)
+                                apply_shape_properties(shape, shape_data, auto_adjust_font=True)
                             except Exception as exc:  # pragma: no cover
                                 print(f"Error applying shape properties: {exc}")
         prs.save(output_ppt_path)
