@@ -89,18 +89,52 @@ twine upload --repository testpypi dist/ppt_translator-*.whl dist/ppt_translator
 
 ### Creating GitHub Release
 
-1. Tag the release:
+#### Option 1: Automated Script (Recommended)
+
+```bash
+# Make script executable (first time only)
+chmod +x release.sh
+
+# Run release script
+./release.sh
+```
+
+This script will:
+- Build Python packages
+- Create and push git tag
+- Create GitHub release with all assets
+- Upload files automatically
+
+#### Option 2: Manual Process
+
+1. **Tag the release:**
    ```bash
    git tag -a v1.0.0 -m "Release version 1.0.0"
    git push origin v1.0.0
    ```
 
-2. Create release on GitHub with:
-   - Release notes
-   - Upload Python packages (.whl, .tar.gz)
-   - Upload macOS apps (.app bundles or .dmg)
-   - Upload Windows executable (.exe)
-   - Upload Linux executable (if applicable)
+2. **Create release on GitHub:**
+   - Go to: https://github.com/Z-MarkUs/PPTrans/releases/new
+   - Select tag: `v1.0.0`
+   - Add title and description
+   - Upload files from `dist/` directory:
+     - Python packages (.whl, .tar.gz)
+     - macOS apps (.app bundles)
+     - Windows executable (.exe)
+     - Linux executable (if applicable)
+   - Click "Publish release"
+
+#### Option 3: GitHub CLI
+
+```bash
+# Install GitHub CLI first: brew install gh (macOS)
+gh release create v1.0.0 \
+  --title "PPT Translator v1.0.0" \
+  --notes-file RELEASE_NOTES.md \
+  dist/*
+```
+
+See `GITHUB_RELEASE.md` for detailed instructions.
 
 ### Distribution Files
 
