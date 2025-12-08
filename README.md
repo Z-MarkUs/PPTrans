@@ -30,7 +30,7 @@ Convert your PowerPoint presentations to beautifully translated documents while 
 ### Option 1: Install via pip (Recommended)
 
 ```bash
-pip install ppt-translator
+pip install pptrans
 ```
 
 ### Option 2: Install from source
@@ -87,20 +87,20 @@ Environment variables of interest:
 
 ## 🚀 Quick Start
 
-After installation, use the `ppt-translator` command:
+After installation, use the `pptrans` command:
 
 ```bash
 # Translate a single file
-ppt-translator presentation.pptx --provider openai --source-lang zh --target-lang en
+pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 
 # Translate all PPT files in a directory
-ppt-translator ./presentations/ --provider openai
+pptrans ./presentations/ --provider openai
 
 # With vision review
-ppt-translator presentation.pptx --provider openai --vision-review --vision-model gpt-5.1
+pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-5.1
 
 # Generate review file for manual editing
-ppt-translator presentation.pptx --provider openai --generate-review
+pptrans presentation.pptx --provider openai --generate-review
 ```
 
 ## 📖 Usage
@@ -108,7 +108,7 @@ ppt-translator presentation.pptx --provider openai --generate-review
 Run the CLI with the path to a single presentation or a directory tree:
 
 ```bash
-ppt-translator /path/to/decks \
+pptrans /path/to/decks \
   --provider openai \
   --model gpt-5-mini \
   --source-lang zh \

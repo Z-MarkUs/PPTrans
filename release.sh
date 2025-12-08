@@ -98,7 +98,7 @@ if command -v gh &> /dev/null; then
     echo -e "${GREEN}📤 Creating GitHub release...${NC}"
     
     # Collect all dist files
-    DIST_FILES=$(find dist -type f \( -name "*.whl" -o -name "*.tar.gz" -o -name "*.app" -o -name "*.exe" -o -name "ppt-translator" \) 2>/dev/null || true)
+    DIST_FILES=$(find dist -type f \( -name "*.whl" -o -name "*.tar.gz" -o -name "*.app" -o -name "*.exe" -o -name "pptrans" \) 2>/dev/null || true)
     
     if [ -z "$DIST_FILES" ]; then
         echo -e "${YELLOW}⚠️  No files found in dist/ directory${NC}"

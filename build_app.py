@@ -101,7 +101,7 @@ def build_linux_app():
     
     args = [
         "main.py",
-        "--name=ppt-translator",
+        "--name=pptrans",
         "--onefile",
         "--console",
         f"--add-data=README.md:.",  # Linux uses colon
@@ -118,7 +118,7 @@ def build_linux_app():
     PyInstaller.__main__.run(args)
     
     dist_dir = Path("dist")
-    exe_path = dist_dir / "ppt-translator"
+    exe_path = dist_dir / "pptrans"
     
     if exe_path.exists():
         print(f"✅ Linux executable created: {exe_path}")

@@ -47,7 +47,7 @@ PPT Translator is now available on PyPI! Translate PowerPoint presentations usin
 
 ### Via pip (Recommended)
 ```bash
-pip install ppt-translator
+pip install pptrans
 ```
 
 ### Standalone Applications
@@ -62,12 +62,12 @@ Download pre-built applications:
 
 ### Basic Translation
 ```bash
-ppt-translator presentation.pptx --provider openai --source-lang zh --target-lang en
+pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 ```
 
 ### With Vision Review
 ```bash
-ppt-translator presentation.pptx \
+pptrans presentation.pptx \
   --provider openai \
   --vision-review \
   --vision-model gpt-5.1 \
@@ -76,7 +76,7 @@ ppt-translator presentation.pptx \
 
 ### Generate Review File
 ```bash
-ppt-translator presentation.pptx \
+pptrans presentation.pptx \
   --provider openai \
   --generate-review \
   --review-format json
@@ -84,7 +84,7 @@ ppt-translator presentation.pptx \
 
 ### Regenerate from Edited Review
 ```bash
-ppt-translator ./presentations/ \
+pptrans ./presentations/ \
   --regenerate-from-review translation_review.json
 ```
 
@@ -132,7 +132,7 @@ Create a JSON or YAML file with preferred translations:
 
 Use with:
 ```bash
-ppt-translator presentation.pptx --glossary glossary.json
+pptrans presentation.pptx --glossary glossary.json
 ```
 
 ---
@@ -181,7 +181,7 @@ Built with ❤️ using:
 ## 🔗 Links
 
 - **GitHub Repository**: https://github.com/Z-MarkUs/PPTrans
-- **PyPI Package**: https://pypi.org/project/ppt-translator/
+- **PyPI Package**: https://pypi.org/project/pptrans/
 - **Issues**: https://github.com/Z-MarkUs/PPTrans/issues
 
 ---
