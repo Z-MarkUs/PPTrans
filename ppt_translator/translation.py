@@ -52,7 +52,7 @@ class TranslationService:
 
         # Translate using LLM provider (with glossary in prompt)
         glossary_dict = self.glossary._glossary if self.glossary else None
-        chunks = self.chunk_text(text_to_translate, self.max_chunk_size)
+        chunks = self.chunk_text(text, self.max_chunk_size)
         translated_chunks: List[str] = []
         for chunk in chunks:
             stripped = chunk.strip()
