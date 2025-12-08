@@ -28,8 +28,8 @@ jobs:
       - name: Upload macOS app (arm64)
         uses: actions/upload-artifact@v4
         with:
-          name: PPT-Translator-macos-arm64
-          path: dist/PPT-Translator.app
+          name: PPTrans-macos-arm64
+          path: dist/PPTrans.app
           retention-days: 30
           if-no-files-found: error
 
@@ -55,8 +55,8 @@ jobs:
       - name: Upload macOS app (x86_64)
         uses: actions/upload-artifact@v4
         with:
-          name: PPT-Translator-macos-x86_64
-          path: dist/PPT-Translator.app
+          name: PPTrans-macos-x86_64
+          path: dist/PPTrans.app
           retention-days: 30
           if-no-files-found: error
 
@@ -82,8 +82,8 @@ jobs:
       - name: Upload Windows executable
         uses: actions/upload-artifact@v4
         with:
-          name: PPT-Translator-windows
-          path: dist/PPT-Translator.exe
+          name: PPTrans-windows
+          path: dist/PPTrans.exe
           retention-days: 30
           if-no-files-found: error
 

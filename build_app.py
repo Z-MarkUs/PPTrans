@@ -21,12 +21,12 @@ def build_macos_app(arch: str = "universal"):
     print(f"Building macOS app for {arch}...")
     
     # PyInstaller options for macOS app
+    # Note: Use --onedir instead of --onefile for macOS .app bundles (PyInstaller deprecation)
     args = [
         "main.py",
-        "--name=PPT-Translator",
-        "--onefile",
+        "--name=PPTrans",
+        "--onedir",  # Use onedir for macOS .app bundles (onefile is deprecated)
         "--windowed",  # No console window
-        "--icon=NONE",  # Add icon file if available
         f"--add-data=README.md:.",  # Include README
         "--hidden-import=pptx",
         "--hidden-import=openai",
@@ -47,20 +47,20 @@ def build_macos_app(arch: str = "universal"):
     # macOS-specific options
     args.extend([
         "--osx-bundle-identifier=com.ppttranslator.app",
-        "--osx-entitlements-file=NONE",
+        # Don't specify entitlements file if not needed (omit instead of "NONE")
     ])
     
     PyInstaller.__main__.run(args)
     
     # Create .app bundle structure
     dist_dir = Path("dist")
-    app_name = "PPT-Translator.app"
+    app_name = "PPTrans.app"
     app_path = dist_dir / app_name
     
     if app_path.exists():
-        print(f"✅ macOS app created: {app_path}")
+        print(f"[OK] macOS app created: {app_path}")
     else:
-        print("⚠️  App bundle may need manual creation")
+        print("[WARN] App bundle may need manual creation")
 
 
 def build_windows_app():
@@ -69,10 +69,10 @@ def build_windows_app():
     
     args = [
         "main.py",
-        "--name=PPT-Translator",
+        "--name=PPTrans",
         "--onefile",
         "--console",  # Show console for Windows
-        "--icon=NONE",  # Add .ico file if available
+        # Don't specify icon if not available (omit instead of "NONE")
         f"--add-data=README.md;.",  # Windows uses semicolon
         "--hidden-import=pptx",
         "--hidden-import=openai",
@@ -87,12 +87,13 @@ def build_windows_app():
     PyInstaller.__main__.run(args)
     
     dist_dir = Path("dist")
-    exe_path = dist_dir / "PPT-Translator.exe"
+    exe_path = dist_dir / "PPTrans.exe"
     
     if exe_path.exists():
-        print(f"✅ Windows executable created: {exe_path}")
+        # Use plain text for Windows console compatibility
+        print(f"[OK] Windows executable created: {exe_path}")
     else:
-        print("⚠️  Executable not found")
+        print("[WARN] Executable not found")
 
 
 def build_linux_app():
@@ -121,9 +122,9 @@ def build_linux_app():
     exe_path = dist_dir / "pptrans"
     
     if exe_path.exists():
-        print(f"✅ Linux executable created: {exe_path}")
+        print(f"[OK] Linux executable created: {exe_path}")
     else:
-        print("⚠️  Executable not found")
+        print("[WARN] Executable not found")
 
 
 def main():
