@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from ppt_translator.translation import TranslationService
 from ppt_translator.providers.base import TranslationProvider
 
@@ -9,7 +11,9 @@ class DummyProvider(TranslationProvider):
         super().__init__(model="dummy")
         self.calls: list[str] = []
 
-    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+    def translate(
+        self, text: str, source_lang: str, target_lang: str, glossary: Optional[dict[str, str]] = None
+    ) -> str:
         self.calls.append(text)
         return f"{text}->{target_lang}"
 

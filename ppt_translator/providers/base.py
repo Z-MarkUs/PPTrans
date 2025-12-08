@@ -20,8 +20,17 @@ class TranslationProvider(ABC):
         self.temperature = temperature
 
     @abstractmethod
-    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
-        """Translate ``text`` from ``source_lang`` to ``target_lang``."""
+    def translate(
+        self, text: str, source_lang: str, target_lang: str, glossary: Optional[Dict[str, str]] = None
+    ) -> str:
+        """Translate ``text`` from ``source_lang`` to ``target_lang``.
+        
+        Args:
+            text: Text to translate
+            source_lang: Source language code
+            target_lang: Target language code
+            glossary: Optional dictionary of preferred translations (key -> value)
+        """
 
 
 class OpenAICompatibleProvider(TranslationProvider):
