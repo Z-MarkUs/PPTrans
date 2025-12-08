@@ -70,7 +70,8 @@ class OpenAICompatibleProvider(TranslationProvider):
             )
         except Exception as e:
             # If temperature is not supported, retry without it
-            if "temperature" in str(e).lower() or "unsupported_value" in str(e):
+            error_str = str(e).lower()
+            if "temperature" in error_str or "unsupported_value" in error_str:
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=self.build_messages(text, source_lang, target_lang),

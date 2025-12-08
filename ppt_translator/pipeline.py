@@ -5,6 +5,7 @@ import json
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Optional
 from xml.dom import minidom
 
 from pptx import Presentation
@@ -228,10 +229,13 @@ def ppt_to_xml(
     source_lang: str,
     target_lang: str,
     max_workers: int = 4,
+    temp_dir: Path | None = None,
 ) -> Optional[str]:
     """Convert a PowerPoint presentation to XML."""
     root = ET.Element("presentation")
     base_dir = Path(ppt_path).parent
+    if temp_dir is None:
+        temp_dir = base_dir
     try:
         prs = Presentation(ppt_path)
         root.set("file_path", Path(ppt_path).name)
@@ -251,7 +255,7 @@ def ppt_to_xml(
             for future, slide_number in future_to_slide.items():
                 slide_element = future.result()
                 root.append(slide_element)
-                intermediate_path = base_dir / f"slide_{slide_number}_{'translated' if translator else 'original'}.xml"
+                intermediate_path = temp_dir / f"slide_{slide_number}_{'translated' if translator else 'original'}.xml"
                 xml_str = minidom.parseString(ET.tostring(root)).toprettyxml(indent="  ")
                 with open(intermediate_path, "w", encoding="utf-8") as handle:
                     handle.write(xml_str)
@@ -298,10 +302,10 @@ def create_translated_ppt(original_ppt_path: str, translated_xml_path: str, outp
         print(f"Error creating translated PowerPoint: {exc}")
 
 
-def cleanup_intermediate_files(base_dir: Path, pattern: str = "slide_*.xml") -> None:
+def cleanup_intermediate_files(temp_dir: Path, pattern: str = "slide_*.xml") -> None:
     """Remove intermediate XML files."""
     try:
-        for file in base_dir.glob(pattern):
+        for file in temp_dir.glob(pattern):
             file.unlink()
     except Exception as exc:  # pragma: no cover - logging only
         print(f"Warning: Could not clean up intermediate files: {exc}")
@@ -323,6 +327,10 @@ def process_ppt_file(
         raise ValueError(f"'{ppt_path}' is not a PowerPoint file.")
 
     base_dir = ppt_path.parent
+    # Create temp directory for intermediate files
+    temp_dir = base_dir / f"{ppt_path.stem}_temp"
+    temp_dir.mkdir(exist_ok=True)
+    print(f"Using temp directory: {temp_dir.name}/")
 
     print(f"Generating original XML for {ppt_path.name}...")
     original_xml = ppt_to_xml(
@@ -331,9 +339,10 @@ def process_ppt_file(
         source_lang=source_lang,
         target_lang=target_lang,
         max_workers=max_workers,
+        temp_dir=temp_dir,
     )
     if original_xml:
-        original_output_path = base_dir / f"{ppt_path.stem}_original.xml"
+        original_output_path = temp_dir / f"{ppt_path.stem}_original.xml"
         with open(original_output_path, "w", encoding="utf-8") as handle:
             handle.write(original_xml)
         print(f"Original XML saved: {original_output_path}")
@@ -347,11 +356,12 @@ def process_ppt_file(
         source_lang=source_lang,
         target_lang=target_lang,
         max_workers=max_workers,
+        temp_dir=temp_dir,
     )
     if not translated_xml:
         return None
 
-    translated_output_path = base_dir / f"{ppt_path.stem}_translated.xml"
+    translated_output_path = temp_dir / f"{ppt_path.stem}_translated.xml"
     with open(translated_output_path, "w", encoding="utf-8") as handle:
         handle.write(translated_xml)
     print(f"Translated XML saved: {translated_output_path}")
@@ -362,7 +372,9 @@ def process_ppt_file(
     create_translated_ppt(str(ppt_path), str(translated_output_path), str(output_ppt_path))
 
     if cleanup:
-        cleanup_intermediate_files(base_dir)
-        print("Cleanup complete.")
+        cleanup_intermediate_files(temp_dir)
+        print(f"Intermediate files cleaned from {temp_dir.name}/")
+    else:
+        print(f"Intermediate files kept in {temp_dir.name}/ (you can delete manually)")
 
     return output_ppt_path
