@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Translate PowerPoint presentations using modern LLM providers with vision-based review"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 license-files = ["LICENSE"]
 authors = [
     {name = "Hehan Zhao", email = "80203549+Z-MarkUs@users.noreply.github.com"}
