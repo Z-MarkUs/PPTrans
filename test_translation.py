@@ -58,13 +58,16 @@ def main():
             # Check for output files
             base_name = ppt_file.stem
             output_pptx = current_dir / f"{base_name}_translated.pptx"
-            output_xml = current_dir / f"{base_name}_translated.xml"
+            temp_dir = current_dir / f"{base_name}_temp"
+            output_xml = temp_dir / f"{base_name}_translated.xml"
             
             print()
             if output_pptx.exists():
                 print(f"✅ Translated PPT created: {output_pptx.name}")
             if output_xml.exists():
                 print(f"✅ Translated XML created: {output_xml.name}")
+            if temp_dir.exists():
+                print(f"📁 Temp directory: {temp_dir.name}/ (contains intermediate files)")
         else:
             print(f"❌ Translation failed for {ppt_file.name}")
         
