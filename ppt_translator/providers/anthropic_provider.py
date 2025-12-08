@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from typing import Optional
 
 from anthropic import Anthropic
 
@@ -24,11 +25,20 @@ class AnthropicProvider(TranslationProvider):
         self.client = Anthropic(api_key=resolved_key)
         self.max_tokens = max_tokens
 
-    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+    def translate(self, text: str, source_lang: str, target_lang: str, glossary: Optional[dict[str, str]] = None) -> str:
         system_prompt = (
             "You are a translation assistant. Translate the user provided text "
             f"from {source_lang} to {target_lang} while preserving tone and formatting."
         )
+        
+        # Include glossary in the prompt if provided
+        if glossary:
+            glossary_text = "\n".join([f"- {key} → {value}" for key, value in sorted(glossary.items())])
+            system_prompt += (
+                f"\n\nIMPORTANT: Use the following preferred translations when applicable:\n{glossary_text}\n"
+                "Always use these exact terms when translating the corresponding words or phrases."
+            )
+        
         response = self.client.messages.create(
             model=self.model,
             max_tokens=self.max_tokens,

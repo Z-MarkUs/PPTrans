@@ -50,7 +50,8 @@ class TranslationService:
                     self._cache[text] = cached
                 return cached
 
-        # Translate using LLM provider
+        # Translate using LLM provider (with glossary in prompt)
+        glossary_dict = self.glossary._glossary if self.glossary else None
         chunks = self.chunk_text(text_to_translate, self.max_chunk_size)
         translated_chunks: List[str] = []
         for chunk in chunks:
@@ -58,14 +59,15 @@ class TranslationService:
             if not stripped:
                 translated_chunks.append(chunk)
                 continue
-            translated = self.provider.translate(chunk, source_lang, target_lang)
+            # Pass glossary to provider so it's included in the prompt
+            translated = self.provider.translate(chunk, source_lang, target_lang, glossary=glossary_dict)
             translated_chunks.append(translated.strip())
 
         combined = " ".join(part for part in translated_chunks if part)
         if not combined:
             combined = text
 
-        # Apply glossary to translated result (replace terms with user-defined translations)
+        # Post-process with glossary as a review/fallback (in case LLM missed some terms)
         if self.glossary:
             combined = self.glossary.apply(combined)
 

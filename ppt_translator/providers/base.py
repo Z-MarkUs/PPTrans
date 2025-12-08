@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from openai import OpenAI
 
@@ -48,23 +48,36 @@ class OpenAICompatibleProvider(TranslationProvider):
             )
         self.client = OpenAI(api_key=resolved_key, base_url=base_url or self.default_base_url, organization=organization)
 
-    def build_messages(self, text: str, source_lang: str, target_lang: str) -> List[Dict[str, str]]:
+    def build_messages(
+        self, text: str, source_lang: str, target_lang: str, glossary: Optional[Dict[str, str]] = None
+    ) -> List[Dict[str, str]]:
         """Construct chat messages sent to the model."""
         system_prompt = (
             "You are a translation assistant. Translate the user provided text "
             f"from {source_lang} to {target_lang} while preserving tone and formatting."
         )
+        
+        # Include glossary in the prompt if provided
+        if glossary:
+            glossary_text = "\n".join([f"- {key} → {value}" for key, value in sorted(glossary.items())])
+            system_prompt += (
+                f"\n\nIMPORTANT: Use the following preferred translations when applicable:\n{glossary_text}\n"
+                "Always use these exact terms when translating the corresponding words or phrases."
+            )
+        
         return [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text},
         ]
 
-    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+    def translate(
+        self, text: str, source_lang: str, target_lang: str, glossary: Optional[Dict[str, str]] = None
+    ) -> str:
         # Some models don't support custom temperature, try with it first, then without
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=self.build_messages(text, source_lang, target_lang),
+                messages=self.build_messages(text, source_lang, target_lang, glossary),
                 temperature=self.temperature,
                 stream=False,
             )
@@ -74,7 +87,7 @@ class OpenAICompatibleProvider(TranslationProvider):
             if "temperature" in error_str or "unsupported_value" in error_str:
                 response = self.client.chat.completions.create(
                     model=self.model,
-                    messages=self.build_messages(text, source_lang, target_lang),
+                    messages=self.build_messages(text, source_lang, target_lang, glossary),
                     stream=False,
                 )
             else:
