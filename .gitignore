@@ -52,3 +52,12 @@ slide_*.xml
 *.bak
 *.cache
 
+# Build artifacts
+*.egg-info/
+build/
+dist/
+*.spec
+*.app
+*.dmg
+*.pkg
+

@@ -25,20 +25,46 @@ Convert your PowerPoint presentations to beautifully translated documents while 
 • 📦 **Batch Processing**: Convert entire directories of presentations at once
 • 🛡️ **Robust Processing**: Handles all PowerPoint content types with graceful fallbacks
 
-## 📦 Requirements
+## 📦 Installation
 
-- Python 3.10+
-- macOS (primary target), Linux, or Windows
-- Provider API keys stored in environment variables (see below)
-
-Install dependencies:
+### Option 1: Install via pip (Recommended)
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate  # macOS/Linux
-# .venv\Scripts\activate  # Windows PowerShell
-pip install -r requirements.txt
+pip install ppt-translator
 ```
+
+### Option 2: Install from source
+
+```bash
+git clone https://github.com/Z-MarkUs/PPTrans.git
+cd PPTrans
+pip install -e .
+```
+
+### Option 3: Use standalone applications
+
+Download pre-built applications for:
+- **macOS Apple Silicon** (arm64): `PPT-Translator-arm64.app`
+- **macOS Intel** (x86_64): `PPT-Translator-x86_64.app`
+- **Windows** (x86): `PPT-Translator.exe`
+
+Or build from source:
+
+```bash
+# macOS
+./build.sh
+
+# Windows
+build.bat
+
+# Linux
+python3 build_app.py linux
+```
+
+## 📋 Requirements
+
+- Python 3.10+ (for pip installation)
+- Provider API keys stored in environment variables (see below)
 
 ## 🔐 Configuration
 
@@ -59,12 +85,30 @@ Environment variables of interest:
 
 > 📝 The CLI reads your `.env` file automatically when run from a shell session that has the variables exported. On macOS you can add the exports to `~/.zshrc` or use `direnv` for project-specific secrets.
 
-## 🚀 Usage
+## 🚀 Quick Start
+
+After installation, use the `ppt-translator` command:
+
+```bash
+# Translate a single file
+ppt-translator presentation.pptx --provider openai --source-lang zh --target-lang en
+
+# Translate all PPT files in a directory
+ppt-translator ./presentations/ --provider openai
+
+# With vision review
+ppt-translator presentation.pptx --provider openai --vision-review --vision-model gpt-5.1
+
+# Generate review file for manual editing
+ppt-translator presentation.pptx --provider openai --generate-review
+```
+
+## 📖 Usage
 
 Run the CLI with the path to a single presentation or a directory tree:
 
 ```bash
-python main.py /path/to/decks \
+ppt-translator /path/to/decks \
   --provider openai \
   --model gpt-5-mini \
   --source-lang zh \

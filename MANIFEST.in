@@ -1,0 +1,11 @@
+include README.md
+include LICENSE
+include requirements.txt
+include example.env
+include example_glossary.json
+recursive-include ppt_translator *.py
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.so
+global-exclude .DS_Store
+
