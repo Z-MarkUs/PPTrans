@@ -20,6 +20,15 @@ def build_macos_app(arch: str = "universal"):
     """
     print(f"Building macOS app for {arch}...")
     
+    # Check if we're trying to cross-compile x86_64 on arm64
+    current_arch = platform.machine()
+    if arch == "x86_64" and current_arch == "arm64":
+        print("[WARN] Cannot build x86_64 on arm64 machine.")
+        print("[WARN] Native dependencies (e.g., PIL) are compiled for arm64 only.")
+        print("[WARN] x86_64 builds must be done on an Intel Mac or with Rosetta 2.")
+        print("[WARN] Skipping x86_64 build.")
+        sys.exit(0)  # Exit gracefully, don't fail the build
+    
     # PyInstaller options for macOS app
     # Note: Use --onedir instead of --onefile for macOS .app bundles (PyInstaller deprecation)
     args = [

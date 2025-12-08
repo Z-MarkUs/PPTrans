@@ -44,22 +44,27 @@ pip install -e .
 ### Option 3: Use standalone applications
 
 Download pre-built applications for:
-- **macOS Apple Silicon** (arm64): `PPT-Translator-arm64.app`
-- **macOS Intel** (x86_64): `PPT-Translator-x86_64.app`
-- **Windows** (x86): `PPT-Translator.exe`
+- **macOS Apple Silicon** (arm64): `PPTrans.app` (available via GitHub releases)
+- **macOS Intel** (x86_64): Requires manual build on an Intel Mac (see note below)
+- **Windows** (x86): `PPTrans.exe` (available via GitHub releases)
 
 Or build from source:
 
 ```bash
-# macOS
-./build.sh
+# macOS (Apple Silicon)
+python3 build_app.py macos arm64
+
+# macOS (Intel) - Must be built on an Intel Mac
+python3 build_app.py macos x86_64
 
 # Windows
-build.bat
+python build_app.py windows
 
 # Linux
 python3 build_app.py linux
 ```
+
+**Note**: macOS x86_64 builds cannot be cross-compiled on Apple Silicon machines due to native dependency limitations. Intel Mac builds must be done manually on an Intel Mac or using Rosetta 2.
 
 ## 📋 Requirements
 
