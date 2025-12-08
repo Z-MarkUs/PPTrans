@@ -302,11 +302,23 @@ def create_translated_ppt(original_ppt_path: str, translated_xml_path: str, outp
         print(f"Error creating translated PowerPoint: {exc}")
 
 
-def cleanup_intermediate_files(temp_dir: Path, pattern: str = "slide_*.xml") -> None:
-    """Remove intermediate XML files."""
+def cleanup_intermediate_files(temp_dir: Path) -> None:
+    """Remove all intermediate files and the temp directory."""
     try:
-        for file in temp_dir.glob(pattern):
-            file.unlink()
+        # Remove all files in the temp directory
+        for file in temp_dir.glob("*"):
+            if file.is_file():
+                try:
+                    file.unlink()
+                except Exception:
+                    pass  # Continue cleaning up other files even if one fails
+        # Remove the temp directory itself (only works if empty)
+        if temp_dir.exists():
+            try:
+                temp_dir.rmdir()
+            except OSError:
+                # Directory not empty or other error - log but don't fail
+                print(f"Warning: Could not remove temp directory {temp_dir.name}/ (may not be empty)")
     except Exception as exc:  # pragma: no cover - logging only
         print(f"Warning: Could not clean up intermediate files: {exc}")
 
@@ -373,7 +385,7 @@ def process_ppt_file(
 
     if cleanup:
         cleanup_intermediate_files(temp_dir)
-        print(f"Intermediate files cleaned from {temp_dir.name}/")
+        print(f"Intermediate files and temp directory cleaned up.")
     else:
         print(f"Intermediate files kept in {temp_dir.name}/ (you can delete manually)")
 
