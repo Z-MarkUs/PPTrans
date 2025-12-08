@@ -76,6 +76,25 @@ python3 build_app.py linux
 
 ### Publishing to PyPI
 
+#### Automated (via GitHub Actions)
+
+The GitHub Actions workflow will automatically publish to PyPI when you create a release, **if** you've set up the `PYPI_API_TOKEN` secret.
+
+**Setup (one-time):**
+1. Create PyPI account: https://pypi.org/account/register/
+2. Create API token: https://pypi.org/manage/account/
+3. Add token to GitHub Secrets:
+   - Go to: Settings → Secrets and variables → Actions
+   - Add secret: `PYPI_API_TOKEN` = `pypi-xxxxx...`
+
+**Then:**
+- Create a GitHub release (via `./release.sh` or manually)
+- The workflow will automatically build and publish to PyPI
+
+See `PYPI_SETUP.md` for detailed setup instructions.
+
+#### Manual Upload
+
 ```bash
 # Install twine
 pip install twine
@@ -83,7 +102,7 @@ pip install twine
 # Upload to PyPI
 twine upload dist/ppt_translator-*.whl dist/ppt_translator-*.tar.gz
 
-# Or upload to TestPyPI first
+# Or upload to TestPyPI first (recommended for testing)
 twine upload --repository testpypi dist/ppt_translator-*.whl dist/ppt_translator-*.tar.gz
 ```
 

@@ -6,32 +6,46 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
-        python-version: ["3.10", "3.11", "3.12"]
+  build-and-publish:
+    runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
       
       - name: Install build dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install setuptools wheel build
+          pip install setuptools wheel build twine
       
       - name: Build package
         run: python -m build
       
-      - name: Upload artifacts
+      - name: Check package
+        run: twine check dist/*
+      
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -z "$TWINE_PASSWORD" ]; then
+            echo "⚠️  PYPI_API_TOKEN not set. Skipping PyPI upload."
+            echo "Set PYPI_API_TOKEN secret in repository settings to enable PyPI publishing."
+          else
+            echo "📤 Uploading to PyPI..."
+            twine upload dist/*
+          fi
+      
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: dist/
+          name: dist-packages
+          path: dist/*.whl dist/*.tar.gz
+          retention-days: 30
 
