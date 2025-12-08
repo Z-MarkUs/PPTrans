@@ -80,13 +80,13 @@ if [ ! -f "RELEASE_NOTES.md" ]; then
 ### 📦 Installation
 
 \`\`\`bash
-pip install ppt-translator
+pip install pptrans
 \`\`\`
 
 ### 🚀 Quick Start
 
 \`\`\`bash
-ppt-translator presentation.pptx --provider openai --source-lang zh --target-lang en
+pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 \`\`\`
 
 See [README.md](README.md) for full documentation.
