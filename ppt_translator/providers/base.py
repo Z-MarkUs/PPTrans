@@ -60,10 +60,22 @@ class OpenAICompatibleProvider(TranslationProvider):
         ]
 
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=self.build_messages(text, source_lang, target_lang),
-            temperature=self.temperature,
-            stream=False,
-        )
+        # Some models don't support custom temperature, try with it first, then without
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=self.build_messages(text, source_lang, target_lang),
+                temperature=self.temperature,
+                stream=False,
+            )
+        except Exception as e:
+            # If temperature is not supported, retry without it
+            if "temperature" in str(e).lower() or "unsupported_value" in str(e):
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=self.build_messages(text, source_lang, target_lang),
+                    stream=False,
+                )
+            else:
+                raise
         return response.choices[0].message.content.strip()
