@@ -70,6 +70,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=3,
         help="Maximum number of refinement iterations for vision review (default: 3).",
     )
+    parser.add_argument(
+        "--vision-model",
+        type=str,
+        help="Vision model to use for review (default: gpt-5.1, fallback: gpt-4o).",
+    )
     return parser
 
 
@@ -119,9 +124,11 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             if hasattr(provider, 'vision_call'):
                 vision_reviewer = VisionReviewer(
                     provider,
-                    quality_threshold=args.vision_quality_threshold
+                    quality_threshold=args.vision_quality_threshold,
+                    vision_model=args.vision_model,
                 )
-                print(f"Vision review enabled (threshold: {args.vision_quality_threshold}/10)")
+                model_info = f" (model: {args.vision_model or 'gpt-5.1'})" if args.vision_model else " (model: gpt-5.1)"
+                print(f"Vision review enabled{model_info}, threshold: {args.vision_quality_threshold}/10")
             else:
                 print("Warning: Provider does not support vision calls. Vision review disabled.")
         except Exception as e:

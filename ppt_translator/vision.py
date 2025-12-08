@@ -38,15 +38,22 @@ class VisionReviewResult:
 class VisionReviewer:
     """Review slides using vision-capable LLM."""
     
-    def __init__(self, provider: TranslationProvider, quality_threshold: float = 7.0):
+    def __init__(
+        self,
+        provider: TranslationProvider,
+        quality_threshold: float = 7.0,
+        vision_model: Optional[str] = None,
+    ):
         """Initialize vision reviewer.
         
         Args:
             provider: Vision-capable translation provider (must support vision)
             quality_threshold: Minimum quality score (0-10) to accept translation
+            vision_model: Optional vision model name (default: gpt-5.1)
         """
         self.provider = provider
         self.quality_threshold = quality_threshold
+        self.vision_model = vision_model or "gpt-5.1"
     
     def analyze_original_slide(
         self, image_path: Path, source_lang: str, target_lang: str, glossary: Optional[Dict[str, str]] = None
@@ -84,7 +91,11 @@ class VisionReviewer:
         # Call vision API
         try:
             if hasattr(self.provider, 'vision_call'):
-                response = self.provider.vision_call(prompt, [str(image_path)])
+                response = self.provider.vision_call(
+                    prompt,
+                    [str(image_path)],
+                    model=self.vision_model
+                )
                 try:
                     return json.loads(response)
                 except json.JSONDecodeError:
@@ -154,7 +165,8 @@ class VisionReviewer:
             if hasattr(self.provider, 'vision_call'):
                 response = self.provider.vision_call(
                     prompt,
-                    [str(original_image_path), str(translated_image_path)]
+                    [str(original_image_path), str(translated_image_path)],
+                    model=self.vision_model
                 )
                 try:
                     result_data = json.loads(response)
