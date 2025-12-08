@@ -53,7 +53,9 @@ class VisionReviewer:
         """
         self.provider = provider
         self.quality_threshold = quality_threshold
-        self.vision_model = vision_model or "gpt-5.1"
+        if not vision_model:
+            raise ValueError("vision_model is required for VisionReviewer. Please specify a vision-capable model.")
+        self.vision_model = vision_model
     
     def analyze_original_slide(
         self, image_path: Path, source_lang: str, target_lang: str, glossary: Optional[Dict[str, str]] = None

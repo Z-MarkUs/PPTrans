@@ -45,12 +45,14 @@ def main():
         print(f"🔄 Processing: {ppt_file.name}")
         print("-" * 60)
         
-        # Run CLI with OpenAI provider
+        # Run CLI with OpenAI provider and vision review using GPT-5.1
         exit_code = run_cli([
             str(ppt_file),
             '--provider', 'openai',
             '--source-lang', 'zh',
             '--target-lang', 'en',
+            '--vision-review',  # Enable vision review
+            '--vision-model', 'gpt-5.1',  # Use GPT-5.1 for testing
             '--keep-intermediate',  # Keep XML files for inspection
         ])
         

@@ -166,24 +166,10 @@ class OpenAICompatibleProvider(TranslationProvider):
             }
         ]
         
-        # Use vision model (default to GPT-5.1, fallback to GPT-4o)
-        # If model is explicitly provided, use it; otherwise auto-select best vision model
-        if model:
-            vision_model = model
-        else:
-            # Auto-select best vision model based on base model or default to GPT-5.1
-            base_model_lower = self.model.lower()
-            if "gpt-5" in base_model_lower or "gpt5" in base_model_lower:
-                vision_model = "gpt-5.1"
-            elif "gpt-4" in base_model_lower:
-                # Fallback to GPT-4o (multimodal) for GPT-4 base models
-                vision_model = "gpt-4o"
-            elif "vision" in base_model_lower:
-                # Already a vision model
-                vision_model = self.model
-            else:
-                # Default to GPT-5.1 for best results (latest multimodal model)
-                vision_model = "gpt-5.1"
+        # Use the provided model (required - no auto-selection)
+        if not model:
+            raise ValueError("Vision model must be explicitly specified. Please provide a vision-capable model name.")
+        vision_model = model
         
         try:
             response = self.client.chat.completions.create(

@@ -73,7 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--vision-model",
         type=str,
-        help="Vision model to use for review (default: gpt-5.1, fallback: gpt-4o).",
+        help="Vision model to use for review (e.g., gpt-5.1, gpt-4o, gpt-4-vision-preview). Required if --vision-review is enabled.",
     )
     return parser
 
@@ -122,13 +122,48 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         try:
             # Check if provider supports vision
             if hasattr(provider, 'vision_call'):
+                # Prompt user to select vision model if not provided
+                vision_model = args.vision_model
+                if not vision_model:
+                    print("\n🔍 Vision review enabled - Please select a vision model:")
+                    print("Available models:")
+                    print("  1. gpt-5.1 (Latest, best quality)")
+                    print("  2. gpt-4o (Multimodal)")
+                    print("  3. gpt-4-vision-preview (Legacy)")
+                    print("  4. Custom (enter model name)")
+                    
+                    while True:
+                        choice = input("\nEnter choice (1-4) or model name: ").strip()
+                        
+                        if choice == "1":
+                            vision_model = "gpt-5.1"
+                            break
+                        elif choice == "2":
+                            vision_model = "gpt-4o"
+                            break
+                        elif choice == "3":
+                            vision_model = "gpt-4-vision-preview"
+                            break
+                        elif choice == "4":
+                            vision_model = input("Enter custom model name: ").strip()
+                            if vision_model:
+                                break
+                            print("Please enter a valid model name.")
+                        elif choice:
+                            # User entered a model name directly
+                            vision_model = choice
+                            break
+                        else:
+                            print("Please enter a valid choice.")
+                    
+                    print(f"Selected model: {vision_model}\n")
+                
                 vision_reviewer = VisionReviewer(
                     provider,
                     quality_threshold=args.vision_quality_threshold,
-                    vision_model=args.vision_model,
+                    vision_model=vision_model,
                 )
-                model_info = f" (model: {args.vision_model or 'gpt-5.1'})" if args.vision_model else " (model: gpt-5.1)"
-                print(f"Vision review enabled{model_info}, threshold: {args.vision_quality_threshold}/10")
+                print(f"Vision review enabled (model: {vision_model}), threshold: {args.vision_quality_threshold}/10")
             else:
                 print("Warning: Provider does not support vision calls. Vision review disabled.")
         except Exception as e:
