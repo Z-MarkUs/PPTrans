@@ -6,12 +6,13 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from .memory import Glossary
+from .memory import Glossary, TranslationMemory
 from .providers import ProviderConfigurationError, create_provider, list_providers
 from .translation import TranslationService
-from .pipeline import process_ppt_file
+from .pipeline import process_ppt_file, regenerate_ppt_from_review
 from .utils import clean_path, iter_presentation_files
 from .vision import VisionReviewer
+from .review import ReviewFileGenerator, ReviewFileLoader
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -74,6 +75,22 @@ def build_parser() -> argparse.ArgumentParser:
         "--vision-model",
         type=str,
         help="Vision model to use for review (e.g., gpt-5.1, gpt-4o, gpt-4-vision-preview). Required if --vision-review is enabled.",
+    )
+    parser.add_argument(
+        "--generate-review",
+        action="store_true",
+        help="Generate interactive review file (JSON/YAML) after translation.",
+    )
+    parser.add_argument(
+        "--review-format",
+        choices=["json", "yaml"],
+        default="json",
+        help="Format for review file (default: json).",
+    )
+    parser.add_argument(
+        "--regenerate-from-review",
+        type=str,
+        help="Regenerate PPTs from edited review file (provide path to review file).",
     )
     return parser
 
@@ -169,15 +186,27 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         except Exception as e:
             print(f"Warning: Could not initialize vision reviewer: {e}")
 
+    # Handle regeneration from review file
+    if args.regenerate_from_review:
+        return _handle_regeneration(
+            review_file_path=Path(clean_path(args.regenerate_from_review)).expanduser().resolve(),
+            memory_file=memory_file,
+        )
+
     files = list(iter_presentation_files(target_path))
     if not files:
         print("No PowerPoint files were found at the provided location.")
         return 1
 
+    # Initialize review file generator if requested
+    review_generator = None
+    if args.generate_review:
+        review_generator = ReviewFileGenerator(args.source_lang, args.target_lang)
+
     exit_code = 0
-    for ppt_file in files:
+    for file_idx, ppt_file in enumerate(files):
         try:
-            process_ppt_file(
+            result = process_ppt_file(
                 ppt_file,
                 translator=translator,
                 source_lang=args.source_lang,
@@ -186,10 +215,40 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 cleanup=not args.keep_intermediate,
                 vision_reviewer=vision_reviewer,
                 max_refinement_iterations=args.max_refinement_iterations,
+                collect_review_data=args.generate_review,
             )
+            
+            # Handle review data collection
+            if args.generate_review:
+                output_path, review_slides = result
+                if review_slides:
+                    # Collect quality scores if available from vision review
+                    quality_scores = [s.quality_score for s in review_slides]
+                    issues_list = [s.issues for s in review_slides]
+                    review_generator.add_file_review(
+                        str(ppt_file),
+                        review_slides,
+                        quality_scores if any(q is not None for q in quality_scores) else None,
+                        issues_list if any(issues for issues in issues_list) else None,
+                    )
+            else:
+                output_path = result
         except Exception as exc:  # pragma: no cover - CLI logging
             print(f"Error processing {ppt_file}: {exc}")
             exit_code = 1
+    
+    # Generate review file if requested
+    if args.generate_review and review_generator:
+        review_file_path = target_path / f"translation_review.{args.review_format}"
+        if target_path.is_file():
+            review_file_path = target_path.parent / f"translation_review.{args.review_format}"
+        
+        try:
+            review_generator.save(review_file_path, format=args.review_format)
+            print(f"\n✅ Review file generated: {review_file_path.name}")
+            print(f"   Edit this file and use --regenerate-from-review to apply changes")
+        except Exception as e:
+            print(f"\n⚠️  Warning: Could not generate review file: {e}")
     
     # Clean up memory file if requested
     if memory_file and memory_file.exists() and not args.keep_intermediate:
@@ -200,6 +259,55 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             pass
 
     return exit_code
+
+
+def _handle_regeneration(review_file_path: Path, memory_file: Optional[Path] = None) -> int:
+    """Handle regeneration from edited review file."""
+    try:
+        print(f"Loading review file: {review_file_path.name}")
+        review_data = ReviewFileLoader.load(review_file_path)
+        
+        # Validate review file
+        is_valid, errors = ReviewFileLoader.validate(review_data)
+        if not is_valid:
+            print("❌ Review file validation failed:")
+            for error in errors:
+                print(f"   - {error}")
+            return 1
+        
+        print(f"✅ Review file validated: {review_data.total_files} file(s), {review_data.total_slides} slide(s)")
+        
+        # Load translation memory if available
+        translation_memory = None
+        if memory_file and memory_file.exists():
+            translation_memory = TranslationMemory(memory_file)
+            print(f"Using translation memory: {memory_file.name}")
+        
+        # Regenerate each file
+        for file_idx, file_review in enumerate(review_data.files):
+            original_ppt_path = Path(file_review.file_path)
+            if not original_ppt_path.exists():
+                print(f"⚠️  Warning: Original file not found: {original_ppt_path}")
+                continue
+            
+            # Determine output path
+            output_path = original_ppt_path.parent / f"{original_ppt_path.stem}_final{original_ppt_path.suffix}"
+            
+            print(f"\n📝 Regenerating: {original_ppt_path.name} → {output_path.name}")
+            regenerate_ppt_from_review(
+                original_ppt_path=original_ppt_path,
+                review_data=review_data,
+                file_index=file_idx,
+                output_path=output_path,
+                update_memory=translation_memory,
+            )
+        
+        print(f"\n✅ Regeneration complete! {len(review_data.files)} file(s) regenerated.")
+        return 0
+    
+    except Exception as e:
+        print(f"❌ Error during regeneration: {e}")
+        return 1
 
 
 def main() -> None:

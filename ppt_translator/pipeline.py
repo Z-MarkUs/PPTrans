@@ -5,7 +5,7 @@ import json
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from xml.dom import minidom
 
 from pptx import Presentation
@@ -17,6 +17,7 @@ from pptx.util import Inches, Pt
 from .translation import TranslationService
 from .vision import VisionReviewer
 from .render import render_slide_to_image
+from .review import ReviewFileGenerator, ReviewFileLoader, SlideTranslation
 
 
 def get_alignment_value(alignment_str: str | None):
@@ -374,6 +375,181 @@ def create_translated_ppt(original_ppt_path: str, translated_xml_path: str, outp
         print(f"Error creating translated PowerPoint: {exc}")
 
 
+def _collect_review_data(
+    original_xml_path: Optional[Path],
+    translated_xml_path: Path,
+    vision_reviewer: Optional[VisionReviewer] = None,
+) -> List[SlideTranslation]:
+    """Collect translation data for review file generation."""
+    review_slides = []
+    
+    try:
+        # Parse translated XML
+        tree = ET.parse(translated_xml_path)
+        root = tree.getroot()
+        
+        # Parse original XML if available
+        original_root = None
+        if original_xml_path and original_xml_path.exists():
+            original_tree = ET.parse(original_xml_path)
+            original_root = original_tree.getroot()
+        
+        for xml_slide in root.findall(".//slide"):
+            slide_number = int(xml_slide.get("number", "0"))
+            if slide_number == 0:
+                continue
+            
+            original_texts = []
+            translated_texts = []
+            quality_score = None
+            issues = []
+            
+            # Collect text elements
+            for text_elem in xml_slide.findall(".//text_element"):
+                shape_index = int(text_elem.get("shape_index", "-1"))
+                props_elem = text_elem.find("properties")
+                if props_elem is not None and props_elem.text:
+                    try:
+                        shape_data = json.loads(props_elem.text)
+                        translated_texts.append({
+                            "shape_index": shape_index,
+                            "text": shape_data.get("text", ""),
+                            "properties": shape_data,
+                        })
+                    except Exception:
+                        pass
+            
+            # Get original texts if available
+            if original_root:
+                orig_slide = original_root.find(f".//slide[@number='{slide_number}']")
+                if orig_slide is not None:
+                    for text_elem in orig_slide.findall(".//text_element"):
+                        shape_index = int(text_elem.get("shape_index", "-1"))
+                        props_elem = text_elem.find("properties")
+                        if props_elem is not None and props_elem.text:
+                            try:
+                                shape_data = json.loads(props_elem.text)
+                                original_texts.append({
+                                    "shape_index": shape_index,
+                                    "text": shape_data.get("text", ""),
+                                    "properties": shape_data,
+                                })
+                            except Exception:
+                                pass
+            
+            # Match original and translated texts by shape_index
+            # Create a map for easier matching
+            orig_map = {t["shape_index"]: t for t in original_texts}
+            trans_map = {t["shape_index"]: t for t in translated_texts}
+            
+            # Ensure both lists are aligned
+            all_indices = sorted(set(orig_map.keys()) | set(trans_map.keys()))
+            aligned_original = []
+            aligned_translated = []
+            
+            for idx in all_indices:
+                aligned_original.append(orig_map.get(idx, {"shape_index": idx, "text": "", "properties": {}}))
+                aligned_translated.append(trans_map.get(idx, {"shape_index": idx, "text": "", "properties": {}}))
+            
+            slide_translation = SlideTranslation(
+                slide_number=slide_number,
+                original_texts=aligned_original,
+                translated_texts=aligned_translated,
+                quality_score=quality_score,
+                issues=issues,
+            )
+            review_slides.append(slide_translation)
+    
+    except Exception as e:
+        print(f"Warning: Could not collect review data: {e}")
+    
+    return review_slides
+
+
+def regenerate_ppt_from_review(
+    original_ppt_path: Path,
+    review_data,
+    file_index: int,
+    output_path: Path,
+    update_memory=None,
+) -> None:
+    """Regenerate PPT from edited review file data.
+    
+    Args:
+        original_ppt_path: Path to original PPT file
+        review_data: ReviewData object with edited translations
+        file_index: Index of file in review_data.files list
+        output_path: Path for output PPT file
+        update_memory: Optional TranslationMemory to update with edits
+    """
+    if file_index >= len(review_data.files):
+        raise ValueError(f"File index {file_index} out of range")
+    
+    file_review = review_data.files[file_index]
+    
+    try:
+        prs = Presentation(str(original_ppt_path))
+        
+        # Create a mapping of slide number to translations
+        slide_translations = {s.slide_number: s for s in file_review.slides}
+        
+        for slide_number, slide in enumerate(prs.slides, start=1):
+            if slide_number not in slide_translations:
+                continue
+            
+            slide_trans = slide_translations[slide_number]
+            
+            # Create a mapping of shape_index to translated text
+            trans_map = {t["shape_index"]: t for t in slide_trans.translated_texts}
+            
+            for shape_index, shape in enumerate(slide.shapes):
+                if shape_index in trans_map:
+                    trans_data = trans_map[shape_index]
+                    
+                    if shape.shape_type == MSO_SHAPE_TYPE.TABLE:
+                        # Handle table updates if needed
+                        pass
+                    elif hasattr(shape, "text"):
+                        # Update text with edited translation
+                        edited_text = trans_data.get("text", "")
+                        if edited_text:
+                            # Get properties from original or use defaults
+                            props = trans_data.get("properties", {})
+                            
+                            # Clear existing text
+                            shape.text = ""
+                            paragraph = shape.text_frame.paragraphs[0]
+                            run = paragraph.add_run()
+                            run.text = edited_text
+                            
+                            # Apply properties if available
+                            if props.get("font_size"):
+                                run.font.size = Pt(props["font_size"] * 0.7)
+                            if props.get("font_name"):
+                                run.font.name = props["font_name"]
+                            if props.get("font_color"):
+                                try:
+                                    run.font.color.rgb = RGBColor.from_string(props["font_color"])
+                                except Exception:
+                                    pass
+                            
+                            # Update translation memory if provided
+                            if update_memory:
+                                orig_text = ""
+                                for orig in slide_trans.original_texts:
+                                    if orig.get("shape_index") == shape_index:
+                                        orig_text = orig.get("text", "")
+                                        break
+                                if orig_text:
+                                    update_memory.set(orig_text, edited_text)
+        
+        prs.save(str(output_path))
+        print(f"✅ Regenerated PPT from review: {output_path.name}")
+    
+    except Exception as e:
+        raise RuntimeError(f"Error regenerating PPT: {e}") from e
+
+
 def cleanup_intermediate_files(temp_dir: Path) -> None:
     """Remove all intermediate files and the temp directory."""
     try:
@@ -405,7 +581,8 @@ def process_ppt_file(
     cleanup: bool = True,
     vision_reviewer: VisionReviewer | None = None,
     max_refinement_iterations: int = 3,
-) -> Optional[Path]:
+    collect_review_data: bool = False,
+):
     """Process a single PowerPoint file from extraction to translated output."""
     if not ppt_path.is_file():
         raise FileNotFoundError(f"'{ppt_path}' is not a valid file.")
@@ -445,7 +622,7 @@ def process_ppt_file(
         temp_dir=temp_dir,
     )
     if not translated_xml:
-        return None
+        return None, None if collect_review_data else None
 
     translated_output_path = temp_dir / f"{ppt_path.stem}_translated.xml"
     with open(translated_output_path, "w", encoding="utf-8") as handle:
@@ -530,10 +707,21 @@ def process_ppt_file(
         # No vision review - just create translated PPT
         create_translated_ppt(str(ppt_path), str(translated_output_path), str(output_ppt_path))
 
+    # Collect review data if requested
+    review_slides = None
+    if collect_review_data:
+        review_slides = _collect_review_data(
+            original_xml_path=original_output_path if original_xml else None,
+            translated_xml_path=translated_output_path,
+            vision_reviewer=vision_reviewer,
+        )
+
     if cleanup:
         cleanup_intermediate_files(temp_dir)
         print(f"Intermediate files and temp directory cleaned up.")
     else:
         print(f"Intermediate files kept in {temp_dir.name}/ (you can delete manually)")
 
+    if collect_review_data:
+        return output_ppt_path, review_slides
     return output_ppt_path
