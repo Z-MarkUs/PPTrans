@@ -31,6 +31,24 @@ class TranslationProvider(ABC):
             target_lang: Target language code
             glossary: Optional dictionary of preferred translations (key -> value)
         """
+    
+    def vision_call(
+        self, prompt: str, image_paths: List[str], model: Optional[str] = None
+    ) -> str:
+        """Make a vision API call with images (optional, for vision-capable providers).
+        
+        Args:
+            prompt: Text prompt for the vision model
+            image_paths: List of base64-encoded image strings or file paths
+            model: Optional model override (defaults to self.model)
+        
+        Returns:
+            Response text from the vision model
+        
+        Raises:
+            NotImplementedError: If provider doesn't support vision
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} does not support vision calls")
 
 
 class OpenAICompatibleProvider(TranslationProvider):
@@ -101,4 +119,76 @@ class OpenAICompatibleProvider(TranslationProvider):
                 )
             else:
                 raise
+        return response.choices[0].message.content.strip()
+    
+    def vision_call(
+        self, prompt: str, image_paths: List[str], model: Optional[str] = None
+    ) -> str:
+        """Make a vision API call using OpenAI-compatible vision models."""
+        import base64
+        from pathlib import Path
+        
+        # Encode images to base64
+        image_contents = []
+        for img_path in image_paths:
+            if isinstance(img_path, str) and Path(img_path).exists():
+                with open(img_path, "rb") as f:
+                    image_data = base64.b64encode(f.read()).decode('utf-8')
+                    image_contents.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{image_data}"
+                        }
+                    })
+            elif isinstance(img_path, str) and img_path.startswith("data:"):
+                # Already base64 encoded
+                image_contents.append({
+                    "type": "image_url",
+                    "image_url": {"url": img_path}
+                })
+            else:
+                # Assume it's already base64 string
+                image_contents.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{img_path}"
+                    }
+                })
+        
+        # Build messages with images
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    *image_contents
+                ]
+            }
+        ]
+        
+        # Use vision model (default to gpt-4-vision-preview or gpt-4o if available)
+        vision_model = model or self.model
+        if "vision" not in vision_model.lower() and "gpt-4" in vision_model.lower():
+            # Try to use vision variant
+            vision_model = "gpt-4o"  # or "gpt-4-vision-preview"
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=vision_model,
+                messages=messages,
+                temperature=self.temperature,
+                stream=False,
+            )
+        except Exception as e:
+            # If temperature is not supported, retry without it
+            error_str = str(e).lower()
+            if "temperature" in error_str or "unsupported_value" in error_str:
+                response = self.client.chat.completions.create(
+                    model=vision_model,
+                    messages=messages,
+                    stream=False,
+                )
+            else:
+                raise
+        
         return response.choices[0].message.content.strip()

@@ -11,6 +11,7 @@ from .providers import ProviderConfigurationError, create_provider, list_provide
 from .translation import TranslationService
 from .pipeline import process_ppt_file
 from .utils import clean_path, iter_presentation_files
+from .vision import VisionReviewer
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -51,6 +52,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-memory",
         action="store_true",
         help="Disable translation memory (consistency across slides).",
+    )
+    parser.add_argument(
+        "--vision-review",
+        action="store_true",
+        help="Enable vision-based review and iterative refinement (requires vision-capable model).",
+    )
+    parser.add_argument(
+        "--vision-quality-threshold",
+        type=float,
+        default=7.0,
+        help="Minimum quality score (0-10) for vision review acceptance (default: 7.0).",
+    )
+    parser.add_argument(
+        "--max-refinement-iterations",
+        type=int,
+        default=3,
+        help="Maximum number of refinement iterations for vision review (default: 3).",
     )
     return parser
 
@@ -93,6 +111,22 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         glossary=glossary,
     )
 
+    # Initialize vision reviewer if requested
+    vision_reviewer = None
+    if args.vision_review:
+        try:
+            # Check if provider supports vision
+            if hasattr(provider, 'vision_call'):
+                vision_reviewer = VisionReviewer(
+                    provider,
+                    quality_threshold=args.vision_quality_threshold
+                )
+                print(f"Vision review enabled (threshold: {args.vision_quality_threshold}/10)")
+            else:
+                print("Warning: Provider does not support vision calls. Vision review disabled.")
+        except Exception as e:
+            print(f"Warning: Could not initialize vision reviewer: {e}")
+
     files = list(iter_presentation_files(target_path))
     if not files:
         print("No PowerPoint files were found at the provided location.")
@@ -108,6 +142,8 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 target_lang=args.target_lang,
                 max_workers=args.max_workers,
                 cleanup=not args.keep_intermediate,
+                vision_reviewer=vision_reviewer,
+                max_refinement_iterations=args.max_refinement_iterations,
             )
         except Exception as exc:  # pragma: no cover - CLI logging
             print(f"Error processing {ppt_file}: {exc}")

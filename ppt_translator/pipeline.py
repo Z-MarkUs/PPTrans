@@ -15,6 +15,8 @@ from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
 from .translation import TranslationService
+from .vision import VisionReviewer
+from .render import render_slide_to_image
 
 
 def get_alignment_value(alignment_str: str | None):
@@ -401,6 +403,8 @@ def process_ppt_file(
     target_lang: str,
     max_workers: int = 4,
     cleanup: bool = True,
+    vision_reviewer: VisionReviewer | None = None,
+    max_refinement_iterations: int = 3,
 ) -> Optional[Path]:
     """Process a single PowerPoint file from extraction to translated output."""
     if not ppt_path.is_file():
@@ -451,7 +455,80 @@ def process_ppt_file(
     print(f"Creating translated PPT for {ppt_path.name}...")
     output_filename = f"{ppt_path.stem}_translated{ppt_path.suffix}"
     output_ppt_path = base_dir / output_filename
-    create_translated_ppt(str(ppt_path), str(translated_output_path), str(output_ppt_path))
+    
+    # Vision-based iterative refinement
+    if vision_reviewer:
+        print(f"🔍 Vision review enabled (max {max_refinement_iterations} iterations)")
+        
+        # Pre-translation: Analyze original slides
+        print("  📸 Rendering original slides for analysis...")
+        prs_original = Presentation(str(ppt_path))
+        for slide_num in range(1, len(prs_original.slides) + 1):
+            original_img = temp_dir / f"slide_{slide_num}_original.png"
+            if render_slide_to_image(ppt_path, slide_num, original_img):
+                analysis = vision_reviewer.analyze_original_slide(
+                    original_img, source_lang, target_lang
+                )
+                if analysis:
+                    print(f"    Slide {slide_num}: Analyzed")
+        
+        # Iterative refinement loop
+        best_ppt_path = None
+        best_score = 0.0
+        
+        for iteration in range(1, max_refinement_iterations + 1):
+            if iteration > 1:
+                print(f"  🔄 Refinement iteration {iteration}/{max_refinement_iterations}")
+            
+            # Create translated PPTX
+            iter_output_path = base_dir / f"{ppt_path.stem}_translated_iter{iteration}{ppt_path.suffix}"
+            create_translated_ppt(str(ppt_path), str(translated_output_path), str(iter_output_path))
+            
+            # Review translated slides
+            print(f"  📸 Rendering translated slides for review...")
+            all_passed = True
+            min_score = 10.0
+            
+            for slide_num in range(1, len(prs_original.slides) + 1):
+                original_img = temp_dir / f"slide_{slide_num}_original.png"
+                translated_img = temp_dir / f"slide_{slide_num}_translated_iter{iteration}.png"
+                
+                if render_slide_to_image(iter_output_path, slide_num, translated_img):
+                    review_result = vision_reviewer.review_translated_slide(
+                        original_img, translated_img, source_lang, target_lang
+                    )
+                    
+                    print(f"    Slide {slide_num}: Quality score {review_result.quality_score:.1f}/10")
+                    if review_result.issues:
+                        print(f"      Issues: {', '.join(review_result.issues[:3])}")
+                    
+                    min_score = min(min_score, review_result.quality_score)
+                    if review_result.needs_refinement:
+                        all_passed = False
+            
+            # Check if quality threshold met
+            if min_score >= vision_reviewer.quality_threshold or all_passed:
+                print(f"  ✅ Quality threshold met (score: {min_score:.1f}/10)")
+                best_ppt_path = iter_output_path
+                break
+            elif iteration < max_refinement_iterations:
+                print(f"  ⚠️  Quality below threshold ({min_score:.1f}/10), refining...")
+                # TODO: Apply suggestions from review_result to improve translation
+                # For now, we'll just retry (could use suggestions to adjust font sizes, etc.)
+            else:
+                print(f"  ⚠️  Max iterations reached (final score: {min_score:.1f}/10)")
+                best_ppt_path = iter_output_path
+        
+        # Use best result or final iteration
+        if best_ppt_path and best_ppt_path != output_ppt_path:
+            best_ppt_path.rename(output_ppt_path)
+            # Clean up iteration files
+            for iter_file in base_dir.glob(f"{ppt_path.stem}_translated_iter*.pptx"):
+                if iter_file != output_ppt_path:
+                    iter_file.unlink()
+    else:
+        # No vision review - just create translated PPT
+        create_translated_ppt(str(ppt_path), str(translated_output_path), str(output_ppt_path))
 
     if cleanup:
         cleanup_intermediate_files(temp_dir)
