@@ -21,9 +21,26 @@ def build_macos_app(arch: str = "universal"):
     print(f"Building macOS app for {arch}...")
     
     # Check if we're trying to cross-compile x86_64 on arm64
+    # GitHub Actions macOS runners are arm64-only, so we can't build x86_64 binaries
     current_arch = platform.machine()
-    if arch == "x86_64" and current_arch == "arm64":
+    
+    # Check multiple ways to detect arm64 (platform.machine() may vary)
+    is_arm64 = (
+        current_arch == "arm64" or 
+        current_arch == "aarch64" or
+        "arm64" in str(current_arch).lower() or
+        (hasattr(platform, 'processor') and platform.processor() == "arm")
+    )
+    
+    # Also check environment variables that GitHub Actions might set
+    import os
+    runner_arch = os.environ.get("RUNNER_ARCH", "").lower()
+    if "arm" in runner_arch or "aarch" in runner_arch:
+        is_arm64 = True
+    
+    if arch == "x86_64" and is_arm64:
         print("[WARN] Cannot build x86_64 on arm64 machine.")
+        print(f"[WARN] Detected architecture: {current_arch}")
         print("[WARN] Native dependencies (e.g., PIL) are compiled for arm64 only.")
         print("[WARN] x86_64 builds must be done on an Intel Mac or with Rosetta 2.")
         print("[WARN] Skipping x86_64 build.")
