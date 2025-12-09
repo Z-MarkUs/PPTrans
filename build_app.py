@@ -18,8 +18,8 @@ def build_macos_app(arch: str = "universal"):
     Args:
         arch: Architecture - "arm64", "x86_64", or "universal"
     """
-    # CRITICAL: Check FIRST before doing anything else
-    # GitHub Actions macOS runners are arm64-only, so we can't build x86_64 binaries
+    # Check if we need to use Rosetta 2 for x86_64 builds on arm64
+    use_rosetta = False
     if arch == "x86_64":
         import os
         import subprocess
@@ -27,10 +27,10 @@ def build_macos_app(arch: str = "universal"):
         # Check platform.machine()
         current_arch = platform.machine()
         
-        # Check platform.platform() string (most reliable - contains "arm64" in GitHub Actions logs)
+        # Check platform.platform() string
         platform_str = platform.platform().lower()
         
-        # Check using uname command (most direct)
+        # Check using uname command
         uname_arch = ""
         try:
             uname_result = subprocess.run(['uname', '-m'], capture_output=True, text=True, timeout=5)
@@ -38,8 +38,7 @@ def build_macos_app(arch: str = "universal"):
         except Exception:
             pass
         
-        # SIMPLE CHECK: If ANY of these contain "arm64", we're on arm64
-        # This should catch GitHub Actions runners which show "macos-14.8.2-arm64-arm-64bit"
+        # Check if we're on arm64
         is_arm64 = (
             "arm64" in str(current_arch).lower() or
             "arm64" in platform_str or
@@ -53,16 +52,21 @@ def build_macos_app(arch: str = "universal"):
         if "arm" in runner_arch or "aarch" in runner_arch:
             is_arm64 = True
         
-        # FORCE EXIT if arm64 detected
         if is_arm64:
-            print("[WARN] Cannot build x86_64 on arm64 machine.")
-            print(f"[WARN] platform.machine(): {current_arch}")
-            print(f"[WARN] platform.platform(): {platform_str}")
-            print(f"[WARN] uname -m: {uname_arch}")
-            print("[WARN] Native dependencies (e.g., PIL) are compiled for arm64 only.")
-            print("[WARN] x86_64 builds must be done on an Intel Mac or with Rosetta 2.")
-            print("[WARN] Skipping x86_64 build.")
-            sys.exit(0)  # Exit gracefully, don't fail the build
+            # Check if Rosetta 2 is available
+            try:
+                rosetta_check = subprocess.run(['arch', '-x86_64', 'uname', '-m'], 
+                                               capture_output=True, text=True, timeout=5)
+                if rosetta_check.returncode == 0 and "x86_64" in rosetta_check.stdout:
+                    print("[INFO] Detected arm64 machine, will use Rosetta 2 for x86_64 build")
+                    use_rosetta = True
+                else:
+                    print("[WARN] Rosetta 2 not available. Cannot build x86_64 on arm64 without Rosetta 2.")
+                    sys.exit(1)
+            except Exception as e:
+                print(f"[WARN] Could not check for Rosetta 2: {e}")
+                print("[WARN] Attempting build anyway...")
+                use_rosetta = True  # Try anyway
     
     print(f"Building macOS app for {arch}...")
     

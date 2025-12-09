@@ -50,8 +50,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
       
+      - name: Install x86_64 dependencies (for Rosetta 2)
+        run: |
+          # Install x86_64 versions of native dependencies using Rosetta 2
+          arch -x86_64 python3 -m pip install --upgrade pip
+          arch -x86_64 python3 -m pip install --force-reinstall --no-deps Pillow || true
+          # Note: This may not work if x86_64 wheels aren't available
+      
       - name: Build macOS app (x86_64)
-        run: python3 build_app.py macos x86_64
+        run: |
+          # Try to build using Rosetta 2
+          arch -x86_64 python3 build_app.py macos x86_64 || python3 build_app.py macos x86_64
         continue-on-error: true
       
       - name: Upload macOS app (x86_64)
