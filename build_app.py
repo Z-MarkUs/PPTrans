@@ -18,43 +18,52 @@ def build_macos_app(arch: str = "universal"):
     Args:
         arch: Architecture - "arm64", "x86_64", or "universal"
     """
-    print(f"Building macOS app for {arch}...")
-    
-    # Check if we're trying to cross-compile x86_64 on arm64
+    # CRITICAL: Check FIRST before doing anything else
     # GitHub Actions macOS runners are arm64-only, so we can't build x86_64 binaries
-    import os
-    
-    current_arch = platform.machine()
-    platform_str = platform.platform().lower()
-    
-    # Check multiple ways to detect arm64 (platform.machine() may vary)
-    is_arm64 = (
-        current_arch == "arm64" or 
-        current_arch == "aarch64" or
-        "arm64" in str(current_arch).lower() or
-        "arm64" in platform_str or
-        "aarch64" in platform_str or
-        (hasattr(platform, 'processor') and "arm" in str(platform.processor()).lower())
-    )
-    
-    # Also check environment variables that GitHub Actions might set
-    runner_arch = os.environ.get("RUNNER_ARCH", "").lower()
-    if "arm" in runner_arch or "aarch" in runner_arch:
-        is_arm64 = True
-    
-    # Debug output
     if arch == "x86_64":
-        print(f"[DEBUG] Current arch (platform.machine()): {current_arch}")
-        print(f"[DEBUG] Platform string: {platform_str}")
-        print(f"[DEBUG] Detected as arm64: {is_arm64}")
+        import os
+        import subprocess
+        
+        # Check platform.machine()
+        current_arch = platform.machine()
+        
+        # Check platform.platform() string (most reliable)
+        platform_str = platform.platform().lower()
+        
+        # Check using uname command (most direct)
+        try:
+            uname_result = subprocess.run(['uname', '-m'], capture_output=True, text=True, timeout=5)
+            uname_arch = uname_result.stdout.strip().lower() if uname_result.returncode == 0 else ""
+        except Exception:
+            uname_arch = ""
+        
+        # Multiple detection methods
+        is_arm64 = (
+            current_arch == "arm64" or 
+            current_arch == "aarch64" or
+            "arm64" in str(current_arch).lower() or
+            "arm64" in platform_str or
+            "aarch64" in platform_str or
+            uname_arch in ("arm64", "aarch64") or
+            (hasattr(platform, 'processor') and "arm" in str(platform.processor()).lower())
+        )
+        
+        # Check environment variables
+        runner_arch = os.environ.get("RUNNER_ARCH", "").lower()
+        if "arm" in runner_arch or "aarch" in runner_arch:
+            is_arm64 = True
+        
+        if is_arm64:
+            print("[WARN] Cannot build x86_64 on arm64 machine.")
+            print(f"[WARN] Detected architecture: {current_arch}")
+            print(f"[WARN] Platform string: {platform_str}")
+            print(f"[WARN] uname -m: {uname_arch}")
+            print("[WARN] Native dependencies (e.g., PIL) are compiled for arm64 only.")
+            print("[WARN] x86_64 builds must be done on an Intel Mac or with Rosetta 2.")
+            print("[WARN] Skipping x86_64 build.")
+            sys.exit(0)  # Exit gracefully, don't fail the build
     
-    if arch == "x86_64" and is_arm64:
-        print("[WARN] Cannot build x86_64 on arm64 machine.")
-        print(f"[WARN] Detected architecture: {current_arch}")
-        print("[WARN] Native dependencies (e.g., PIL) are compiled for arm64 only.")
-        print("[WARN] x86_64 builds must be done on an Intel Mac or with Rosetta 2.")
-        print("[WARN] Skipping x86_64 build.")
-        sys.exit(0)  # Exit gracefully, don't fail the build
+    print(f"Building macOS app for {arch}...")
     
     # PyInstaller options for macOS app
     # Note: Use --onedir instead of --onefile for macOS .app bundles (PyInstaller deprecation)
