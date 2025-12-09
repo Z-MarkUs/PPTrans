@@ -27,25 +27,25 @@ def build_macos_app(arch: str = "universal"):
         # Check platform.machine()
         current_arch = platform.machine()
         
-        # Check platform.platform() string (most reliable)
+        # Check platform.platform() string (most reliable - contains "arm64" in GitHub Actions logs)
         platform_str = platform.platform().lower()
         
         # Check using uname command (most direct)
+        uname_arch = ""
         try:
             uname_result = subprocess.run(['uname', '-m'], capture_output=True, text=True, timeout=5)
             uname_arch = uname_result.stdout.strip().lower() if uname_result.returncode == 0 else ""
         except Exception:
-            uname_arch = ""
+            pass
         
-        # Multiple detection methods
+        # SIMPLE CHECK: If ANY of these contain "arm64", we're on arm64
+        # This should catch GitHub Actions runners which show "macos-14.8.2-arm64-arm-64bit"
         is_arm64 = (
-            current_arch == "arm64" or 
-            current_arch == "aarch64" or
             "arm64" in str(current_arch).lower() or
             "arm64" in platform_str or
+            "aarch64" in str(current_arch).lower() or
             "aarch64" in platform_str or
-            uname_arch in ("arm64", "aarch64") or
-            (hasattr(platform, 'processor') and "arm" in str(platform.processor()).lower())
+            uname_arch in ("arm64", "aarch64")
         )
         
         # Check environment variables
@@ -53,10 +53,11 @@ def build_macos_app(arch: str = "universal"):
         if "arm" in runner_arch or "aarch" in runner_arch:
             is_arm64 = True
         
+        # FORCE EXIT if arm64 detected
         if is_arm64:
             print("[WARN] Cannot build x86_64 on arm64 machine.")
-            print(f"[WARN] Detected architecture: {current_arch}")
-            print(f"[WARN] Platform string: {platform_str}")
+            print(f"[WARN] platform.machine(): {current_arch}")
+            print(f"[WARN] platform.platform(): {platform_str}")
             print(f"[WARN] uname -m: {uname_arch}")
             print("[WARN] Native dependencies (e.g., PIL) are compiled for arm64 only.")
             print("[WARN] x86_64 builds must be done on an Intel Mac or with Rosetta 2.")
