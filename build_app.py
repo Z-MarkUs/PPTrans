@@ -18,55 +18,24 @@ def build_macos_app(arch: str = "universal"):
     Args:
         arch: Architecture - "arm64", "x86_64", or "universal"
     """
-    # Check if we need to use Rosetta 2 for x86_64 builds on arm64
-    use_rosetta = False
+    # Note: For x86_64 builds on arm64, the workflow should use 'arch -x86_64' 
+    # to run this script, which will use Rosetta 2 emulation
     if arch == "x86_64":
         import os
-        import subprocess
-        
-        # Check platform.machine()
         current_arch = platform.machine()
-        
-        # Check platform.platform() string
         platform_str = platform.platform().lower()
-        
-        # Check using uname command
-        uname_arch = ""
-        try:
-            uname_result = subprocess.run(['uname', '-m'], capture_output=True, text=True, timeout=5)
-            uname_arch = uname_result.stdout.strip().lower() if uname_result.returncode == 0 else ""
-        except Exception:
-            pass
         
         # Check if we're on arm64
         is_arm64 = (
             "arm64" in str(current_arch).lower() or
             "arm64" in platform_str or
             "aarch64" in str(current_arch).lower() or
-            "aarch64" in platform_str or
-            uname_arch in ("arm64", "aarch64")
+            "aarch64" in platform_str
         )
         
-        # Check environment variables
-        runner_arch = os.environ.get("RUNNER_ARCH", "").lower()
-        if "arm" in runner_arch or "aarch" in runner_arch:
-            is_arm64 = True
-        
         if is_arm64:
-            # Check if Rosetta 2 is available
-            try:
-                rosetta_check = subprocess.run(['arch', '-x86_64', 'uname', '-m'], 
-                                               capture_output=True, text=True, timeout=5)
-                if rosetta_check.returncode == 0 and "x86_64" in rosetta_check.stdout:
-                    print("[INFO] Detected arm64 machine, will use Rosetta 2 for x86_64 build")
-                    use_rosetta = True
-                else:
-                    print("[WARN] Rosetta 2 not available. Cannot build x86_64 on arm64 without Rosetta 2.")
-                    sys.exit(1)
-            except Exception as e:
-                print(f"[WARN] Could not check for Rosetta 2: {e}")
-                print("[WARN] Attempting build anyway...")
-                use_rosetta = True  # Try anyway
+            print("[INFO] Building x86_64 on arm64 machine (requires Rosetta 2)")
+            print("[INFO] Ensure this script is run with: arch -x86_64 python3 build_app.py macos x86_64")
     
     print(f"Building macOS app for {arch}...")
     
