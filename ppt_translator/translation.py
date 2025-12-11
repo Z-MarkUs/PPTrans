@@ -32,10 +32,31 @@ class TranslationService:
         self.memory = TranslationMemory(memory_file) if memory_file else None
         self.glossary = glossary if glossary else None
 
-    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
-        """Translate ``text`` with glossary, memory, and caching support."""
+    def translate(self, text: str, source_lang: str, target_lang: str, preserve_paragraphs: bool = True) -> str:
+        """Translate ``text`` with glossary, memory, and caching support.
+        
+        Args:
+            text: Text to translate
+            source_lang: Source language code
+            target_lang: Target language code  
+            preserve_paragraphs: If True, translate each paragraph separately to preserve formatting
+        
+        Returns:
+            Translated text with formatting preserved
+        """
         if not text or text.isspace():
             return text
+
+        # NEW: If text has multiple paragraphs, translate each separately to preserve structure
+        if preserve_paragraphs and '\n' in text:
+            lines = text.split('\n')
+            translated_lines = []
+            for line in lines:
+                if line.strip():
+                    translated_lines.append(self.translate(line.strip(), source_lang, target_lang, preserve_paragraphs=False))
+                else:
+                    translated_lines.append('')
+            return '\n'.join(translated_lines)
 
         # Check in-memory cache first
         with self._lock:
