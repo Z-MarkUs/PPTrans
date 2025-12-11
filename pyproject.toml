@@ -8,7 +8,6 @@ version = "1.0.0"
 description = "Translate PowerPoint presentations using modern LLM providers with vision-based review"
 readme = "README.md"
 requires-python = ">=3.10"
-license = "MIT"
 license-files = ["LICENSE"]
 authors = [
     {name = "Hehan Zhao", email = "80203549+Z-MarkUs@users.noreply.github.com"}
@@ -17,6 +16,7 @@ keywords = ["powerpoint", "translation", "llm", "ppt", "pptx", "multimodal"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
