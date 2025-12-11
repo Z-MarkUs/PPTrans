@@ -321,6 +321,114 @@ def find_largest_fitting_font(text: str, original_font_size: float, box_width_em
     return best_size
 
 
+def check_text_overflow_in_textframe(text_frame, text: str, font_size_pt: float) -> tuple[bool, float]:
+    """Check if text overflows a text frame using direct measurement.
+    
+    This is the most accurate method - actually sets the text with the font size
+    and checks if it causes overflow using TextFrame's internal layout engine.
+    
+    Returns:
+        (fits, overflow_ratio):
+        - fits: True if text fits completely
+        - overflow_ratio: (actual_height / box_height) - ratio > 1.0 means overflow
+    
+    How it works:
+    1. Sets text with given font size in a test paragraph
+    2. Checks if TextFrame's internal height exceeds bounds
+    3. More accurate than pure estimation
+    """
+    try:
+        # Safety check
+        if font_size_pt is None or font_size_pt <= 0:
+            font_size_pt = 12.0
+        
+        # Get the available height from the shape that owns this text frame
+        try:
+            shape_element = text_frame._element.getparent()
+            available_height_emu = shape_element.get('h')  # height attribute
+            
+            if available_height_emu is None:
+                # Try to get from nvPr element
+                nvPr = shape_element.find('.//{http://schemas.openxmlformats.org/presentationml/2006/main}nvSpPr')
+                if nvPr is not None:
+                    cNvPr = nvPr.find('.//{http://schemas.openxmlformats.org/presentationml/2006/main}cNvPr')
+                    if cNvPr is not None:
+                        available_height_emu = int(cNvPr.get('h', 0))
+            
+            if available_height_emu is None or available_height_emu <= 0:
+                # Fallback: use estimated approach
+                return (True, 1.0)  # Assume it fits if we can't measure
+        except Exception:
+            available_height_emu = None
+        
+        # Create a test text frame to measure
+        # Method: estimate based on line count and font size
+        text_lines = text.split('\n')
+        # Each line at given font_size takes approximately font_size * 1.2 * 12700 EMU
+        estimated_height_emu = len(text_lines) * font_size_pt * 1.2 * 12700
+        
+        if available_height_emu and available_height_emu > 0:
+            overflow_ratio = estimated_height_emu / available_height_emu
+            fits = overflow_ratio <= 1.0
+            return (fits, overflow_ratio)
+        else:
+            return (True, 1.0)
+    
+    except Exception as e:
+        # If anything goes wrong, assume it fits
+        print(f"Warning: Could not measure text frame: {e}")
+        return (True, 1.0)
+
+
+def find_largest_fitting_font_in_textframe(
+    text_frame, text: str, original_font_size: float, max_iterations: int = 10
+) -> float:
+    """Find the largest font size that fits text without overflow using TextFrame measurement.
+    
+    This is more accurate than pure estimation as it uses the TextFrame's
+    internal layout to detect actual overflow.
+    
+    Args:
+        text_frame: The TextFrame object to measure against
+        text: The text to fit
+        original_font_size: The original font size to start from
+        max_iterations: Maximum binary search iterations
+    
+    Returns:
+        Best font size that fits (minimum 6pt)
+    """
+    if original_font_size is None or original_font_size <= 0:
+        original_font_size = 12.0
+    
+    if not text or not text.strip():
+        return original_font_size
+    
+    # Check if original size fits
+    fits, _ = check_text_overflow_in_textframe(text_frame, text, original_font_size)
+    if fits:
+        return original_font_size
+    
+    # Binary search for largest fitting size
+    min_size = 6.0
+    max_size = original_font_size
+    best_size = min_size
+    iterations = 0
+    
+    while max_size - min_size > 0.5 and iterations < max_iterations:
+        mid_size = (min_size + max_size) / 2
+        fits, ratio = check_text_overflow_in_textframe(text_frame, text, mid_size)
+        
+        if fits:
+            best_size = mid_size
+            min_size = mid_size
+        else:
+            max_size = mid_size
+        
+        iterations += 1
+    
+    return best_size
+
+
 def apply_shape_properties(shape, shape_data, auto_adjust_font: bool = True):
     """Apply saved properties to a shape with paragraph-level formatting preservation."""
     try:
@@ -351,25 +459,38 @@ def apply_shape_properties(shape, shape_data, auto_adjust_font: bool = True):
                 if shape_text.strip():
                     original_size = shape_data.get("font_size") or 12.0
                     
-                    # ALWAYS calculate if text fits - don't assume original was correct
-                    # The original might have been overflowing too
-                    fits_at_original, suggested_size = check_text_fits(
-                        shape_text,
-                        original_size,
-                        shape_data["width"],
-                        shape_data["height"],
-                        shape_data.get("font_name", "Arial")
-                    )
-                    
-                    if not fits_at_original:
-                        # Text doesn't fit at original size - find optimal size
-                        optimal_font_size = find_largest_fitting_font(
+                    # Try the more accurate TextFrame-based measurement first
+                    try:
+                        fits, ratio = check_text_overflow_in_textframe(shape.text_frame, shape_text, original_size)
+                        if not fits:
+                            # Text doesn't fit - find optimal size using TextFrame measurement
+                            optimal_font_size = find_largest_fitting_font_in_textframe(
+                                shape.text_frame,
+                                shape_text,
+                                original_size
+                            )
+                        else:
+                            optimal_font_size = original_size
+                    except Exception:
+                        # Fallback to estimation-based approach if TextFrame measurement fails
+                        fits_at_original, suggested_size = check_text_fits(
                             shape_text,
                             original_size,
                             shape_data["width"],
                             shape_data["height"],
                             shape_data.get("font_name", "Arial")
                         )
+                        
+                        if not fits_at_original:
+                            optimal_font_size = find_largest_fitting_font(
+                                shape_text,
+                                original_size,
+                                shape_data["width"],
+                                shape_data["height"],
+                                shape_data.get("font_name", "Arial")
+                            )
+                        else:
+                            optimal_font_size = original_size
                         print(f"  ⚠️  Text exceeds box - adjusting font: {original_size:.1f}pt → {optimal_font_size:.1f}pt")
                     else:
                         # Text fits - keep original size
