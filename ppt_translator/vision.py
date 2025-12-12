@@ -147,19 +147,25 @@ class VisionReviewer:
                 needs_refinement=True,
             )
         
-        # Build prompt for quality review
+        # Build prompt for quality review with autofallback guidance
         prompt = (
             f"Review this translation from {source_lang} to {target_lang}. "
             "Compare the original slide (first image) with the translated slide (second image).\n\n"
             "Assess:\n"
             "1. Translation quality (accuracy, naturalness) - score 0-10\n"
             "2. Layout preservation (text fits, no overflow)\n"
-            "3. Visual consistency (formatting, spacing)\n"
-            "4. Issues found (list specific problems)\n"
+            "3. Visual consistency (formatting, spacing, bullets, paragraphs)\n"
+            "4. Issues found (list specific problems like 'text overflow', 'bullet formatting lost', etc.)\n"
             "5. Suggestions for improvement\n\n"
+            "For suggestions, include these keys if applicable:\n"
+            "- 'use_advanced_formatting': true if paragraph/bullet formatting is lost\n"
+            "- 'use_textframe_measurement': true if text overflow is detected\n"
+            "- 'font_size': suggested font size if needed\n"
+            "- 'line_spacing': suggested line spacing if needed\n\n"
             "Respond in JSON format:\n"
             '{"quality_score": 0-10, "issues": ["issue1", "issue2"], '
-            '"suggestions": {"font_size": 10.5, "line_spacing": 1.2}, "needs_refinement": true/false}'
+            '"suggestions": {"use_advanced_formatting": true/false, "use_textframe_measurement": true/false, '
+            '"font_size": 10.5, "line_spacing": 1.2}, "needs_refinement": true/false}'
         )
         
         # Call vision API
