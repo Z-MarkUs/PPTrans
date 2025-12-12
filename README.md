@@ -110,8 +110,8 @@ pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 # Translate all PPT files in a directory
 pptrans ./presentations/ --provider openai
 
-# With vision-based quality review
-pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-5.1
+# With vision-based quality review (choose your own vision model)
+pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-4o
 
 # Use a glossary for consistent terminology
 pptrans presentation.pptx --provider openai --glossary glossary.json
@@ -165,7 +165,7 @@ pptrans /path/to/decks \
 | `--glossary` | Path to glossary file (JSON/YAML) | None |
 | `--no-memory` | Disable translation memory | Enabled |
 | `--vision-review` | Enable vision-based quality review | Disabled |
-| `--vision-model` | Vision model for review (e.g., `gpt-5.1`, `gpt-4o`) | `gpt-5.1` |
+| `--vision-model` | Vision-capable model for review (e.g., `gpt-4o`, `gpt-4-vision-preview`, `claude-3-opus`) | Required if `--vision-review` enabled |
 | `--vision-quality-threshold` | Minimum quality score (0-10) | `7.0` |
 | `--max-refinement-iterations` | Max refinement attempts | `3` |
 | `--generate-review` | Generate editable review file | Disabled |
@@ -184,16 +184,24 @@ The tool generates:
 
 ### 🎯 Key Features Explained
 
-#### Vision-Based Quality Review
+#### AI-Guided Autofallback & Vision Review
 
-Uses multimodal LLMs (GPT-5.1, GPT-4o) to visually analyze slides before and after translation:
+**Note**: PPTrans is an application that uses your chosen models - we don't provide model services. You select both the translation model and vision review model based on your needs and API access.
+
+When vision review is enabled, the system uses your chosen vision-capable model to visually analyze slides:
 
 - **Pre-translation analysis**: Understands layout constraints and text hierarchy
 - **Post-translation review**: Quality scoring (0-10) with specific issues and suggestions
+- **AI-guided autofallback**: Automatically switches to advanced formatting methods when issues are detected:
+  - **Advanced paragraph formatting**: Preserves bullets, indentation, and multi-paragraph structure
+  - **TextFrame measurement**: Uses accurate text measurement instead of estimation for better font sizing
 - **Iterative refinement**: Automatically improves translations until quality threshold is met
 
+The autofallback system reads AI suggestions and intelligently enables advanced features only when needed, keeping the process efficient for simple slides while ensuring quality for complex formatting.
+
 ```bash
-pptrans deck.pptx --provider openai --vision-review --vision-quality-threshold 8.0
+# Use your chosen vision model (must support vision capabilities)
+pptrans deck.pptx --provider openai --vision-review --vision-model gpt-4o --vision-quality-threshold 8.0
 ```
 
 #### Translation Memory
@@ -306,7 +314,7 @@ This project is licensed under the MIT License. See `LICENSE` for details.
 • ⚡ **极速翻译**: 大多数演示文稿可在 2 秒内完成翻译  
 • 🔄 **多提供商支持**: 通过简单的 CLI 标志在 DeepSeek、OpenAI、Anthropic 和 Grok 之间切换  
 • 🎨 **丰富格式**: 翻译后保留字体、颜色、间距、表格和对齐方式  
-• 🔍 **基于视觉的审查**: 使用 GPT-5.1 进行质量评估和迭代优化  
+• 🔍 **AI 引导的自动回退**: 基于视觉的质量审查，需要时自动切换到高级格式处理  
 • 💾 **翻译记忆库**: 确保跨幻灯片的一致性并降低 API 成本  
 • 📚 **用户词汇表**: 定义首选翻译以保持术语一致性  
 • 📝 **交互式审查**: 在 JSON/YAML 中编辑翻译并重新生成 PPT  
@@ -389,8 +397,8 @@ pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 # 翻译目录中的所有 PPT 文件
 pptrans ./presentations/ --provider openai
 
-# 使用基于视觉的质量审查
-pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-5.1
+# 使用基于视觉的质量审查（选择您自己的视觉模型）
+pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-4o
 
 # 使用词汇表保持术语一致性
 pptrans presentation.pptx --provider openai --glossary glossary.json
@@ -444,7 +452,7 @@ pptrans /path/to/decks \
 | `--glossary` | 词汇表文件路径 (JSON/YAML) | 无 |
 | `--no-memory` | 禁用翻译记忆库 | 启用 |
 | `--vision-review` | 启用基于视觉的质量审查 | 禁用 |
-| `--vision-model` | 用于审查的视觉模型（如 `gpt-5.1`, `gpt-4o`） | `gpt-5.1` |
+| `--vision-model` | 用于审查的视觉模型（如 `gpt-4o`, `gpt-4-vision-preview`, `claude-3-opus`） | 启用 `--vision-review` 时必需 |
 | `--vision-quality-threshold` | 最低质量分数 (0-10) | `7.0` |
 | `--max-refinement-iterations` | 最大优化尝试次数 | `3` |
 | `--generate-review` | 生成可编辑的审查文件 | 禁用 |
@@ -463,16 +471,24 @@ pptrans /path/to/decks \
 
 ### 🎯 核心功能说明
 
-#### 基于视觉的质量审查
+#### AI 引导的自动回退和视觉审查
 
-使用多模态 LLM（GPT-5.1、GPT-4o）在翻译前后视觉分析幻灯片：
+**注意**: PPTrans 是一个使用您选择的模型的应用 - 我们不提供模型服务。您可以根据需求和 API 访问权限选择翻译模型和视觉审查模型。
+
+启用视觉审查后，系统使用您选择的视觉模型来视觉分析幻灯片：
 
 - **翻译前分析**: 理解布局约束和文本层次结构
 - **翻译后审查**: 质量评分 (0-10) 并提供具体问题和建议
+- **AI 引导的自动回退**: 检测到问题时自动切换到高级格式处理方法：
+  - **高级段落格式**: 保留项目符号、缩进和多段落结构
+  - **TextFrame 测量**: 使用准确的文本测量而非估算，实现更好的字体大小调整
 - **迭代优化**: 自动改进翻译直到达到质量阈值
 
+自动回退系统读取 AI 建议，仅在需要时智能启用高级功能，对简单幻灯片保持高效，同时确保复杂格式的质量。
+
 ```bash
-pptrans deck.pptx --provider openai --vision-review --vision-quality-threshold 8.0
+# 使用您选择的视觉模型（必须支持视觉功能）
+pptrans deck.pptx --provider openai --vision-review --vision-model gpt-4o --vision-quality-threshold 8.0
 ```
 
 #### 翻译记忆库

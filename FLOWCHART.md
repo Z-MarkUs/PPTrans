@@ -163,10 +163,10 @@
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ Multimodal LLM Review:                                     │
+│ Vision Model Review (User's Chosen Model):                │
 │ - Input: Original Image + Translated Image                │
 │ - Analyze: Quality, Layout, Readability                    │
-│ - Output: Quality Score (0-10) + Issues List               │
+│ - Output: Quality Score (0-10) + Issues + Suggestions     │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
@@ -180,24 +180,39 @@
        YES                       NO
         │                         │
         ▼                         ▼
-┌──────────────┐         ┌──────────────┐
-│ Save to      │         │ Max          │
-│ Memory DB    │         │ Iterations   │
-└──────┬───────┘         │ Reached?     │
-       │                 └──────┬───────┘
+┌──────────────┐         ┌──────────────────────────────────┐
+│ Save to      │         │ AI-Guided Autofallback:          │
+│ Memory DB    │         │ - Read AI Suggestions            │
+└──────┬───────┘         │ - Detect Formatting Issues       │
+       │                 │ - Detect Overflow Issues          │
+       │                 └──────────┬─────────────────────────┘
+       │                            │
+       │                            ▼
+       │                 ┌──────────────────────┐
+       │                 │ Apply Suggestions:  │
+       │                 │ - Advanced Format?  │
+       │                 │ - TextFrame Measure?│
+       │                 └──────────┬───────────┘
+       │                            │
+       │                            ▼
+       │                 ┌──────────────────────┐
+       │                 │ Max Iterations      │
+       │                 │ Reached?            │
+       │                 └──────┬───────────────┘
        │                        │
        │            ┌───────────┴───────────┐
        │           YES                    NO
        │            │                       │
        │            ▼                       ▼
        │    ┌──────────────┐    ┌──────────────────────┐
-       │    │ Flag Low     │    │ Refine Translation:  │
-       │    │ Quality for  │    │ - Apply LLM          │
-       │    │ Manual Review│    │   Suggestions        │
-       │    └──────┬───────┘    │ - Fix Layout Issues  │
-       │           │             │ - Improve Quality    │
-       │           └──────┬──────┘                      │
-       │                  │                             │
+       │    │ Flag Low     │    │ Retry with Advanced │
+       │    │ Quality for  │    │ Methods Enabled:    │
+       │    │ Manual Review│    │ - Paragraph Format   │
+       │    └──────┬───────┘    │ - TextFrame Measure │
+       │           │             └──────────┬───────────┘
+       │           │                        │
+       │           └──────┬─────────────────┘
+       │                  │
        │                  └──────────────┬──────────────┘
        │                                 │
        └─────────────────────────────────┘
@@ -307,8 +322,59 @@
 - Shows ETA and completion status
 - Displays cost estimates
 
-### 5. **Multimodal Review** (Red)
-- Visual quality check with LLM
-- Iterative refinement loop
+### 5. **AI-Guided Autofallback & Vision Review** (Red)
+- Visual quality check with user's chosen vision model
+- AI reads suggestions and triggers automatic fallback
+- Advanced formatting enabled when formatting issues detected
+- TextFrame measurement enabled when overflow detected
+- Iterative refinement loop with intelligent method selection
 - Quality scoring and flagging
+
+## Autofallback Flow Detail
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Iteration N: Simple Approach                               │
+│ - Basic text extraction                                     │
+│ - Estimation-based font sizing                             │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Vision Review (User's Model)                               │
+│ - Analyzes translated slide                               │
+│ - Detects issues: overflow, formatting loss               │
+│ - Provides structured suggestions                         │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼
+              ┌──────────────┐
+              │ Issues Found?│
+              └──────┬───────┘
+                     │
+        ┌────────────┴────────────┐
+        │                         │
+       NO                        YES
+        │                         │
+        ▼                         ▼
+┌──────────────┐    ┌──────────────────────────────────────┐
+│ Accept       │    │ Read AI Suggestions:                │
+│ Result       │    │ - "use_advanced_formatting": true?  │
+└──────────────┘    │ - "use_textframe_measurement": true? │
+                    └──────────┬───────────────────────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │ Enable Fallback:     │
+                    │ - Advanced Format    │
+                    │ - TextFrame Measure  │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │ Iteration N+1:       │
+                    │ Retry with Advanced  │
+                    │ Methods              │
+                    └──────────────────────┘
+```
 
