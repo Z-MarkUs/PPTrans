@@ -49,7 +49,7 @@ class VisionReviewer:
         Args:
             provider: Vision-capable translation provider (must support vision)
             quality_threshold: Minimum quality score (0-10) to accept translation
-            vision_model: Optional vision model name (default: gpt-5.1)
+            vision_model: Vision-capable model name (required, user chooses their own)
         """
         self.provider = provider
         self.quality_threshold = quality_threshold

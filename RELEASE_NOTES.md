@@ -16,7 +16,7 @@ PPT Translator is now available on PyPI! Translate PowerPoint presentations usin
 
 ### 🔍 Vision-Based Quality Review
 - **Pre-Translation Analysis**: LLM analyzes original slides to plan translation strategy
-- **Post-Translation Review**: Quality scoring (0-10) with GPT-5.1 or other vision models
+- **Post-Translation Review**: Quality scoring (0-10) with user's chosen vision-capable model
 - **Iterative Refinement**: Automatically refines translations until quality threshold is met
 - **Visual Quality Assessment**: Compares original and translated slides for layout and accuracy
 
@@ -140,7 +140,7 @@ pptrans presentation.pptx --glossary glossary.json
 ## 📊 What's Included
 
 - ✅ Multi-provider LLM support
-- ✅ Vision-based quality review with GPT-5.1
+- ✅ Vision-based quality review with AI-guided autofallback
 - ✅ Layout-aware translation with auto font adjustment
 - ✅ Translation memory for consistency
 - ✅ Interactive review mode with editable files
@@ -155,7 +155,7 @@ pptrans presentation.pptx --glossary glossary.json
 
 - Slide rendering requires LibreOffice or Pillow (fallback)
 - Large presentations may take longer to process
-- Vision review requires vision-capable models (GPT-5.1, GPT-4o, etc.)
+- Vision review requires vision-capable models (users choose their own, e.g., GPT-4o, Claude-3 Opus, etc.)
 - Some complex PowerPoint features may not be fully preserved
 
 ---

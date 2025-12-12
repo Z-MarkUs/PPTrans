@@ -70,7 +70,7 @@ if [ ! -f "RELEASE_NOTES.md" ]; then
 ### ✨ Features
 
 - Multi-provider LLM support (DeepSeek, OpenAI, Anthropic, Grok)
-- Vision-based quality review with GPT-5.1
+- Vision-based quality review with user's chosen vision model
 - Layout-aware translation with auto font adjustment
 - Translation memory for consistency
 - Interactive review mode

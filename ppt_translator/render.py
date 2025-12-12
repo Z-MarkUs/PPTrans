@@ -137,3 +137,7 @@ def _render_with_pillow(ppt_path: Path, slide_number: int, output_path: Path, wi
     except Exception:
         return False
 
+
+
+
+
