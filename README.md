@@ -27,7 +27,7 @@ Convert your PowerPoint presentations to beautifully translated documents while 
 • ⚡ **Lightning Fast**: Sub-2 second translation for most presentations
 • 🔄 **Multi-Provider Support**: Switch between DeepSeek, OpenAI, Anthropic, and Grok with a simple CLI flag
 • 🎨 **Rich Formatting**: Preserves fonts, colors, spacing, tables, and alignment after translation
-• 🔍 **Vision-Based Review**: GPT-5.1 powered quality assessment with iterative refinement  
+• 🔍 **AI-Guided Autofallback**: Vision-based quality review with automatic fallback to advanced formatting when needed  
 • 💾 **Translation Memory**: Ensures consistency across slides and reduces API costs  
 • 📚 **User Glossary**: Define preferred translations for consistent terminology  
 • 📝 **Interactive Review**: Edit translations in JSON/YAML and regenerate PPTs  
