@@ -110,8 +110,8 @@ pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 # Translate all PPT files in a directory
 pptrans ./presentations/ --provider openai
 
-# With vision-based quality review (choose your own vision model)
-pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-4o
+# With vision-based quality review (enter your vision-capable model name)
+pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME
 
 # Use a glossary for consistent terminology
 pptrans presentation.pptx --provider openai --glossary glossary.json
@@ -130,7 +130,7 @@ pptrans presentation.pptx --regenerate-from-review translation_review.json
 ```bash
 pptrans /path/to/presentation.pptx \
   --provider openai \
-  --model gpt-5-mini \
+  --model YOUR_MODEL_NAME \
   --source-lang zh \
   --target-lang en
 ```
@@ -157,7 +157,7 @@ pptrans /path/to/decks \
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--provider` | Model provider: `deepseek`, `openai`, `anthropic`, `grok` | `deepseek` |
-| `--model` | Override default model (e.g., `gpt-5-nano`, `gpt-5-mini`) | Provider default |
+| `--model` | Override provider's default model (enter model name from your provider) | Provider default |
 | `--source-lang` | Source language code (ISO 639-1) | `zh` |
 | `--target-lang` | Target language code (ISO 639-1) | `en` |
 | `--max-chunk-size` | Character limit per translation request | `1000` |
@@ -165,7 +165,7 @@ pptrans /path/to/decks \
 | `--glossary` | Path to glossary file (JSON/YAML) | None |
 | `--no-memory` | Disable translation memory | Enabled |
 | `--vision-review` | Enable vision-based quality review | Disabled |
-| `--vision-model` | Vision-capable model for review (e.g., `gpt-4o`, `gpt-4-vision-preview`, `claude-3-opus`) | Required if `--vision-review` enabled |
+| `--vision-model` | Vision-capable model name (must support image/vision analysis) | Required if `--vision-review` enabled |
 | `--vision-quality-threshold` | Minimum quality score (0-10) | `7.0` |
 | `--max-refinement-iterations` | Max refinement attempts | `3` |
 | `--generate-review` | Generate editable review file | Disabled |
@@ -200,8 +200,8 @@ When vision review is enabled, the system uses your chosen vision-capable model 
 The autofallback system reads AI suggestions and intelligently enables advanced features only when needed, keeping the process efficient for simple slides while ensuring quality for complex formatting.
 
 ```bash
-# Use your chosen vision model (must support vision capabilities)
-pptrans deck.pptx --provider openai --vision-review --vision-model gpt-4o --vision-quality-threshold 8.0
+# Use your vision-capable model (enter the model name from your provider)
+pptrans deck.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --vision-quality-threshold 8.0
 ```
 
 #### Translation Memory
@@ -397,8 +397,8 @@ pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 # 翻译目录中的所有 PPT 文件
 pptrans ./presentations/ --provider openai
 
-# 使用基于视觉的质量审查（选择您自己的视觉模型）
-pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-4o
+# 使用基于视觉的质量审查（输入您自己的视觉模型名称）
+pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME
 
 # 使用词汇表保持术语一致性
 pptrans presentation.pptx --provider openai --glossary glossary.json
@@ -417,7 +417,7 @@ pptrans presentation.pptx --regenerate-from-review translation_review.json
 ```bash
 pptrans /path/to/presentation.pptx \
   --provider openai \
-  --model gpt-5-mini \
+  --model YOUR_MODEL_NAME \
   --source-lang zh \
   --target-lang en
 ```
@@ -452,7 +452,7 @@ pptrans /path/to/decks \
 | `--glossary` | 词汇表文件路径 (JSON/YAML) | 无 |
 | `--no-memory` | 禁用翻译记忆库 | 启用 |
 | `--vision-review` | 启用基于视觉的质量审查 | 禁用 |
-| `--vision-model` | 用于审查的视觉模型（如 `gpt-4o`, `gpt-4-vision-preview`, `claude-3-opus`） | 启用 `--vision-review` 时必需 |
+| `--vision-model` | 视觉模型名称（必须支持图像/视觉分析功能） | 启用 `--vision-review` 时必需 |
 | `--vision-quality-threshold` | 最低质量分数 (0-10) | `7.0` |
 | `--max-refinement-iterations` | 最大优化尝试次数 | `3` |
 | `--generate-review` | 生成可编辑的审查文件 | 禁用 |
@@ -487,8 +487,8 @@ pptrans /path/to/decks \
 自动回退系统读取 AI 建议，仅在需要时智能启用高级功能，对简单幻灯片保持高效，同时确保复杂格式的质量。
 
 ```bash
-# 使用您选择的视觉模型（必须支持视觉功能）
-pptrans deck.pptx --provider openai --vision-review --vision-model gpt-4o --vision-quality-threshold 8.0
+# 使用您的视觉模型（输入您提供商提供的模型名称）
+pptrans deck.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --vision-quality-threshold 8.0
 ```
 
 #### 翻译记忆库

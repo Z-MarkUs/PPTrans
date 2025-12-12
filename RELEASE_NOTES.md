@@ -70,7 +70,7 @@ pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 pptrans presentation.pptx \
   --provider openai \
   --vision-review \
-  --vision-model gpt-5.1 \
+  --vision-model YOUR_VISION_MODEL_NAME \
   --vision-quality-threshold 8.0
 ```
 
@@ -155,7 +155,7 @@ pptrans presentation.pptx --glossary glossary.json
 
 - Slide rendering requires LibreOffice or Pillow (fallback)
 - Large presentations may take longer to process
-- Vision review requires vision-capable models (users choose their own, e.g., GPT-4o, Claude-3 Opus, etc.)
+- Vision review requires vision-capable models (users enter their own model name from their provider)
 - Some complex PowerPoint features may not be fully preserved
 
 ---

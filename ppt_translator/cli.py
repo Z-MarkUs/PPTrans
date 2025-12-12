@@ -74,7 +74,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--vision-model",
         type=str,
-        help="Vision-capable model to use for review (e.g., gpt-4o, gpt-4-vision-preview, claude-3-opus). Required if --vision-review is enabled.",
+        help="Vision-capable model name for review (must support vision/image analysis). Required if --vision-review is enabled.",
     )
     parser.add_argument(
         "--generate-review",
@@ -142,38 +142,17 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 # Prompt user to select vision model if not provided
                 vision_model = args.vision_model
                 if not vision_model:
-                    print("\n🔍 Vision review enabled - Please select a vision-capable model:")
-                    print("Available models:")
-                    print("  1. gpt-4o (OpenAI, multimodal)")
-                    print("  2. gpt-4-vision-preview (OpenAI, legacy)")
-                    print("  3. claude-3-opus (Anthropic, if available)")
-                    print("  4. Custom (enter model name)")
+                    print("\n🔍 Vision review enabled - Please enter a vision-capable model name:")
+                    print("The model must support vision/image analysis capabilities.")
+                    print("Enter the model name as provided by your chosen provider.")
                     
                     while True:
-                        choice = input("\nEnter choice (1-4) or model name: ").strip()
-                        
-                        if choice == "1":
-                            vision_model = "gpt-4o"
+                        vision_model = input("\nVision model name: ").strip()
+                        if vision_model:
                             break
-                        elif choice == "2":
-                            vision_model = "gpt-4-vision-preview"
-                            break
-                        elif choice == "3":
-                            vision_model = "claude-3-opus"
-                            break
-                        elif choice == "4":
-                            vision_model = input("Enter custom model name: ").strip()
-                            if vision_model:
-                                break
-                            print("Please enter a valid model name.")
-                        elif choice:
-                            # User entered a model name directly
-                            vision_model = choice
-                            break
-                        else:
-                            print("Please enter a valid choice.")
+                        print("Please enter a valid model name.")
                     
-                    print(f"Selected model: {vision_model}\n")
+                    print(f"Using vision model: {vision_model}\n")
                 
                 vision_reviewer = VisionReviewer(
                     provider,
