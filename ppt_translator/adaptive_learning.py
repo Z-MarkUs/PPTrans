@@ -151,14 +151,15 @@ class AdaptiveLearningSystem:
         
         self._save_knowledge_base()
     
-    def get_suggestions(self, issues: List[str]) -> Dict:
+    def get_suggestions(self, issues: List[str], max_patterns: int = 3) -> Dict:
         """Get learned patterns and suggestions for similar issues.
         
         Args:
             issues: List of current issues
+            max_patterns: Maximum number of patterns to include (to limit prompt size)
             
         Returns:
-            Dictionary with suggestions and successful patterns
+            Dictionary with suggestions and successful patterns (limited size)
         """
         suggestions = {
             'successful_patterns': [],
@@ -166,35 +167,73 @@ class AdaptiveLearningSystem:
             'pattern_recommendations': {}
         }
         
-        # Find similar successful fixes
+        # Find similar successful fixes (limit search to recent ones)
         issue_keywords = ' '.join(issues).lower()
+        matched_patterns = {}
         
+        # Search only most recent fixes (sliding window)
         for fix in self.knowledge_base['successful_fixes'][-20:]:  # Last 20
             fix_issues = ' '.join(fix.get('issues', [])).lower()
             # Simple keyword matching
             if any(keyword in fix_issues for keyword in issue_keywords.split()):
-                if fix.get('pattern'):
-                    suggestions['successful_patterns'].append({
-                        'pattern': fix['pattern'],
-                        'quality_delta': fix['quality_delta'],
-                        'code_snippet': fix['code_snippet']
-                    })
+                pattern = fix.get('pattern')
+                if pattern:
+                    # Track best quality delta per pattern
+                    if pattern not in matched_patterns:
+                        matched_patterns[pattern] = {
+                            'quality_delta': fix['quality_delta'],
+                            'code_snippet': fix['code_snippet']
+                        }
+                    elif fix['quality_delta'] > matched_patterns[pattern]['quality_delta']:
+                        # Keep the one with better quality improvement
+                        matched_patterns[pattern] = {
+                            'quality_delta': fix['quality_delta'],
+                            'code_snippet': fix['code_snippet']
+                        }
         
-        # Find failed patterns to avoid
+        # Sort by quality delta (best improvements first) and limit
+        sorted_patterns = sorted(
+            matched_patterns.items(),
+            key=lambda x: x[1]['quality_delta'],
+            reverse=True
+        )[:max_patterns]
+        
+        for pattern, data in sorted_patterns:
+            suggestions['successful_patterns'].append({
+                'pattern': pattern,
+                'quality_delta': data['quality_delta'],
+                'code_snippet': data['code_snippet']
+            })
+        
+        # Find failed patterns to avoid (only most recent failures)
+        failed_pattern_set = set()
         for fix in self.knowledge_base['failed_fixes'][-10:]:  # Last 10
-            if fix.get('pattern'):
-                suggestions['failed_patterns'].append({
-                    'pattern': fix['pattern'],
-                    'quality_delta': fix['quality_delta']
-                })
+            pattern = fix.get('pattern')
+            if pattern:
+                failed_pattern_set.add(pattern)
         
-        # Add pattern recommendations
+        # Limit failed patterns
+        suggestions['failed_patterns'] = [
+            {'pattern': p} for p in list(failed_pattern_set)[:max_patterns]
+        ]
+        
+        # Add pattern recommendations (only top performers)
+        pattern_stats = []
         for pattern, stats in self.knowledge_base['patterns'].items():
             if stats['total_count'] >= 3:  # Only recommend if tried at least 3 times
-                suggestions['pattern_recommendations'][pattern] = {
-                    'success_rate': stats['success_rate'],
-                    'total_tries': stats['total_count']
-                }
+                pattern_stats.append((pattern, stats))
+        
+        # Sort by success rate and total tries, take top ones
+        pattern_stats.sort(
+            key=lambda x: (x[1]['success_rate'], x[1]['total_count']),
+            reverse=True
+        )
+        
+        for pattern, stats in pattern_stats[:5]:  # Top 5 patterns
+            suggestions['pattern_recommendations'][pattern] = {
+                'success_rate': stats['success_rate'],
+                'total_tries': stats['total_count']
+            }
         
         return suggestions
     

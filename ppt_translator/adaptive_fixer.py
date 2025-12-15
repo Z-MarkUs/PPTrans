@@ -78,8 +78,9 @@ class AdaptiveFixer:
             # Save state before attempting fix
             state_id = self.state_manager.save_state(ppt_path)
             
-            # Get learning suggestions
-            suggestions = self.learning_system.get_suggestions(issues)
+            # Get learning suggestions (limit to prevent prompt bloat)
+            # Only include most relevant patterns, not all history
+            suggestions = self.learning_system.get_suggestions(issues, max_patterns=3)
             
             # Generate fix code
             try:

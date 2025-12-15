@@ -40,26 +40,48 @@ class AICodeGenerator:
         Returns:
             Generated Python code string
         """
-        # Build prompt with context
-        successful_patterns = ""
-        failed_patterns = ""
-        recommendations = ""
+        # Build prompt with context - limit learning KB to prevent prompt bloat
+        learning_context = ""
+        MAX_LEARNING_TOKENS = 500  # Rough token limit for learning context
         
         if learning_kb:
+            token_count = 0
+            
+            # Add successful patterns (most relevant first, limited)
             if learning_kb.get('successful_patterns'):
-                successful_patterns = "\n\nSuccessful patterns from past fixes:\n"
-                for pattern in learning_kb['successful_patterns'][:3]:
-                    successful_patterns += f"- {pattern['pattern']}: {pattern.get('code_snippet', '')[:100]}\n"
+                successful_section = "\n\nSuccessful patterns from past fixes:\n"
+                for pattern in learning_kb['successful_patterns'][:3]:  # Max 3 patterns
+                    snippet = pattern.get('code_snippet', '')[:80]  # Truncate to 80 chars
+                    successful_section += f"- {pattern['pattern']}: {snippet}...\n"
+                    token_count += len(snippet.split()) + 10  # Rough token estimate
+                
+                if token_count < MAX_LEARNING_TOKENS:
+                    learning_context += successful_section
             
-            if learning_kb.get('failed_patterns'):
-                failed_patterns = "\n\nAvoid these patterns (they failed before):\n"
-                for pattern in learning_kb['failed_patterns'][:3]:
-                    failed_patterns += f"- {pattern['pattern']}\n"
+            # Add failed patterns (concise, only if space available)
+            if learning_kb.get('failed_patterns') and token_count < MAX_LEARNING_TOKENS:
+                failed_section = "\n\nAvoid these patterns (they failed before):\n"
+                for pattern in learning_kb['failed_patterns'][:3]:  # Max 3 patterns
+                    failed_section += f"- {pattern['pattern']}\n"
+                    token_count += 5  # Rough estimate per pattern
+                
+                if token_count < MAX_LEARNING_TOKENS:
+                    learning_context += failed_section
             
-            if learning_kb.get('pattern_recommendations'):
-                recommendations = "\n\nPattern success rates:\n"
+            # Add pattern recommendations (summary only, if space available)
+            if learning_kb.get('pattern_recommendations') and token_count < MAX_LEARNING_TOKENS:
+                rec_section = "\n\nPattern success rates:\n"
                 for pattern, stats in list(learning_kb['pattern_recommendations'].items())[:5]:
-                    recommendations += f"- {pattern}: {stats['success_rate']:.0%} success rate\n"
+                    rec_section += f"- {pattern}: {stats['success_rate']:.0%} ({stats['total_tries']} tries)\n"
+                    token_count += 8  # Rough estimate per recommendation
+                
+                if token_count < MAX_LEARNING_TOKENS:
+                    learning_context += rec_section
+        
+        # Use learning context in prompt
+        successful_patterns = learning_context
+        failed_patterns = ""
+        recommendations = ""
         
         prompt = f"""You are fixing PowerPoint translation issues. Generate Python code to fix these problems:
 
