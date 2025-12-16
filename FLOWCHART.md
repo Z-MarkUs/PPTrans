@@ -329,6 +329,7 @@
 - TextFrame measurement enabled when overflow detected
 - Iterative refinement loop with intelligent method selection
 - Quality scoring and flagging
+- **Prompt optimization**: Learning context limited to ~500 tokens, only most relevant patterns included to prevent prompt bloat across iterations
 
 ## Autofallback Flow Detail
 
@@ -375,6 +376,17 @@
                     │ Iteration N+1:       │
                     │ Retry with Advanced  │
                     │ Methods              │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │ AI Code Generation: │
+                    │ - Uses learning KB  │
+                    │ - Limited to ~500   │
+                    │   tokens (top 3     │
+                    │   patterns only)    │
+                    │ - Prevents prompt   │
+                    │   bloat             │
                     └──────────────────────┘
 ```
 

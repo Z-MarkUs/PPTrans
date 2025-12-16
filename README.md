@@ -196,8 +196,9 @@ When vision review is enabled, the system uses your chosen vision-capable model 
   - **Advanced paragraph formatting**: Preserves bullets, indentation, and multi-paragraph structure
   - **TextFrame measurement**: Uses accurate text measurement instead of estimation for better font sizing
 - **Iterative refinement**: Automatically improves translations until quality threshold is met
+- **Prompt optimization**: Learning context is intelligently limited (~500 tokens max) to prevent prompt bloat across multiple iterations - only the most relevant and successful patterns are included
 
-The autofallback system reads AI suggestions and intelligently enables advanced features only when needed, keeping the process efficient for simple slides while ensuring quality for complex formatting.
+The autofallback system reads AI suggestions and intelligently enables advanced features only when needed, keeping the process efficient for simple slides while ensuring quality for complex formatting. The learning system tracks successful fixes and avoids repeating failed patterns, with prompt size management to ensure efficient API usage.
 
 ```bash
 # Use your vision-capable model (enter the model name from your provider)
@@ -483,8 +484,9 @@ pptrans /path/to/decks \
   - **高级段落格式**: 保留项目符号、缩进和多段落结构
   - **TextFrame 测量**: 使用准确的文本测量而非估算，实现更好的字体大小调整
 - **迭代优化**: 自动改进翻译直到达到质量阈值
+- **提示优化**: 学习上下文智能限制（最多约 500 个 token），防止多次迭代时提示膨胀 - 仅包含最相关和成功的模式
 
-自动回退系统读取 AI 建议，仅在需要时智能启用高级功能，对简单幻灯片保持高效，同时确保复杂格式的质量。
+自动回退系统读取 AI 建议，仅在需要时智能启用高级功能，对简单幻灯片保持高效，同时确保复杂格式的质量。学习系统跟踪成功的修复并避免重复失败的模式，通过提示大小管理确保高效的 API 使用。
 
 ```bash
 # 使用您的视觉模型（输入您提供商提供的模型名称）

@@ -11,7 +11,6 @@ from .adaptive_learning import AdaptiveLearningSystem
 from .state_manager import StateManager
 from .providers.base import TranslationProvider
 from .render import render_slide_to_image
-from pathlib import Path
 
 
 class AdaptiveFixer:
