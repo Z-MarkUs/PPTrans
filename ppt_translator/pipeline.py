@@ -242,7 +242,14 @@ def apply_table_properties(table, table_data):
                 cell.margin_top = cell_data["margin_top"]
                 cell.margin_bottom = cell_data["margin_bottom"]
                 if cell_data.get("vertical_anchor"):
-                    cell.vertical_anchor = eval(cell_data["vertical_anchor"])
+                    # Parse vertical anchor safely
+                    anchor_str = cell_data["vertical_anchor"]
+                    if "TOP" in anchor_str:
+                        cell.vertical_anchor = MSO_ANCHOR.TOP
+                    elif "MIDDLE" in anchor_str:
+                        cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+                    elif "BOTTOM" in anchor_str:
+                        cell.vertical_anchor = MSO_ANCHOR.BOTTOM
                 cell.text = ""
                 paragraph = cell.text_frame.paragraphs[0]
                 run = paragraph.add_run()
