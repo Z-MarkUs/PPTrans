@@ -168,6 +168,8 @@ pptrans /path/to/decks \
 | `--model` | Override provider's default model (enter model name from your provider) | Provider default |
 | `--source-lang` | Source language code (ISO 639-1) | `zh` |
 | `--target-lang` | Target language code (ISO 639-1) | `en` |
+
+**Language Support**: PPTrans accepts any ISO 639-1 language code. Actual language support depends on your chosen LLM provider's capabilities. Common codes: `zh` (Chinese), `en` (English), `ja` (Japanese), `ko` (Korean), `es` (Spanish), `fr` (French), `de` (German), etc. See [LANGUAGE_SUPPORT.md](LANGUAGE_SUPPORT.md) for details.
 | `--max-chunk-size` | Character limit per translation request | `1000` |
 | `--max-workers` | Number of threads for slide processing | `4` |
 | `--glossary` | Path to glossary file (JSON/YAML) | None |
