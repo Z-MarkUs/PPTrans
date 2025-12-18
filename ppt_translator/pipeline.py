@@ -495,9 +495,25 @@ def _apply_shape_recursive(
             if props_element is not None and props_element.text:
                 try:
                     table_data = json.loads(props_element.text)
+                    # Debug: Check if translation is in the data
+                    if table_data.get("cells") and len(table_data["cells"]) > 0:
+                        first_cell_text = table_data["cells"][0][0].get("text", "")
+                        if first_cell_text and not first_cell_text.startswith("24/25"):  # Not Chinese
+                            print(f"  ✓ Applying translated table at shape_index={current_path}")
+                        else:
+                            print(f"  ⚠️  Table at shape_index={current_path} has untranslated text")
                     apply_table_properties(shape.table, table_data)
                 except Exception as exc:
-                    print(f"Error applying table properties: {exc}")
+                    print(f"Error applying table properties at {current_path}: {exc}")
+                    import traceback
+                    traceback.print_exc()
+        else:
+            # Debug: Table not found - list all available table elements
+            all_tables = xml_slide.findall(".//table_element")
+            if all_tables:
+                print(f"  ⚠️  Table not found at shape_index='{current_path}'. Available: {[t.get('shape_index') for t in all_tables]}")
+            else:
+                print(f"  ⚠️  No table elements found in XML for slide")
     elif hasattr(shape, "text_frame") and hasattr(shape, "text"):
         # Has text frame
         text_element = xml_slide.find(f".//text_element[@shape_index='{current_path}']")
