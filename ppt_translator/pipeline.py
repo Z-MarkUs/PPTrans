@@ -234,40 +234,92 @@ def get_table_properties(table):
 def apply_table_properties(table, table_data):
     """Apply saved table properties."""
     for row_idx, row in enumerate(table.rows):
+        # Safety check: ensure row exists in data
+        if row_idx >= len(table_data.get("cells", [])):
+            continue
         for col_idx, cell in enumerate(row.cells):
+            # Safety check: ensure column exists in data
+            if col_idx >= len(table_data["cells"][row_idx]):
+                continue
             try:
                 cell_data = table_data["cells"][row_idx][col_idx]
-                cell.margin_left = cell_data["margin_left"]
-                cell.margin_right = cell_data["margin_right"]
-                cell.margin_top = cell_data["margin_top"]
-                cell.margin_bottom = cell_data["margin_bottom"]
+                
+                # Apply margins (if available and valid)
+                try:
+                    if "margin_left" in cell_data:
+                        cell.margin_left = cell_data["margin_left"]
+                    if "margin_right" in cell_data:
+                        cell.margin_right = cell_data["margin_right"]
+                    if "margin_top" in cell_data:
+                        cell.margin_top = cell_data["margin_top"]
+                    if "margin_bottom" in cell_data:
+                        cell.margin_bottom = cell_data["margin_bottom"]
+                except Exception:
+                    pass  # Margins are optional, continue if they fail
+                
+                # Apply vertical anchor (if available)
                 if cell_data.get("vertical_anchor"):
-                    # Parse vertical anchor safely
-                    anchor_str = cell_data["vertical_anchor"]
-                    if "TOP" in anchor_str:
-                        cell.vertical_anchor = MSO_ANCHOR.TOP
-                    elif "MIDDLE" in anchor_str:
-                        cell.vertical_anchor = MSO_ANCHOR.MIDDLE
-                    elif "BOTTOM" in anchor_str:
-                        cell.vertical_anchor = MSO_ANCHOR.BOTTOM
-                cell.text = ""
-                paragraph = cell.text_frame.paragraphs[0]
-                run = paragraph.add_run()
-                run.text = cell_data["text"]
-                if cell_data.get("font_size"):
-                    adjusted_size = cell_data["font_size"] * 0.8
-                    run.font.size = Pt(adjusted_size)
-                run.font.name = cell_data.get("font_name") or "Arial"
-                if cell_data.get("font_color"):
-                    run.font.color.rgb = RGBColor.from_string(cell_data["font_color"])
-                if "bold" in cell_data:
-                    run.font.bold = cell_data["bold"]
-                if "italic" in cell_data:
-                    run.font.italic = cell_data["italic"]
-                if cell_data.get("alignment"):
-                    paragraph.alignment = get_alignment_value(cell_data["alignment"])
+                    try:
+                        anchor_str = cell_data["vertical_anchor"]
+                        if "TOP" in anchor_str:
+                            cell.vertical_anchor = MSO_ANCHOR.TOP
+                        elif "MIDDLE" in anchor_str:
+                            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+                        elif "BOTTOM" in anchor_str:
+                            cell.vertical_anchor = MSO_ANCHOR.BOTTOM
+                    except Exception:
+                        pass  # Vertical anchor is optional
+                
+                # CRITICAL: Apply translated text - this must succeed
+                translated_text = cell_data.get("text", "")
+                if translated_text:
+                    # Clear existing content
+                    cell.text = ""
+                    # Ensure paragraph exists
+                    if not cell.text_frame.paragraphs:
+                        cell.text_frame.add_paragraph()
+                    paragraph = cell.text_frame.paragraphs[0]
+                    # Clear paragraph and add new run with translated text
+                    paragraph.clear()
+                    run = paragraph.add_run()
+                    run.text = translated_text
+                    
+                    # Apply formatting (if available)
+                    if cell_data.get("font_size"):
+                        try:
+                            adjusted_size = cell_data["font_size"] * 0.8
+                            run.font.size = Pt(adjusted_size)
+                        except Exception:
+                            pass
+                    if cell_data.get("font_name"):
+                        try:
+                            run.font.name = cell_data["font_name"]
+                        except Exception:
+                            pass
+                    if cell_data.get("font_color"):
+                        try:
+                            run.font.color.rgb = RGBColor.from_string(cell_data["font_color"])
+                        except Exception:
+                            pass
+                    if "bold" in cell_data and cell_data["bold"] is not None:
+                        try:
+                            run.font.bold = cell_data["bold"]
+                        except Exception:
+                            pass
+                    if "italic" in cell_data and cell_data["italic"] is not None:
+                        try:
+                            run.font.italic = cell_data["italic"]
+                        except Exception:
+                            pass
+                    if cell_data.get("alignment"):
+                        try:
+                            paragraph.alignment = get_alignment_value(cell_data["alignment"])
+                        except Exception:
+                            pass
             except Exception as exc:  # pragma: no cover - best effort logging
-                print(f"Error setting cell properties: {exc}")
+                print(f"Error setting cell properties at [{row_idx},{col_idx}]: {exc}")
+                import traceback
+                traceback.print_exc()
 
 
 def _process_shape_recursive(
