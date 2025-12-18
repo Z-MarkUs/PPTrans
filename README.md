@@ -110,8 +110,11 @@ pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 # Translate all PPT files in a directory
 pptrans ./presentations/ --provider openai
 
-# With vision-based quality review (opt-in feature - requires --vision-review flag)
-pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME
+# With vision-based quality review (translates AND reviews in one command)
+pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
+
+# Batch translation with vision review (all files in directory)
+pptrans ./presentations/ --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
 
 # Use a glossary for consistent terminology
 pptrans presentation.pptx --provider openai --glossary glossary.json
@@ -199,6 +202,25 @@ The tool generates:
 **Note**: PPTrans is an application that uses your chosen models - we don't provide model services. You select both the translation model and vision review model based on your needs and API access.
 
 **Vision review is opt-in only** - it is NOT enabled by default. You must explicitly add the `--vision-review` flag to enable it. Basic translation (without vision review) is faster and uses fewer API calls.
+
+**Important**: When you use `--vision-review`, the system **translates AND reviews in a single command**. You do NOT need to run translation first, then review separately. The workflow is:
+
+1. **Translation**: Text is extracted and translated using your translation model
+2. **Vision Review**: Translated slides are rendered and analyzed by your vision model
+3. **Iterative Refinement**: If quality is below threshold, the system automatically refines the translation
+4. **Output**: Final translated PPTX file is generated
+
+**Example workflow:**
+```bash
+# Single command: Translates AND reviews in one go
+pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-4o --source-lang zh --target-lang en
+
+# This will:
+# 1. Translate the presentation (using OpenAI's default model or --model if specified)
+# 2. Review the translated slides (using gpt-4o vision model)
+# 3. Refine if needed
+# 4. Output: presentation_translated.pptx
+```
 
 When vision review is enabled (via `--vision-review` flag), the system uses your chosen vision-capable model to visually analyze slides:
 
@@ -410,8 +432,11 @@ pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 # 翻译目录中的所有 PPT 文件
 pptrans ./presentations/ --provider openai
 
-# 使用基于视觉的质量审查（需要显式添加 --vision-review 标志）
-pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME
+# 使用基于视觉的质量审查（在单个命令中完成翻译和审查）
+pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
+
+# 批量翻译并审查（目录中的所有文件）
+pptrans ./presentations/ --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
 
 # 使用词汇表保持术语一致性
 pptrans presentation.pptx --provider openai --glossary glossary.json
@@ -497,6 +522,25 @@ pptrans /path/to/decks \
 **注意**: PPTrans 是一个使用您选择的模型的应用 - 我们不提供模型服务。您可以根据需求和 API 访问权限选择翻译模型和视觉审查模型。
 
 **视觉审查是可选的** - 默认情况下不启用。必须显式添加 `--vision-review` 标志才能启用。基本翻译（不使用视觉审查）更快且使用更少的 API 调用。
+
+**重要提示**: 当您使用 `--vision-review` 时，系统会在**单个命令中完成翻译和审查**。您不需要先运行翻译，然后再单独运行审查。工作流程是：
+
+1. **翻译**: 提取文本并使用您的翻译模型进行翻译
+2. **视觉审查**: 渲染翻译后的幻灯片并使用您的视觉模型进行分析
+3. **迭代优化**: 如果质量低于阈值，系统会自动优化翻译
+4. **输出**: 生成最终的翻译 PPTX 文件
+
+**示例工作流程:**
+```bash
+# 单个命令：一次性完成翻译和审查
+pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-4o --source-lang zh --target-lang en
+
+# 这将：
+# 1. 翻译演示文稿（使用 OpenAI 的默认模型或指定的 --model）
+# 2. 审查翻译后的幻灯片（使用 gpt-4o 视觉模型）
+# 3. 根据需要优化
+# 4. 输出：presentation_translated.pptx
+```
 
 启用视觉审查后（通过 `--vision-review` 标志），系统使用您选择的视觉模型来视觉分析幻灯片：
 
