@@ -11,7 +11,7 @@ from xml.dom import minidom
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE
-from pptx.enum.text import PP_ALIGN
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.util import Inches, Pt
 
 from .translation import TranslationService
@@ -263,6 +263,77 @@ def apply_table_properties(table, table_data):
                 print(f"Error setting cell properties: {exc}")
 
 
+def _process_shape_recursive(
+    shape,
+    shape_index: int,
+    slide_element: ET.Element,
+    slide_number: int,
+    translator: TranslationService | None,
+    source_lang: str,
+    target_lang: str,
+    parent_path: str = "",
+):
+    """Recursively process a shape and its nested shapes (groups).
+    
+    Handles:
+    - Regular text shapes
+    - Tables (using hasattr check - more reliable than shape_type)
+    - Group shapes (containing nested shapes)
+    - Shapes within groups
+    """
+    current_path = f"{parent_path}.{shape_index}" if parent_path else str(shape_index)
+    
+    # Check if this is a group shape with nested shapes
+    if hasattr(shape, 'shapes'):
+        # This is a group shape - recursively process its children
+        for nested_index, nested_shape in enumerate(shape.shapes):
+            _process_shape_recursive(
+                nested_shape,
+                nested_index,
+                slide_element,
+                slide_number,
+                translator,
+                source_lang,
+                target_lang,
+                parent_path=current_path
+            )
+    
+    # Process the shape itself - check for table first (most specific)
+    # Use hasattr instead of shape_type for more reliable table detection
+    if hasattr(shape, 'table'):
+        # This shape has a table - process it
+        table_element = ET.SubElement(slide_element, "table_element")
+        table_element.set("shape_index", current_path)
+        table_data = get_table_properties(shape.table)
+        if translator:
+            # Translate each cell's text
+            for row_idx, row in enumerate(table_data["cells"]):
+                for col_idx, cell in enumerate(row):
+                    if cell.get("text", "").strip():
+                        original = cell["text"]
+                        translated = translator.translate(cell["text"], source_lang, target_lang)
+                        cell["text"] = translated
+                        if original != translated:
+                            print(f"    [Slide {slide_number}] Table {current_path}[{row_idx},{col_idx}]: {original[:30]}... → {translated[:30]}...")
+        props_element = ET.SubElement(table_element, "properties")
+        props_element.text = json.dumps(table_data, indent=2)
+    elif hasattr(shape, "text_frame") and hasattr(shape, "text"):
+        # Has text frame - extract and translate
+        text_element = ET.SubElement(slide_element, "text_element")
+        text_element.set("shape_index", current_path)
+        shape_data = get_shape_properties(shape)
+        
+        if translator and shape_data.get("text", "").strip():
+            original_text = shape_data["text"]
+            translated_text = translator.translate(shape_data["text"], source_lang, target_lang)
+            shape_data["text"] = translated_text
+            if original_text and original_text != translated_text:
+                print(f"    [Slide {slide_number}] {current_path}: {original_text[:40]}... → {translated_text[:40]}...")
+        
+        props_element = ET.SubElement(text_element, "properties")
+        props_element.text = json.dumps(shape_data, indent=2)
+
+
 def extract_text_from_slide(
     slide,
     slide_number: int,
@@ -271,28 +342,25 @@ def extract_text_from_slide(
     source_lang: str,
     target_lang: str,
 ):
-    """Extract text from a slide and optionally translate it."""
+    """Extract text from a slide and optionally translate it.
+    
+    Now handles nested groups and uses more reliable table detection.
+    """
     slide_element = ET.Element("slide")
     slide_element.set("number", str(slide_number))
+    
+    # Process all shapes recursively (handles nested groups)
     for shape_index, shape in enumerate(slide.shapes):
-        if shape.shape_type == MSO_SHAPE_TYPE.TABLE:
-            table_element = ET.SubElement(slide_element, "table_element")
-            table_element.set("shape_index", str(shape_index))
-            table_data = get_table_properties(shape.table)
-            if translator:
-                for row in table_data["cells"]:
-                    for cell in row:
-                        cell["text"] = translator.translate(cell["text"], source_lang, target_lang)
-            props_element = ET.SubElement(table_element, "properties")
-            props_element.text = json.dumps(table_data, indent=2)
-        elif hasattr(shape, "text"):
-            text_element = ET.SubElement(slide_element, "text_element")
-            text_element.set("shape_index", str(shape_index))
-            shape_data = get_shape_properties(shape)
-            if translator:
-                shape_data["text"] = translator.translate(shape_data["text"], source_lang, target_lang)
-            props_element = ET.SubElement(text_element, "properties")
-            props_element.text = json.dumps(shape_data, indent=2)
+        _process_shape_recursive(
+            shape,
+            shape_index,
+            slide_element,
+            slide_number,
+            translator,
+            source_lang,
+            target_lang
+        )
+    
     return slide_element
 
 
@@ -339,8 +407,56 @@ def ppt_to_xml(
         return None
 
 
+def _apply_shape_recursive(
+    shape,
+    shape_index: int,
+    xml_slide: ET.Element,
+    parent_path: str = "",
+):
+    """Recursively apply translated content to shapes, handling nested groups."""
+    current_path = f"{parent_path}.{shape_index}" if parent_path else str(shape_index)
+    
+    # Check if this is a group shape with nested shapes
+    if hasattr(shape, 'shapes'):
+        # This is a group shape - recursively process its children
+        for nested_index, nested_shape in enumerate(shape.shapes):
+            _apply_shape_recursive(
+                nested_shape,
+                nested_index,
+                xml_slide,
+                parent_path=current_path
+            )
+    
+    # Apply translation to the shape itself - check for table first
+    if hasattr(shape, 'table'):
+        # This shape has a table
+        table_element = xml_slide.find(f".//table_element[@shape_index='{current_path}']")
+        if table_element is not None:
+            props_element = table_element.find("properties")
+            if props_element is not None and props_element.text:
+                try:
+                    table_data = json.loads(props_element.text)
+                    apply_table_properties(shape.table, table_data)
+                except Exception as exc:
+                    print(f"Error applying table properties: {exc}")
+    elif hasattr(shape, "text_frame") and hasattr(shape, "text"):
+        # Has text frame
+        text_element = xml_slide.find(f".//text_element[@shape_index='{current_path}']")
+        if text_element is not None:
+            props_element = text_element.find("properties")
+            if props_element is not None and props_element.text:
+                try:
+                    shape_data = json.loads(props_element.text)
+                    apply_shape_properties(shape, shape_data, auto_adjust_font=True)
+                except Exception as exc:
+                    print(f"Error applying shape properties: {exc}")
+
+
 def create_translated_ppt(original_ppt_path: str, translated_xml_path: str, output_ppt_path: str) -> None:
-    """Create a new PowerPoint presentation using translated content."""
+    """Create a new PowerPoint presentation using translated content.
+    
+    Recursively processes all shapes including nested groups.
+    """
     try:
         prs = Presentation(original_ppt_path)
         tree = ET.parse(translated_xml_path)
@@ -349,27 +465,11 @@ def create_translated_ppt(original_ppt_path: str, translated_xml_path: str, outp
             xml_slide = root.find(f".//slide[@number='{slide_number}']")
             if xml_slide is None:
                 continue
+            
+            # Process all shapes recursively
             for shape_index, shape in enumerate(slide.shapes):
-                if shape.shape_type == MSO_SHAPE_TYPE.TABLE:
-                    table_element = xml_slide.find(f".//table_element[@shape_index='{shape_index}']")
-                    if table_element is not None:
-                        props_element = table_element.find("properties")
-                        if props_element is not None and props_element.text:
-                            try:
-                                table_data = json.loads(props_element.text)
-                                apply_table_properties(shape.table, table_data)
-                            except Exception as exc:  # pragma: no cover
-                                print(f"Error applying table properties: {exc}")
-                elif hasattr(shape, "text"):
-                    text_element = xml_slide.find(f".//text_element[@shape_index='{shape_index}']")
-                    if text_element is not None:
-                        props_element = text_element.find("properties")
-                        if props_element is not None and props_element.text:
-                            try:
-                                shape_data = json.loads(props_element.text)
-                                apply_shape_properties(shape, shape_data, auto_adjust_font=True)
-                            except Exception as exc:  # pragma: no cover
-                                print(f"Error applying shape properties: {exc}")
+                _apply_shape_recursive(shape, shape_index, xml_slide)
+        
         prs.save(output_ppt_path)
         print(f"Translated PowerPoint saved to: {output_ppt_path}")
     except Exception as exc:  # pragma: no cover - logging only
