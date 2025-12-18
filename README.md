@@ -113,6 +113,9 @@ pptrans ./presentations/ --provider openai
 # With vision-based quality review (translates AND reviews in one command)
 pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
 
+# Customize max refinement iterations (default is 3)
+pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_MODEL --max-refinement-iterations 5
+
 # Batch translation with vision review (all files in directory)
 pptrans ./presentations/ --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
 
@@ -237,6 +240,9 @@ The autofallback system reads AI suggestions and intelligently enables advanced 
 ```bash
 # Use your vision-capable model (enter the model name from your provider)
 pptrans deck.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --vision-quality-threshold 8.0
+
+# Customize max refinement iterations (how many times to retry if quality is low)
+pptrans deck.pptx --provider openai --vision-review --vision-model YOUR_MODEL --max-refinement-iterations 5
 ```
 
 #### Translation Memory
@@ -434,6 +440,9 @@ pptrans ./presentations/ --provider openai
 
 # 使用基于视觉的质量审查（在单个命令中完成翻译和审查）
 pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
+
+# 自定义最大优化迭代次数（默认为 3）
+pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_MODEL --max-refinement-iterations 5
 
 # 批量翻译并审查（目录中的所有文件）
 pptrans ./presentations/ --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
