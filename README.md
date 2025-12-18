@@ -104,13 +104,13 @@ cp example.env .env
 After installation, use the `pptrans` command:
 
 ```bash
-# Translate a single file
+# Basic translation (no vision review - fastest)
 pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 
 # Translate all PPT files in a directory
 pptrans ./presentations/ --provider openai
 
-# With vision-based quality review (enter your vision-capable model name)
+# With vision-based quality review (opt-in feature - requires --vision-review flag)
 pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME
 
 # Use a glossary for consistent terminology
@@ -121,7 +121,15 @@ pptrans presentation.pptx --provider openai --generate-review
 
 # Regenerate PPT from edited review file
 pptrans presentation.pptx --regenerate-from-review translation_review.json
+
+# View all available options
+pptrans --help
 ```
+
+**Important Notes:**
+- **Vision review is NOT automatic** - you must explicitly add `--vision-review` flag to enable it
+- Basic translation (without `--vision-review`) is faster and uses fewer API calls
+- Vision review requires a vision-capable model (specify with `--vision-model`)
 
 ### 📖 Usage
 
@@ -188,7 +196,9 @@ The tool generates:
 
 **Note**: PPTrans is an application that uses your chosen models - we don't provide model services. You select both the translation model and vision review model based on your needs and API access.
 
-When vision review is enabled, the system uses your chosen vision-capable model to visually analyze slides:
+**Vision review is opt-in only** - it is NOT enabled by default. You must explicitly add the `--vision-review` flag to enable it. Basic translation (without vision review) is faster and uses fewer API calls.
+
+When vision review is enabled (via `--vision-review` flag), the system uses your chosen vision-capable model to visually analyze slides:
 
 - **Pre-translation analysis**: Understands layout constraints and text hierarchy
 - **Post-translation review**: Quality scoring (0-10) with specific issues and suggestions
@@ -392,13 +402,13 @@ cp example.env .env
 安装后，使用 `pptrans` 命令：
 
 ```bash
-# 翻译单个文件
+# 基本翻译（无视觉审查 - 最快）
 pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
 
 # 翻译目录中的所有 PPT 文件
 pptrans ./presentations/ --provider openai
 
-# 使用基于视觉的质量审查（输入您自己的视觉模型名称）
+# 使用基于视觉的质量审查（需要显式添加 --vision-review 标志）
 pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME
 
 # 使用词汇表保持术语一致性
@@ -409,7 +419,15 @@ pptrans presentation.pptx --provider openai --generate-review
 
 # 从编辑后的审查文件重新生成 PPT
 pptrans presentation.pptx --regenerate-from-review translation_review.json
+
+# 查看所有可用选项
+pptrans --help
 ```
+
+**重要提示：**
+- **视觉审查不是自动的** - 必须显式添加 `--vision-review` 标志才能启用
+- 基本翻译（不使用 `--vision-review`）更快且使用更少的 API 调用
+- 视觉审查需要支持视觉的模型（使用 `--vision-model` 指定）
 
 ### 📖 使用方法
 
@@ -476,7 +494,9 @@ pptrans /path/to/decks \
 
 **注意**: PPTrans 是一个使用您选择的模型的应用 - 我们不提供模型服务。您可以根据需求和 API 访问权限选择翻译模型和视觉审查模型。
 
-启用视觉审查后，系统使用您选择的视觉模型来视觉分析幻灯片：
+**视觉审查是可选的** - 默认情况下不启用。必须显式添加 `--vision-review` 标志才能启用。基本翻译（不使用视觉审查）更快且使用更少的 API 调用。
+
+启用视觉审查后（通过 `--vision-review` 标志），系统使用您选择的视觉模型来视觉分析幻灯片：
 
 - **翻译前分析**: 理解布局约束和文本层次结构
 - **翻译后审查**: 质量评分 (0-10) 并提供具体问题和建议

@@ -16,7 +16,29 @@ from .review import ReviewFileGenerator, ReviewFileLoader
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Translate PowerPoint decks using modern LLM providers.")
+    parser = argparse.ArgumentParser(
+        description="Translate PowerPoint decks using modern LLM providers.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Basic translation (no vision review)
+  pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
+
+  # With vision-based quality review
+  pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-4o
+
+  # Batch translation with glossary
+  pptrans ./presentations/ --provider openai --glossary glossary.json
+
+  # Generate review file for manual editing
+  pptrans deck.pptx --provider openai --generate-review --review-format yaml
+
+  # Regenerate PPT from edited review file
+  pptrans deck.pptx --regenerate-from-review translation_review.json
+
+For more information, visit: https://github.com/Z-MarkUs/PPTrans
+        """
+    )
     parser.add_argument("path", help="Path to a PPT/PPTX file or a directory containing presentations.")
     parser.add_argument("--source-lang", default="zh", help="Source language code (default: zh).")
     parser.add_argument("--target-lang", default="en", help="Target language code (default: en).")

@@ -228,3 +228,4 @@ class AdaptiveFixer:
         except Exception as e:
             print(f"    ⚠️  Vision review failed: {e}")
             return 7.0, []
+

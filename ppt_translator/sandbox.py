@@ -136,3 +136,4 @@ class SandboxExecutor:
 class SecurityError(Exception):
     """Security violation in code execution."""
     pass
+
