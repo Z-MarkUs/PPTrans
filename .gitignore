@@ -61,3 +61,6 @@ dist/
 *.dmg
 *.pkg
 
+# Gradio
+.gradio/
+

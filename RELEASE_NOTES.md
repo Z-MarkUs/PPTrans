@@ -172,9 +172,7 @@ Built with ❤️ using:
 ## 📖 Documentation
 
 - **Full Documentation**: See [README.md](README.md)
-- **Release Guide**: See [RELEASE.md](RELEASE.md)
-- **PyPI Setup**: See [PYPI_SETUP.md](PYPI_SETUP.md)
-- **GitHub Release Guide**: See [GITHUB_RELEASE.md](GITHUB_RELEASE.md)
+- **Language Support**: See [LANGUAGE_SUPPORT.md](LANGUAGE_SUPPORT.md)
 
 ---
 
@@ -187,6 +185,20 @@ Built with ❤️ using:
 ---
 
 ## 📝 Changelog
+
+### v1.1.1 (2026-02-03)
+
+**Maintenance Release**
+
+- 🧹 Removed untested Gradio web interface (CLI-only focus)
+- 🧹 Cleaned up test files and temporary artifacts
+- 📝 Improved documentation consistency
+- 🔒 Enhanced security checks (no exposed credentials)
+- 📦 Removed Gradio dependency from requirements
+
+### v1.1.0
+
+**Previous release with multi-provider support and vision review**
 
 ### v1.0.0 (2025-12-08)
 

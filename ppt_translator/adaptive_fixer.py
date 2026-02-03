@@ -229,3 +229,6 @@ class AdaptiveFixer:
             print(f"    ⚠️  Vision review failed: {e}")
             return 7.0, []
 
+
+
+
