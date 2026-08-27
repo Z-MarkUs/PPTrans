@@ -10,6 +10,7 @@ include README.zh-CN.md
 include SECURITY.md
 recursive-include .agents *.md *.yaml
 recursive-include .claude *.md *.yaml
+recursive-include benchmarks *.json *.md
 recursive-include docs *.md *.webp
 recursive-include examples *.pptx *.yaml
 recursive-include scripts *.py *.mjs

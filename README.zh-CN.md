@@ -141,9 +141,9 @@ CLI 会在构造付费服务商 client 前保守检查完整计划，缓存查�
 
 ### Benchmark 状态
 
-目前没有公开宣称速度、成本或翻译质量数字。Benchmark gate 要求原始结果记录 commit SHA、fixture 版本、Python/操作系统版本、准确的服务商与模型、冷热缓存状态、token 用量、适用时的 renderer 版本以及完整命令。只有提供可复现产物后才会加入结果，见[质量门禁](docs/QUALITY_GATES.md)。
+在 Windows 11 与 Python 3.12.13 上，仓库中的合成 deck 完成确定性的 `inspect → identity 编排 → patch → verify` 核心流程时，3 次预热后 30 次计时的**中位数为 59.998 ms**、**p95 为 66.442 ms**。该结果来自干净 commit `dd39e55`，fixture 大小为 18,687 bytes，包含 3 张幻灯片、41 个单元和 45 个片段；完整 SHA、环境、命令与计时见[原始 benchmark 结果](benchmarks/results/2026-08-28-windows-python312.json)。
 
-<!-- BENCHMARK_RESULT_PLACEHOLDER: 仅在干净工作树上生成并提交原始结果后替换。 -->
+这是范围很窄的本机核心 benchmark，不包含服务商、网络、翻译记忆、LibreOffice、渲染、成本或翻译质量，也不能证明最大实用 deck 大小或其他机器上的性能。详见 [benchmark 方法](benchmarks/README.md)与[质量门禁](docs/QUALITY_GATES.md)。
 
 ## 可选视觉审查基础
 

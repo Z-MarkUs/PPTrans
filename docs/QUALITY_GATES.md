@@ -54,13 +54,13 @@ Do not advertise standalone binaries unless each advertised platform artifact wa
 
 ## 5. Documentation and benchmark gate
 
-Every README metric must come from a committed raw result that records the commit SHA, fixture revision, Python version, renderer version, operating system, and command. Separate deterministic layout-engine results from provider-dependent translation quality, latency, and cost.
+Every README benchmark metric must come from a committed raw result that records the commit SHA, fixture hash/revision, Python version, operating system, and complete command. Record provider/model, cold versus warm translation-memory state, token usage, and renderer version whenever those systems participate. Separate deterministic OOXML-core results from provider-dependent translation quality, latency, cost, and visual-render results.
 
 Remove or label claims whose evidence is absent, stale, model-specific, or narrower than the wording. Static “passing” badges are not evidence; badges must resolve to the workflow that runs the relevant gate.
 
 The public demo has its own source and QA record in [DEMO.md](DEMO.md). A replacement must remain synthetic, be built into a disposable path, have metadata normalized, preserve the asserted slide/unit/span counts, pass the offline identity transaction and independent reopen, and receive visual review of every generated slide plus layout output. A rendered preview is presentation evidence only; it does not establish PowerPoint pixel identity or translation quality.
 
-Until a raw benchmark artifact is committed from a clean tree, the READMEs must retain an explicit no-public-benchmark statement and placeholder rather than a number.
+The current narrow result and method are committed under [`benchmarks/`](../benchmarks/). Regenerate into a new no-clobber result path from a clean tree; never overwrite old evidence or broaden the claim beyond the systems actually measured.
 
 ## 6. Release gate
 

@@ -16,6 +16,8 @@ SDIST_REQUIRED_SUFFIXES = {
     ".agents/skills/pptrans-engineering/SKILL.md",
     ".claude/skills/pptrans-engineering/SKILL.md",
     "README.zh-CN.md",
+    "benchmarks/README.md",
+    "benchmarks/results/2026-08-28-windows-python312.json",
     "docs/ARCHITECTURE.md",
     "docs/assets/pptrans-demo-preview.webp",
     "examples/pptrans-demo.en.pptx",

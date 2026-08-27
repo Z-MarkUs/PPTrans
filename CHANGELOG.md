@@ -20,6 +20,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Provider-neutral review schemas, deterministic score evaluation, privacy policy helpers, review budgets, and allowlisted repair-plan schemas.
 - Cross-platform CI configuration, package smoke checks, dependency/security scanning, repository guidance, and Codex/Claude Code engineering skills.
 - A self-authored three-slide public demo deck, committed Artifact Tool authoring source, deterministic metadata normalization, rendered QA preview, source-distribution fixture checks, a deterministic core benchmark harness, and English/Chinese recruiter-facing documentation.
+- A clean-tree raw deterministic-core benchmark result with commit, fixture, environment, command, and distribution timings.
 
 ### Changed
 
@@ -57,7 +58,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 ### Known gaps before release
 
 - The review modules are not yet wired into an end-to-end multimodal provider, CLI review command, or repair executor.
-- No committed performance, cost, or translation-quality benchmark supports a public claim yet.
+- The committed benchmark covers only local deterministic core processing; provider latency/cost, translation quality, rendering, and maximum practical deck size remain unbenchmarked.
 - The licensing issue in [NOTICE.md](NOTICE.md) must be resolved before package publication or another release.
 
 Earlier repository changes predate this structured changelog. Consult Git history and prior GitHub release notes for legacy-version history; v2 guarantees must not be projected onto those releases.

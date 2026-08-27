@@ -143,9 +143,9 @@ The configured branch-coverage floor is visible in [pyproject.toml](pyproject.to
 
 ### Benchmark status
 
-No public speed, cost, or translation-quality benchmark is claimed yet. The benchmark gate requires raw results to record the commit SHA, fixture revision, Python and OS versions, exact provider/model, cold versus warm translation-memory state, token usage, renderer version when applicable, and the complete command. Results will be added only with reproducible artifacts; see [quality gates](docs/QUALITY_GATES.md).
+On Windows 11 with Python 3.12.13, the committed synthetic deck completed the deterministic `inspect → identity orchestration → patch → verify` core in a **59.998 ms median** and **66.442 ms p95** over 30 measured iterations after 3 warmups. The run came from clean commit `dd39e55`, used the 18,687-byte fixture with 3 slides / 41 units / 45 spans, and records its full SHA, environment, command, and timings in the [raw benchmark result](benchmarks/results/2026-08-28-windows-python312.json).
 
-<!-- BENCHMARK_RESULT_PLACEHOLDER: replace only after committing a raw result from a clean tree. -->
+This is a narrow local core benchmark, not a provider, network, translation-memory, LibreOffice, rendering, cost, or translation-quality result, and it does not establish maximum practical deck size or cross-machine performance. See the [benchmark method](benchmarks/README.md) and [quality gates](docs/QUALITY_GATES.md).
 
 ## Optional review foundation
 
