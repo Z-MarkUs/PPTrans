@@ -11,10 +11,9 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 from typer.testing import CliRunner, Result
 
-import main as compatibility_entrypoint
 from pptrans import __version__
 from pptrans import cli as cli_module
-from pptrans.cli import app, main
+from pptrans.cli import app
 
 PRIVATE_TEXT = "Confidential launch plan for Project Juniper"
 
@@ -65,7 +64,7 @@ def runner() -> CliRunner:
     return CliRunner()
 
 
-def test_help_version_and_compatibility_entrypoint(runner: CliRunner) -> None:
+def test_help_and_version(runner: CliRunner) -> None:
     help_result = runner.invoke(app, ["--help"])
 
     assert help_result.exit_code == 0, help_result.output
@@ -75,7 +74,6 @@ def test_help_version_and_compatibility_entrypoint(runner: CliRunner) -> None:
     version_result = runner.invoke(app, ["--version"])
     assert version_result.exit_code == 0, version_result.output
     assert version_result.stdout.strip() == f"pptrans {__version__}"
-    assert compatibility_entrypoint.main is main
 
 
 def test_inspect_json_is_content_private_by_default_and_opt_in_reveals_text(

@@ -14,7 +14,7 @@ from test_ooxml_helpers import create_complex_deck
 
 from pptrans.application.errors import TranslationValidationError
 from pptrans.application.translate import translate_plan
-from pptrans.domain.errors import InvalidPresentationError, PatchValidationError, PPTransError
+from pptrans.domain.errors import InvalidPresentationError, PatchValidationError
 from pptrans.domain.models import (
     DeckPlan,
     ParagraphLocator,
@@ -203,6 +203,8 @@ _RELATIONSHIP_TARGET = st.lists(
             "%2E%2E",
             "%2f",
             "%5c",
+            "%00",
+            "C:",
             "slides",
             "nested",
             "slide1.xml",
@@ -239,6 +241,13 @@ def test_relationship_targets_never_resolve_outside_the_package(target: str) -> 
     assert ".." not in Path(resolved).parts
 
 
+def test_common_relationship_target_normalizes_inside_the_package() -> None:
+    assert (
+        _resolve_part("ppt/presentation.xml", "slides/../slides/slide1.xml")
+        == "ppt/slides/slide1.xml"
+    )
+
+
 def test_byte_mutated_pptx_either_inspects_or_fails_with_a_domain_error(
     tmp_path: Path,
 ) -> None:
@@ -246,6 +255,8 @@ def test_byte_mutated_pptx_either_inspects_or_fails_with_a_domain_error(
     pristine = tmp_path / "pristine.pptx"
     create_complex_deck(pristine)
     original = pristine.read_bytes()
+    pristine_plan = inspect_deck(pristine, source_lang="en", target_lang="fr")
+    assert pristine_plan.source_path == pristine.resolve()
 
     @settings(max_examples=250, **_DETERMINISTIC)
     @given(
@@ -266,7 +277,7 @@ def test_byte_mutated_pptx_either_inspects_or_fails_with_a_domain_error(
 
         try:
             plan = inspect_deck(source, source_lang="en", target_lang="fr")
-        except PPTransError:
+        except InvalidPresentationError:
             return
         assert plan.source_path == source.resolve()
         with zipfile.ZipFile(source) as archive:

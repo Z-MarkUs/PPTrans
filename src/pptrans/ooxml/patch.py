@@ -175,13 +175,28 @@ def _patch_part(part_name: str, original: bytes, patches: list[TranslationPatch]
 def _group_patches(patch_set: PatchSet) -> dict[str, list[TranslationPatch]]:
     by_part: dict[str, list[TranslationPatch]] = defaultdict(list)
     seen_locators = set()
+    seen_unit_ids: set[str] = set()
     for patch in patch_set.patches:
         if patch.locator in seen_locators:
             raise PatchValidationError(
                 f"Multiple patches target the same paragraph: {patch.locator}"
             )
+        if patch.unit_id in seen_unit_ids:
+            raise PatchValidationError(f"Multiple patches use unit ID {patch.unit_id!r}.")
+        seen_unit_ids.add(patch.unit_id)
         seen_locators.add(patch.locator)
         by_part[patch.locator.slide_part].append(patch)
+    return by_part
+
+
+def validate_patch_set(patch_set: PatchSet) -> dict[str, list[TranslationPatch]]:
+    """Validate a manually constructed patch set and group it by package part."""
+
+    if patch_set.schema_version != PATCH_SCHEMA_VERSION:
+        raise PatchValidationError(f"Unsupported patch schema: {patch_set.schema_version!r}")
+    by_part = _group_patches(patch_set)
+    for patch in patch_set.patches:
+        _validate_patch_shape(patch)
     return by_part
 
 
@@ -199,13 +214,11 @@ def apply_patch_set(
     destination = Path(destination)
     ensure_distinct_package_paths(source, destination)
     ensure_package_destination_available(destination, overwrite=overwrite)
-    if patch_set.schema_version != PATCH_SCHEMA_VERSION:
-        raise PatchValidationError(f"Unsupported patch schema: {patch_set.schema_version!r}")
     current_hash = file_sha256(source)
     if current_hash != patch_set.input_sha256:
         raise SourceChangedError("The source PPTX changed after its translation plan was created.")
 
-    by_part = _group_patches(patch_set)
+    by_part = validate_patch_set(patch_set)
     policy = limits or PackageLimits()
 
     replacements: dict[str, bytes] = {}

@@ -70,6 +70,25 @@ def test_inspection_reads_every_member_and_rejects_corrupt_opaque_payload(
         inspect_deck(source, source_lang="en", target_lang="fr")
 
 
+def test_rejects_a_real_high_compression_ratio_member(tmp_path: Path) -> None:
+    source = tmp_path / "high-compression-ratio.pptx"
+    member_name = "ppt/media/high-compression-ratio.bin"
+    create_complex_deck(source)
+    with zipfile.ZipFile(source, mode="a", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(member_name, b"0" * 1_000_000)
+
+    with zipfile.ZipFile(source) as archive:
+        info = archive.getinfo(member_name)
+    assert info.compress_size > 0
+    assert info.file_size / info.compress_size > PackageLimits().max_compression_ratio
+
+    with (
+        pytest.raises(InvalidPresentationError, match="compression-ratio limit"),
+        open_package(source),
+    ):
+        pass
+
+
 def test_xml_read_ceiling_does_not_depend_on_a_filename_suffix(tmp_path: Path) -> None:
     source = tmp_path / "complex.pptx"
     create_complex_deck(source)

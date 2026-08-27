@@ -261,6 +261,32 @@ def test_renderer_rolls_back_a_mid_publication_failure(tmp_path: Path) -> None:
     assert list(output_dir.glob("*.png")) == []
 
 
+def test_renderer_preserves_a_destination_created_during_publication(
+    tmp_path: Path,
+) -> None:
+    calls: list[tuple[list[str], dict[str, Any]]] = []
+    sentinel = b"created by another process"
+    raced_destination: Path | None = None
+
+    def racing_link(_source: Path, destination: Path) -> None:
+        nonlocal raced_destination
+        raced_destination = destination
+        destination.write_bytes(sentinel)
+        raise FileExistsError("injected publication race")
+
+    renderer = _renderer(tmp_path, calls, linker=racing_link)
+    source = tmp_path / "deck.pptx"
+    source.write_bytes(b"synthetic pptx")
+    output_dir = tmp_path / "renders"
+
+    with pytest.raises(RenderError, match="appeared during publication"):
+        renderer.render(RenderRequest(source, output_dir))
+
+    assert raced_destination is not None
+    assert raced_destination.read_bytes() == sentinel
+    assert list(output_dir.glob("*.png")) == [raced_destination]
+
+
 def test_renderer_publishes_every_page_after_real_pptx_count_check(tmp_path: Path) -> None:
     calls: list[tuple[list[str], dict[str, Any]]] = []
     executable = tmp_path / "soffice.exe"

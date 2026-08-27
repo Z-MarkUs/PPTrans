@@ -7,7 +7,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from pptrans.domain.errors import SourceChangedError, VerificationError
+from pptrans.domain.errors import PatchValidationError, SourceChangedError, VerificationError
 from pptrans.domain.models import (
     PackageLimits,
     PatchSet,
@@ -15,8 +15,9 @@ from pptrans.domain.models import (
     VerificationReport,
 )
 
-from .locate import extract_spans, paragraph_for_locator, paragraph_text_nodes
+from .locate import extract_spans, paragraph_for_locator, paragraph_text_nodes, source_digest
 from .package import file_sha256, open_package, read_xml_part
+from .patch import validate_patch_set
 from .xml import A_T, XML_SPACE, parse_xml, structural_fingerprint
 
 
@@ -28,8 +29,13 @@ def _verify_patch(
 ) -> tuple[set[int], int]:
     source_paragraph = paragraph_for_locator(source_root, patch.locator)
     output_paragraph = paragraph_for_locator(output_root, patch.locator)
-    if extract_spans(source_paragraph) != patch.source_spans:
+    actual_source_spans = extract_spans(source_paragraph)
+    if actual_source_spans != patch.source_spans:
         raise VerificationError(f"Patch source does not match translation unit {patch.unit_id}.")
+    if source_digest(patch.locator, actual_source_spans) != patch.source_digest:
+        raise VerificationError(
+            f"Patch source digest does not match translation unit {patch.unit_id}."
+        )
 
     source_nodes = paragraph_text_nodes(source_paragraph)
     output_nodes = paragraph_text_nodes(output_paragraph)
@@ -120,11 +126,10 @@ def verify_output(
     if source_hash != patch_set.input_sha256:
         raise SourceChangedError("The source PPTX changed before output verification.")
 
-    patches_by_part: dict[str, list[TranslationPatch]] = {}
-    for patch in patch_set.patches:
-        patches_by_part.setdefault(patch.locator.slide_part, []).append(patch)
+    patches_by_part = validate_patch_set(patch_set)
 
     changed_parts: list[str] = []
+    verified_patches = 0
     verified_spans = 0
     policy = limits or PackageLimits()
     with open_package(source, policy) as source_zip, open_package(output, policy) as output_zip:
@@ -132,6 +137,11 @@ def verify_output(
         output_names = tuple(output_zip.namelist())
         if source_names != output_names:
             raise VerificationError("Output package member names or ordering changed.")
+        missing_parts = set(patches_by_part).difference(source_names)
+        if missing_parts:
+            raise PatchValidationError(
+                "Patch targets a missing slide part: " + ", ".join(sorted(missing_parts))
+            )
         if source_zip.testzip() is not None or output_zip.testzip() is not None:
             raise VerificationError("Source or output PPTX failed its ZIP CRC check.")
 
@@ -150,14 +160,17 @@ def verify_output(
                     raise VerificationError(f"Unrelated package part changed: {part_name!r}")
                 continue
             verified_spans += _verify_target_part(part_name, source_data, output_data, patches)
+            verified_patches += len(patches)
 
     unexpected = set(changed_parts).difference(patch_set.target_parts)
     if unexpected:
         raise VerificationError("Unexpected changed parts: " + ", ".join(sorted(unexpected)))
+    if verified_patches != len(patch_set.patches):
+        raise VerificationError("Not every supplied patch was verified.")
     return VerificationReport(
         source_sha256=source_hash,
         output_sha256=file_sha256(output),
         changed_parts=tuple(changed_parts),
-        verified_patches=len(patch_set.patches),
+        verified_patches=verified_patches,
         verified_spans=verified_spans,
     )

@@ -36,12 +36,14 @@ This alpha is active development, not a release candidate. Publication is blocke
 - CLI provider preflight defaults to at most 2,000 units, 100 logical calls, 2,000,000 source/context characters, 5,000,000 serialized characters across all batches, and 1,000,000 characters per request.
 - Default publication uses an atomic no-clobber path; destination replacement requires explicit overwrite permission.
 - Low-level patch/rewrite APIs are no-clobber by default, reject source aliases, and refuse symbolic-link destinations even with explicit overwrite.
+- Tests use the installed `src` package directly instead of a legacy root-path import shim.
 
 ### Security
 
 - Model output is data only. The v2 package contains no dynamic execution path for model-generated code.
 - XML parsing disables DTD loading, entity resolution, and network access.
 - Source hashes and structural verification prevent stale or structurally destructive patches from being published as successful output.
+- Direct verification validates patch-set schema, unique unit/locator identities, ordered spans, source digests, and target-part existence, then reports only patches it actually traversed.
 - LibreOffice is invoked without a shell and without likely credential-bearing environment variables; rendered images are validated and bounded.
 - Rendering hashes, slide-counts, converts, and rasterizes one private per-run input snapshot, reducing local source-path replacement races.
 - Provider exceptions are mapped to concise PPTrans errors so request content is not copied into user-facing error messages.
@@ -52,6 +54,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 ### Removed from the v2 surface
 
 - Legacy `.ppt` translation.
+- The legacy root `main.py` compatibility launcher; the packaged `pptrans` entry point is authoritative.
 - Implicit paid-provider model defaults.
 - Legacy DeepSeek and Grok adapters pending a new adapter that satisfies the v2 exact-ID contract.
 - The legacy dynamic-code repair/sandbox path.

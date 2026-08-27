@@ -136,6 +136,50 @@ def test_apply_rejects_tampered_patch_metadata(tmp_path: Path) -> None:
         )
 
 
+def test_verifier_rejects_tampered_patch_metadata(tmp_path: Path) -> None:
+    source, plan = _valid_plan(tmp_path)
+    patches = build_patch_set(plan, translated_values(plan))
+    first = next(patch for patch in patches.patches if len(patch.translations) > 1)
+
+    with pytest.raises(PatchValidationError, match="Unsupported patch schema"):
+        verify_output(source, source, replace(patches, schema_version="bad"))
+
+    with pytest.raises(PatchValidationError, match="same paragraph"):
+        verify_output(source, source, replace(patches, patches=(first, first)))
+
+    second = next(patch for patch in patches.patches if patch.locator != first.locator)
+    duplicate_unit = replace(second, unit_id=first.unit_id)
+    with pytest.raises(PatchValidationError, match="use unit ID"):
+        verify_output(source, source, replace(patches, patches=(first, duplicate_unit)))
+
+    reordered = replace(first, translations=tuple(reversed(first.translations)))
+    with pytest.raises(PatchValidationError, match="span order"):
+        verify_output(
+            source,
+            source,
+            PatchSet(patches.schema_version, patches.input_sha256, (reordered,)),
+        )
+
+    missing_locator = replace(
+        first,
+        locator=replace(first.locator, slide_part="ppt/slides/missing.xml"),
+    )
+    with pytest.raises(PatchValidationError, match="missing slide part"):
+        verify_output(
+            source,
+            source,
+            PatchSet(patches.schema_version, patches.input_sha256, (missing_locator,)),
+        )
+
+    bad_digest = replace(first, source_digest="0" * 64)
+    with pytest.raises(VerificationError, match="source digest"):
+        verify_output(
+            source,
+            source,
+            PatchSet(patches.schema_version, patches.input_sha256, (bad_digest,)),
+        )
+
+
 def test_low_level_patch_and_rewrite_reject_source_aliases_without_data_loss(
     tmp_path: Path,
 ) -> None:
