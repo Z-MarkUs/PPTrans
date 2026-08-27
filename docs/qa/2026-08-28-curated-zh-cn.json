@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "observed_at_utc": "2026-08-27T19:46:49.4389244Z",
+  "observed_at_utc": "2026-08-27T20:10:19.9166267Z",
   "local_test_date": "2026-08-28",
-  "tested_commit": "6d80dc3d093bface37c19d28c2e0ec8f8192ec8d",
+  "tested_commit": "9589fb0fb6ce9ad767c6f1b9e05915d8dd96774f",
   "platform": {
     "os": "Microsoft Windows NT 10.0.26200.0",
     "architecture": "AMD64",
@@ -52,8 +52,8 @@
     },
     "curated_target": {
       "path": "examples/pptrans-demo.zh-CN.pptx",
-      "bytes": 18891,
-      "sha256": "efc6781d8f952e3a5452db03a0f385bb13a03d4e58b3544c57270f48649bb0b7",
+      "bytes": 18813,
+      "sha256": "bef11b42cddc9c8bfc4e9137995d592e0d910b3b88bbd556e48a9593ae14bb1f",
       "byte_identical_to_source": false
     }
   },
@@ -64,8 +64,8 @@
       "height": 1080,
       "source_png_bytes": 68092,
       "source_png_sha256": "c5442ade6848d1eb07edf89d41080a452349850a6e6af5653e048d83bacf2c30",
-      "target_png_bytes": 77994,
-      "target_png_sha256": "4393320535d4cd8afe4fd84ec52a0f4efa22e11b214213a8c18cacc16aeff11a",
+      "target_png_bytes": 70829,
+      "target_png_sha256": "9802d3c54e70fadaff476fe89e1af5de75eca8687945481f21a35d770d93b3de",
       "dimensions_equal": true
     },
     {
@@ -74,8 +74,8 @@
       "height": 1080,
       "source_png_bytes": 77877,
       "source_png_sha256": "3809cbcb6605a37f9400191f8fa0c62c2be629201c1d1c74b2ebade589a3371b",
-      "target_png_bytes": 93781,
-      "target_png_sha256": "73d01b5ce0c4242c7d3e1e3d563eb794fa3b5409292e7bb7023c8644727acc3b",
+      "target_png_bytes": 87294,
+      "target_png_sha256": "3ad5688372f6c71e98d0784ddf5cc1923a6b7e242a2d1b41dd6925933b487b29",
       "dimensions_equal": true
     },
     {
@@ -108,11 +108,11 @@
     "curated_target": [
       {
         "path": "docs/assets/pptrans-demo-zh-CN-slide-01.webp",
-        "sha256": "bfb4045ed2a289a51441e22084305257e4dca33b3041a13bcb0f24ce1cecde68"
+        "sha256": "581497826f2c57501dcc2c54aeb30bf62773946f5d187c22a1582dba1164c100"
       },
       {
         "path": "docs/assets/pptrans-demo-zh-CN-slide-02.webp",
-        "sha256": "feba971b1ce5ca15d21d4e694b6830c63b89b2973fdcd0b9c569059778464d31"
+        "sha256": "0bec38a4a624feb7f7ad341d529ff462741fcdbfadc0c4b168e0762af3edba9c"
       },
       {
         "path": "docs/assets/pptrans-demo-zh-CN-slide-03.webp",
@@ -140,7 +140,7 @@
     "clipping_detected": false,
     "overlap_detected": false,
     "off_slide_content_detected": false,
-    "notes": "Every curated-target LibreOffice PNG was inspected at 1921 x 1080. The authoring-runtime previews were also inspected separately."
+    "notes": "Every curated-target LibreOffice PNG was inspected at 1921 x 1080 after the recruiter-facing Chinese typography was polished. The authoring-runtime previews were also inspected separately."
   },
   "scope": [
     "The target strings are a fixed, author-reviewed fixture mapping, not output from a paid or production translation provider.",

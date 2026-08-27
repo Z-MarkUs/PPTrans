@@ -59,7 +59,7 @@ This result is intentionally narrow. It proves that one synthetic fixture and it
 
 ## Native LibreOffice changed-text acceptance
 
-The curated zh-CN output received a second acceptance run at commit `6d80dc3d093bface37c19d28c2e0ec8f8192ec8d`. Its deterministic offline generator made 41 verified patches / 45 verified spans across exactly `slide1.xml`, `slide2.xml`, and `slide3.xml`. ZIP member order remained equal, every other package member remained byte-identical, and PPTrans reverified changed-slide structure plus planned and unplanned text nodes.
+The curated zh-CN output received a second acceptance run at commit `9589fb0fb6ce9ad767c6f1b9e05915d8dd96774f`. Its deterministic offline generator made 41 verified patches / 45 verified spans across exactly `slide1.xml`, `slide2.xml`, and `slide3.xml`. ZIP member order remained equal, every other package member remained byte-identical, and PPTrans reverified changed-slide structure plus planned and unplanned text nodes.
 
 The English and zh-CN decks were then rendered with the same LibreOffice 26.8.0.3 build, PyMuPDF 1.28.2, Windows environment, and 144 DPI settings used for the identity record. Each produced three 1921 × 1080 PNGs. Every target render was inspected at original resolution with no visible clipping, overlap, or off-slide content. The Presentations skill's padded-canvas harness also passed all three target slides using its documented 100 px margin check. No private renderer workspace, publication staging directory, or LibreOffice helper process remained after the clean run.
 

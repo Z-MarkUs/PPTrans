@@ -21,6 +21,13 @@ DEMO_PATH = Path(__file__).parents[1] / "examples" / "pptrans-demo.en.pptx"
 CURATED_DEMO_PATH = Path(__file__).parents[1] / "examples" / "pptrans-demo.zh-CN.pptx"
 NATIVE_QA_PATH = Path(__file__).parents[1] / "docs" / "qa" / "2026-08-28-windows-libreoffice.json"
 CURATED_QA_PATH = Path(__file__).parents[1] / "docs" / "qa" / "2026-08-28-curated-zh-cn.json"
+NATIVE_QA_CANONICAL_SHA256 = "43ad1b27fe86d4b564023e8dab83084e851f78c387229f2d72c8c59a2d29e05b"
+CURATED_QA_CANONICAL_SHA256 = "e41fa804ab77d53a2c7861e8217dd1ff0918baf90f22403705c94e2ed000ccfa"
+
+
+def _canonical_record_sha256(record: object) -> str:
+    payload = json.dumps(record, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _load_curated_demo_script() -> ModuleType:
@@ -57,10 +64,14 @@ def test_public_demo_runs_end_to_end_without_network(tmp_path: Path) -> None:
 
 
 def test_native_qa_record_is_pinned_to_the_committed_demo() -> None:
-    record = json.loads(NATIVE_QA_PATH.read_text(encoding="utf-8"))
+    record_bytes = NATIVE_QA_PATH.read_bytes()
+    record = json.loads(record_bytes)
     demo_bytes = DEMO_PATH.read_bytes()
     demo_sha256 = hashlib.sha256(demo_bytes).hexdigest()
 
+    # The native render and visual review are manual acceptance observations. Pinning
+    # the whole manifest makes every field change explicit in review; it does not rerun LO.
+    assert _canonical_record_sha256(record) == NATIVE_QA_CANONICAL_SHA256
     assert record["schema_version"] == 1
     assert record["presentations"]["source"] == {
         "path": "examples/pptrans-demo.en.pptx",
@@ -125,12 +136,16 @@ def test_curated_zh_cn_demo_is_reproducible_and_structurally_verified(tmp_path: 
 
 
 def test_curated_zh_cn_qa_record_is_pinned_to_committed_evidence() -> None:
-    record = json.loads(CURATED_QA_PATH.read_text(encoding="utf-8"))
+    record_bytes = CURATED_QA_PATH.read_bytes()
+    record = json.loads(record_bytes)
     source_bytes = DEMO_PATH.read_bytes()
     target_bytes = CURATED_DEMO_PATH.read_bytes()
 
+    # As above, the whole-record digest pins manual native/visual observations without
+    # claiming the unit suite recreated LibreOffice output or human visual judgment.
+    assert _canonical_record_sha256(record) == CURATED_QA_CANONICAL_SHA256
     assert record["schema_version"] == 1
-    assert record["tested_commit"] == "6d80dc3d093bface37c19d28c2e0ec8f8192ec8d"
+    assert record["tested_commit"] == "9589fb0fb6ce9ad767c6f1b9e05915d8dd96774f"
     assert record["presentations"] == {
         "source": {
             "path": "examples/pptrans-demo.en.pptx",
