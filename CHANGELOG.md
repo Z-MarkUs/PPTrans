@@ -21,6 +21,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Cross-platform CI configuration, package smoke checks, dependency/security scanning, repository guidance, and Codex/Claude Code engineering skills.
 - A self-authored three-slide public demo deck, committed Artifact Tool authoring source, deterministic metadata normalization, rendered QA preview, source-distribution fixture checks, a deterministic core benchmark harness, and English/Chinese recruiter-facing documentation.
 - A clean-tree raw deterministic-core benchmark result with commit, fixture, environment, command, and distribution timings.
+- A machine-readable Windows/LibreOffice native acceptance record for the synthetic source and byte-identical identity output, including exact tool versions, hashes, per-slide pixel comparison, visual/overflow review, and cleanup checks.
 - Deterministic property-based stress tests covering XML character handling, Unicode round trips, exact provider result ordering, relationship target containment, and byte-mutated presentation input.
 
 ### Changed
@@ -37,6 +38,8 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Default publication uses an atomic no-clobber path; destination replacement requires explicit overwrite permission.
 - Low-level patch/rewrite APIs are no-clobber by default, reject source aliases, and refuse symbolic-link destinations even with explicit overwrite.
 - Tests use the installed `src` package directly instead of a legacy root-path import shim.
+- LibreOffice rendering now treats private-workspace cleanup as a commit barrier: validated PNGs move to separate same-filesystem staging, bounded transient-error retries retire the source/PDF/profile/raster workspace before publication, and late publication-stage cleanup failure rolls back owned final links.
+- PyMuPDF discovery and loading now use its canonical `pymupdf` module name instead of the collision-prone legacy `fitz` alias.
 
 ### Security
 
@@ -46,6 +49,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Direct verification validates patch-set schema, unique unit/locator identities, ordered spans, source digests, and target-part existence, then reports only patches it actually traversed.
 - LibreOffice is invoked without a shell and without likely credential-bearing environment variables; rendered images are validated and bounded.
 - Rendering hashes, slide-counts, converts, and rasterizes one private per-run input snapshot, reducing local source-path replacement races.
+- Renderer rollback records staged file identities, so cleanup removes only final hard links still owned by the failed transaction and preserves paths replaced by another process.
 - Provider exceptions are mapped to concise PPTrans errors so request content is not copied into user-facing error messages.
 - Provider text must be nonblank, stay within a bounded expansion, and preserve high-confidence URLs, emails, placeholders, and digit sequences.
 - XML parts have a dedicated 32 MiB expansion ceiling, while safer archive/member/compression defaults bound opaque payload processing.

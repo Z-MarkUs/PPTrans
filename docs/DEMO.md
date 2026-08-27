@@ -30,6 +30,16 @@ Document properties are normalized by [`scripts/sanitize_demo_metadata.py`](../s
 
 This removes tool-default metadata; it is not a general metadata scrubber for arbitrary presentations.
 
+## Native LibreOffice acceptance record
+
+The demo received a separate native acceptance run on Windows at commit `37733faf71e660737177ff991be2a8437c9a6858`. The source deck first completed the offline `identity` transaction with translation memory disabled. The 18,687-byte output had the same SHA-256 as its source (`dd36b4f92edf915942d4300aeebd1854a049acc521dfc29e78b286c774d8e9d8`), so the no-op transaction was package-byte-identical.
+
+Both packages were then opened through PPTrans's renderer using an administratively extracted, disposable copy of LibreOffice 26.8.0.3 (`bce0998afefdbc355585ca324285661a2170ba77`) and PyMuPDF 1.28.2 at 144 DPI. The result was three 1921 × 1080 PNGs per deck. Every source/identity pair had the same file SHA-256 and an empty pixel difference. All three source renders were inspected at original resolution with no visible clipping, overlap, or off-slide content, and the padded-canvas overflow check also passed.
+
+The run additionally verified that neither the private render workspace nor publication staging remained and that no LibreOffice helper process survived success. The complete environment, distribution digest, package hashes, per-slide dimensions and hashes, comparison flags, and scope are in the [machine-readable record](qa/2026-08-28-windows-libreoffice.json).
+
+This result is intentionally narrow. It proves that one synthetic fixture and its identity output opened and rendered identically in the recorded LibreOffice environment. It does not measure translation quality, longer-text layout fit, provider behavior, other decks, other LibreOffice versions, or Microsoft PowerPoint pixel identity.
+
 ## Authoring source
 
 [`scripts/build_demo.mjs`](../scripts/build_demo.mjs) contains the complete slide-authoring source. It uses Codex's bundled `@oai/artifact-tool` runtime to generate the raw deck, per-slide PNGs, per-slide layout JSON, an inspection snapshot, and the first-slide WebP preview.

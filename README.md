@@ -101,7 +101,9 @@ pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provid
 
 ![Rendered first slide of the synthetic PPTrans public demo](docs/assets/pptrans-demo-preview.webp)
 
-`identity` is deliberately not a translator: it returns each source span unchanged. This demo proves inspection, exact-ID orchestration, patch construction, staging, verification, and output publication without a network call or API key. The committed integration test currently asserts 3 slides, 41 translation units, 45 verified spans, zero inspection warnings, normalized author-owned metadata, and a successful independent `python-pptx` reopen in [tests/test_public_demo.py](tests/test_public_demo.py). The preview above is a rendered QA artifact, not proof of pixel identity with PowerPoint. See [demo source, rebuild, and QA notes](docs/DEMO.md).
+`identity` is deliberately not a translator: it returns each source span unchanged. This demo proves inspection, exact-ID orchestration, patch construction, staging, verification, and output publication without a network call or API key. The committed integration test currently asserts 3 slides, 41 translation units, 45 verified spans, zero inspection warnings, normalized author-owned metadata, and a successful independent `python-pptx` reopen in [tests/test_public_demo.py](tests/test_public_demo.py).
+
+The same source and identity output were also accepted by LibreOffice 26.8.0.3 on Windows at commit `37733fa`: both packages were byte-identical, all three 1921 × 1080 render pairs had matching SHA-256 values and pixel buffers, every slide passed visual and automated overflow review, and the renderer left no private workspace or helper process behind. The [machine-readable native QA record](docs/qa/2026-08-28-windows-libreoffice.json) carries the exact versions, hashes, dimensions, and scope. This is LibreOffice evidence for one synthetic fixture—not a translation-quality result or a claim of pixel identity with Microsoft PowerPoint. See [demo source, rebuild, and QA notes](docs/DEMO.md).
 
 ## Translate with a provider
 
@@ -137,6 +139,7 @@ The repository's quality claims are scoped to checks that actually run:
 - [Provider contract tests](tests/test_provider_adapters.py) inject SDK clients and exercise strict schemas and safe error mapping without network access.
 - [Review-foundation tests](tests/test_security_review_foundation.py) scan the v2 package for dynamic execution calls and test renderer/image safety boundaries.
 - [The public demo test](tests/test_public_demo.py) keeps the committed PPTX synchronized with the real offline pipeline.
+- [The native renderer acceptance record](docs/qa/2026-08-28-windows-libreoffice.json) ties one complete Windows/LibreOffice run to a commit, fixture digest, exact renderer versions, per-slide hashes, pixel comparison, visual review, overflow review, and cleanup checks.
 - [CI](.github/workflows/ci.yml) is configured for linting, formatting, strict typing, branch coverage, Bandit, dependency audit, skill validation, and package checks on Python 3.12, plus deterministic tests on Linux, Windows, and macOS at Python 3.10 and 3.13.
 - [Security automation](.github/workflows/security.yml) configures CodeQL, full-history secret scanning, and a weekly schedule; actions are pinned to commit SHAs.
 
@@ -150,7 +153,7 @@ This is a narrow local core benchmark, not a provider, network, translation-memo
 
 ## Optional review foundation
 
-Installing `.[review]` adds PyMuPDF support for a local LibreOffice → PDF → bounded PNG renderer. Its explicit Impress PDF export includes hidden slides so page-count verification covers the full deck. The repository also contains strict issue schemas, deterministic local score/pass evaluation, privacy modes, endpoint checks, log redaction, request/pixel/token/repair budgets, and typed allowlisted repair plans.
+Installing `.[review]` adds PyMuPDF support for a local LibreOffice → PDF → bounded PNG renderer. Its explicit Impress PDF export includes hidden slides so page-count verification covers the full deck. Rendering uses separate private and publication workspaces: bounded cleanup retries must retire the source snapshot, PDF, raster workspace, and isolated LibreOffice profile before any final image is linked into place; cleanup or publication failures fail closed and roll back owned outputs. The repository also contains strict issue schemas, deterministic local score/pass evaluation, privacy modes, endpoint checks, log redaction, request/pixel/token/repair budgets, and typed allowlisted repair plans.
 
 These are reviewed building blocks, not a completed visual-review product. There is no multimodal review-provider adapter, CLI review command, PowerPoint-equivalent rendering guarantee, or repair executor in v2 today. LibreOffice is a separate system dependency and should be isolated at the OS level when opening untrusted decks.
 

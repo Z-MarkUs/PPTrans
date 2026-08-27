@@ -101,7 +101,9 @@ pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provid
 
 ![PPTrans 合成公开 demo 的第一张幻灯片渲染预览](docs/assets/pptrans-demo-preview.webp)
 
-`identity` 并不翻译，而是原样返回每个源文本片段。这个 demo 无需网络或 API key，即可验证检查、精确 ID 编排、补丁构建、临时写入、验证和输出发布。当前 [tests/test_public_demo.py](tests/test_public_demo.py) 明确断言：3 张幻灯片、41 个翻译单元、45 个已验证文本片段、零检查警告、规范化的作者自有元数据，并能由独立的 `python-pptx` 成功重新打开。上图是渲染 QA 产物，不代表与 PowerPoint 像素一致。源文件、重建与 QA 说明见[公开 demo 文档](docs/DEMO.md)。
+`identity` 并不翻译，而是原样返回每个源文本片段。这个 demo 无需网络或 API key，即可验证检查、精确 ID 编排、补丁构建、临时写入、验证和输出发布。当前 [tests/test_public_demo.py](tests/test_public_demo.py) 明确断言：3 张幻灯片、41 个翻译单元、45 个已验证文本片段、零检查警告、规范化的作者自有元数据，并能由独立的 `python-pptx` 成功重新打开。
+
+在 commit `37733fa`，同一源 deck 与 identity 输出还通过了 Windows 上 LibreOffice 26.8.0.3 的原生验收：两份 PPTX 字节一致；三组 1921 × 1080 渲染图的 SHA-256 与像素缓冲区逐一一致；每张幻灯片均通过人工视觉检查与自动越界检查；renderer 完成后没有留下私有工作目录或辅助进程。[机器可读的原生 QA 记录](docs/qa/2026-08-28-windows-libreoffice.json)包含精确版本、hash、尺寸与证据边界。这只是一个合成 fixture 的 LibreOffice 证据，不衡量翻译质量，也不代表与 Microsoft PowerPoint 像素一致。源文件、重建与 QA 说明见[公开 demo 文档](docs/DEMO.md)。
 
 ## 使用真实服务商翻译
 
@@ -135,6 +137,7 @@ CLI 会在构造付费服务商 client 前保守检查完整计划，缓存查�
 - [服务商契约测试](tests/test_provider_adapters.py)注入 SDK client，在不联网的情况下检查严格 schema 与安全错误映射。
 - [审查基础安全测试](tests/test_security_review_foundation.py)扫描 v2 包中的动态执行调用，并验证 renderer/图片边界。
 - [公开 demo 测试](tests/test_public_demo.py)确保仓库中的 PPTX 始终与真实离线流水线同步。
+- [原生 renderer 验收记录](docs/qa/2026-08-28-windows-libreoffice.json)把一次完整的 Windows/LibreOffice 运行绑定到 commit、fixture digest、精确 renderer 版本、逐页 hash、像素比较、人工视觉检查、自动越界检查与清理结果。
 - [CI](.github/workflows/ci.yml)在 Python 3.12 上配置了 lint、格式、严格类型检查、分支覆盖率、Bandit、依赖审计、skill 校验与构建检查，并在 Python 3.10 和 3.13 的 Linux、Windows、macOS 上运行确定性测试。
 - [安全工作流](.github/workflows/security.yml)配置了 CodeQL、完整 Git 历史 secret scan 和每周定时任务；Actions 均固定到 commit SHA。
 
@@ -148,7 +151,7 @@ CLI 会在构造付费服务商 client 前保守检查完整计划，缓存查�
 
 ## 可选视觉审查基础
 
-安装 `.[review]` 会加入 PyMuPDF，用于本地 LibreOffice → PDF → 有界 PNG 渲染。其显式 Impress PDF 导出会包含隐藏幻灯片，因此页数校验覆盖完整 deck。仓库也包含严格问题 schema、本地确定性评分/通过判定、隐私模式、endpoint 校验、日志脱敏、请求/像素/token/修复轮次预算，以及类型化的 allowlist 修复计划。
+安装 `.[review]` 会加入 PyMuPDF，用于本地 LibreOffice → PDF → 有界 PNG 渲染。其显式 Impress PDF 导出会包含隐藏幻灯片，因此页数校验覆盖完整 deck。渲染使用彼此分离的私有工作目录与发布暂存目录：只有在有界重试成功清除源文件快照、PDF、光栅工作区与隔离的 LibreOffice profile 后，最终图片才会被链接到目标目录；清理或发布失败会安全终止，并回滚属于本次事务的输出。仓库也包含严格问题 schema、本地确定性评分/通过判定、隐私模式、endpoint 校验、日志脱敏、请求/像素/token/修复轮次预算，以及类型化的 allowlist 修复计划。
 
 这些只是经过测试的基础组件，不是已完成的视觉审查产品。目前没有多模态审查服务商、CLI 审查命令、与 PowerPoint 像素等价的渲染保证或修复执行器。LibreOffice 是独立系统依赖；处理不可信 deck 时仍应使用操作系统级隔离。
 

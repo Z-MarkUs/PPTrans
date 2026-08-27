@@ -11,7 +11,7 @@ include SECURITY.md
 recursive-include .agents *.md *.yaml
 recursive-include .claude *.md *.yaml
 recursive-include benchmarks *.json *.md
-recursive-include docs *.md *.webp
+recursive-include docs *.json *.md *.webp
 recursive-include examples *.pptx *.yaml
 recursive-include scripts *.py *.mjs
 recursive-include tests *.py

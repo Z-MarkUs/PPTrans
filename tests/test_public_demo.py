@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 
 from pptx import Presentation
@@ -12,6 +14,7 @@ from pptrans.application.translate import translate_plan
 from pptrans.ooxml import inspect_deck
 
 DEMO_PATH = Path(__file__).parents[1] / "examples" / "pptrans-demo.en.pptx"
+NATIVE_QA_PATH = Path(__file__).parents[1] / "docs" / "qa" / "2026-08-28-windows-libreoffice.json"
 
 
 def test_public_demo_runs_end_to_end_without_network(tmp_path: Path) -> None:
@@ -35,3 +38,32 @@ def test_public_demo_runs_end_to_end_without_network(tmp_path: Path) -> None:
     assert reopened.core_properties.last_modified_by == "Hehan Zhao"
     assert reopened.core_properties.title == "PPTrans v2 - verifiable OOXML translation demo"
     assert reopened.core_properties.subject.startswith("Synthetic fixture")
+
+
+def test_native_qa_record_is_pinned_to_the_committed_demo() -> None:
+    record = json.loads(NATIVE_QA_PATH.read_text(encoding="utf-8"))
+    demo_bytes = DEMO_PATH.read_bytes()
+    demo_sha256 = hashlib.sha256(demo_bytes).hexdigest()
+
+    assert record["schema_version"] == 1
+    assert record["presentations"]["source"] == {
+        "path": "examples/pptrans-demo.en.pptx",
+        "bytes": len(demo_bytes),
+        "sha256": demo_sha256,
+    }
+    assert record["presentations"]["identity_output"] == {
+        "bytes": len(demo_bytes),
+        "sha256": demo_sha256,
+        "byte_identical_to_source": True,
+    }
+    assert [slide["slide_number"] for slide in record["slides"]] == [1, 2, 3]
+    assert all(slide["pixel_equal"] is True for slide in record["slides"])
+    assert all(
+        slide["source_png_sha256"] == slide["identity_png_sha256"] for slide in record["slides"]
+    )
+    assert record["visual_review"]["reviewed_slide_count"] == 3
+    assert record["cleanup"] == {
+        "private_render_workspace_present_after_success": False,
+        "publication_staging_present_after_success": False,
+        "libreoffice_process_present_after_success": False,
+    }

@@ -160,7 +160,8 @@ The test fixture covers mixed runs, fonts, emphasis, colors, hyperlinks, paragra
 
 The review foundation is deliberately separated from the translation transaction:
 
-- `LibreOfficeRenderer` copies the input once into a private per-run directory, then hashes, counts, converts, and rasterizes that same snapshot. It uses an isolated LibreOffice profile, explicitly includes hidden slides in the Impress PDF export, verifies the expected whole-deck page count when available, and produces bounded PNGs through the optional PyMuPDF dependency.
+- `LibreOfficeRenderer` copies the input once into a private operating-system temporary directory, then hashes, counts, converts, and rasterizes that same fixed-name snapshot. It uses an isolated LibreOffice profile, explicitly includes hidden slides in the Impress PDF export, verifies the expected whole-deck page count when available, and produces bounded PNGs through the optional PyMuPDF dependency.
+- Validated PNGs are copied into a separate same-filesystem publication directory. Bounded retries for short-lived `ENOTEMPTY`, busy, and access races must remove the entire source/PDF/profile/raster workspace—and observe a quiet absence interval—before the first final hard link is created. An exhausted private cleanup publishes nothing. Final-link failures roll back only paths that retain the recorded staged-file identity; an exhausted publication-stage cleanup likewise rolls back owned final images before returning an error.
 - strict review schemas accept observations only; pass/fail and a weighted score are computed locally;
 - privacy policies decide whether original, translated, or overlay images may be selected for upload and whether manifest text is included;
 - budgets reserve requests, slides, pixels, output tokens, and repair rounds before work;

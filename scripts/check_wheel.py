@@ -20,6 +20,7 @@ SDIST_REQUIRED_SUFFIXES = {
     "benchmarks/results/2026-08-28-windows-python312.json",
     "docs/ARCHITECTURE.md",
     "docs/assets/pptrans-demo-preview.webp",
+    "docs/qa/2026-08-28-windows-libreoffice.json",
     "examples/pptrans-demo.en.pptx",
     "scripts/build_demo.mjs",
     "tests/test_public_demo.py",

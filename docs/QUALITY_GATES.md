@@ -30,6 +30,8 @@ Changes to OOXML inspection, locator resolution, text patching, preservation ver
 - the output reopens with `python-pptx` and can be rendered by the supported office renderer;
 - partial failures do not overwrite the source or leave a false-success output.
 
+Renderer changes must additionally prove that the private source/PDF/profile/raster workspace is absent before the first final image is published, transient cleanup races are retried within a fixed bound, persistent cleanup failure publishes nothing, publication failure rolls back only owned links, and every successful or recoverable-failure path leaves no renderer staging directory. When a compatible office runtime is available, open and rasterize every slide from a synthetic source and its offline identity output, compare every render pair, inspect every slide, run the padded-canvas overflow check, and commit a scoped environment-and-hash record rather than generated working images.
+
 A visual golden-image comparison detects regression against a known output; it does not by itself prove translation accuracy or universal formatting preservation.
 
 ## 3. Provider gate
