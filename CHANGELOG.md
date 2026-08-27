@@ -38,6 +38,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - CLI provider preflight defaults to at most 2,000 units, 100 logical calls, 2,000,000 source/context characters, 5,000,000 serialized characters across all batches, and 1,000,000 characters per request.
 - Default publication uses an atomic no-clobber path; destination replacement requires explicit overwrite permission.
 - Low-level patch/rewrite APIs are no-clobber by default, reject source aliases, and refuse symbolic-link destinations even with explicit overwrite.
+- Deck publication now treats private staging cleanup as a commit barrier: transient Windows unlink failures receive bounded retries, exhausted cleanup rolls back only identity-matching final links, and foreign replacements plus any residual paths are reported without deletion.
 - Tests use the installed `src` package directly instead of a legacy root-path import shim.
 - LibreOffice rendering now treats private-workspace cleanup as a commit barrier: validated PNGs move to separate same-filesystem staging, bounded transient-error retries retire the source/PDF/profile/raster workspace before publication, and late publication-stage cleanup failure rolls back owned final links.
 - PyMuPDF discovery and loading now use its canonical `pymupdf` module name instead of the collision-prone legacy `fitz` alias.

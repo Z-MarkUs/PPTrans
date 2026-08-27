@@ -140,7 +140,7 @@ Verification reopens both packages and proves:
 
 Target slide XML is reserialized, so byte-for-byte equality is not promised for a changed slide part. The stronger relevant assertion is that its canonical structure is unchanged and only authorized text/whitespace fields differ.
 
-After successful verification, the staged file is flushed with `fsync`. Default publication uses an atomic hard link that fails if a destination appeared after preflight, closing the no-overwrite race without exposing a partial file. Filesystems that cannot provide this primitive fail closed. With explicit overwrite permission, the verified staged file atomically replaces the destination. A failure removes the staged file; an earlier destination remains intact through inspection, translation, patching, and verification failures.
+After successful verification, the staged file is flushed with `fsync`. Default publication uses an atomic hard link that fails if a destination appeared after preflight, closing the no-overwrite race without exposing a partial file. Filesystems that cannot provide this primitive fail closed. With explicit overwrite permission, the verified staged file atomically replaces the destination. Private-file removal uses bounded retries for transient Windows sharing races, and success is returned only after the staged path is absent. If post-publication cleanup cannot complete, PPTrans rolls back only a final path that still has the recorded staged-file identity, preserves foreign replacements, and reports the exact final/staging residual state. An earlier destination remains intact through inspection, translation, patching, and verification failures.
 
 ## Preservation contract
 

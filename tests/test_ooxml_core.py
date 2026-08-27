@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 import zipfile
 from pathlib import Path
 
@@ -202,6 +203,196 @@ def test_no_overwrite_publish_fails_closed_when_atomic_link_is_unavailable(
 
     assert not output.exists()
     assert not tuple(tmp_path.glob(".unsupported-filesystem.pptrans-*.pptx"))
+
+
+def test_no_overwrite_publish_retries_transient_stage_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "complex.pptx"
+    output = tmp_path / "retry-cleanup.pptx"
+    create_complex_deck(source)
+    plan = inspect_deck(source, source_lang="en", target_lang="fr")
+    original_unlink = deck_service._unlink_path
+    stage_attempts = 0
+    sleeps: list[float] = []
+
+    def transient_unlink(path: Path) -> None:
+        nonlocal stage_attempts
+        if path.name.startswith(".retry-cleanup.pptrans-"):
+            stage_attempts += 1
+            if stage_attempts < 3:
+                error = PermissionError(errno.EACCES, "injected sharing violation")
+                error.winerror = 32
+                raise error
+        original_unlink(path)
+
+    monkeypatch.setattr(deck_service, "_unlink_path", transient_unlink)
+    monkeypatch.setattr(deck_service.time, "sleep", sleeps.append)
+
+    result = write_translated_deck(plan, translated_values(plan), output)
+
+    assert result.output_path == output
+    assert stage_attempts == 3
+    assert sleeps == [0.05, 0.1]
+    assert output.is_file()
+    assert not tuple(tmp_path.glob(".retry-cleanup.pptrans-*.pptx"))
+
+
+def test_persistent_stage_cleanup_rolls_back_only_the_owned_final(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "complex.pptx"
+    output = tmp_path / "persistent-cleanup.pptx"
+    create_complex_deck(source)
+    plan = inspect_deck(source, source_lang="en", target_lang="fr")
+    original_unlink = deck_service._unlink_path
+    stage_attempts = 0
+    sleeps: list[float] = []
+
+    def persistent_unlink(path: Path) -> None:
+        nonlocal stage_attempts
+        if path.name.startswith(".persistent-cleanup.pptrans-"):
+            stage_attempts += 1
+            raise PermissionError(errno.EACCES, "injected persistent sharing violation")
+        original_unlink(path)
+
+    monkeypatch.setattr(deck_service, "_unlink_path", persistent_unlink)
+    monkeypatch.setattr(deck_service.time, "sleep", sleeps.append)
+
+    with pytest.raises(
+        PatchValidationError,
+        match=r"owned final output was rolled back; private staging remains",
+    ):
+        write_translated_deck(plan, translated_values(plan), output)
+
+    assert stage_attempts == len(deck_service._UNLINK_RETRY_DELAYS_SECONDS) + 1
+    assert sleeps == list(deck_service._UNLINK_RETRY_DELAYS_SECONDS)
+    assert not output.exists()
+    assert len(tuple(tmp_path.glob(".persistent-cleanup.pptrans-*.pptx"))) == 1
+
+
+def test_cleanup_rollback_preserves_a_foreign_final_replacement(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "complex.pptx"
+    output = tmp_path / "foreign-replacement.pptx"
+    sentinel = b"created by another process"
+    create_complex_deck(source)
+    plan = inspect_deck(source, source_lang="en", target_lang="fr")
+    original_unlink = deck_service._unlink_path
+    replaced = False
+
+    def replace_final_then_fail(path: Path) -> None:
+        nonlocal replaced
+        if path.name.startswith(".foreign-replacement.pptrans-"):
+            if not replaced:
+                output.unlink()
+                output.write_bytes(sentinel)
+                replaced = True
+            raise OSError(errno.EIO, "injected staging cleanup failure")
+        original_unlink(path)
+
+    monkeypatch.setattr(deck_service, "_unlink_path", replace_final_then_fail)
+
+    with pytest.raises(
+        PatchValidationError,
+        match=r"foreign replacement at final output was preserved.*private staging remains",
+    ):
+        write_translated_deck(plan, translated_values(plan), output)
+
+    assert replaced is True
+    assert output.read_bytes() == sentinel
+    assert len(tuple(tmp_path.glob(".foreign-replacement.pptrans-*.pptx"))) == 1
+
+
+def test_cleanup_reports_owned_final_and_stage_when_both_unlinks_fail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "complex.pptx"
+    output = tmp_path / "double-residual.pptx"
+    create_complex_deck(source)
+    plan = inspect_deck(source, source_lang="en", target_lang="fr")
+
+    def reject_owned_unlink(path: Path) -> None:
+        if path == output or path.name.startswith(".double-residual.pptrans-"):
+            raise PermissionError(errno.EACCES, "injected persistent sharing violation")
+        path.unlink()
+
+    monkeypatch.setattr(deck_service, "_unlink_path", reject_owned_unlink)
+    monkeypatch.setattr(deck_service.time, "sleep", lambda _delay: None)
+
+    with pytest.raises(
+        PatchValidationError,
+        match=r"owned final output remains.*private staging remains",
+    ):
+        write_translated_deck(plan, translated_values(plan), output)
+
+    assert output.is_file()
+    assert len(tuple(tmp_path.glob(".double-residual.pptrans-*.pptx"))) == 1
+
+
+def test_prepublication_failure_survives_transient_stage_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "complex.pptx"
+    output = tmp_path / "prepublish-failure.pptx"
+    create_complex_deck(source)
+    plan = inspect_deck(source, source_lang="en", target_lang="fr")
+    primary_error = RuntimeError("injected verifier failure")
+    original_unlink = deck_service._unlink_path
+    stage_attempts = 0
+
+    def fail_verification(*_args: object, **_kwargs: object) -> None:
+        raise primary_error
+
+    def transient_unlink(path: Path) -> None:
+        nonlocal stage_attempts
+        if path.name.startswith(".prepublish-failure.pptrans-"):
+            stage_attempts += 1
+            if stage_attempts == 1:
+                raise PermissionError(errno.EACCES, "injected sharing violation")
+        original_unlink(path)
+
+    monkeypatch.setattr(deck_service, "verify_output", fail_verification)
+    monkeypatch.setattr(deck_service, "_unlink_path", transient_unlink)
+    monkeypatch.setattr(deck_service.time, "sleep", lambda _delay: None)
+
+    with pytest.raises(RuntimeError, match="injected verifier failure") as raised:
+        write_translated_deck(plan, translated_values(plan), output)
+
+    assert raised.value is primary_error
+    assert stage_attempts == 2
+    assert not output.exists()
+    assert not tuple(tmp_path.glob(".prepublish-failure.pptrans-*.pptx"))
+
+
+def test_prepublication_cleanup_error_retains_the_primary_failure_as_cause(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "complex.pptx"
+    output = tmp_path / "prepublish-residual.pptx"
+    create_complex_deck(source)
+    plan = inspect_deck(source, source_lang="en", target_lang="fr")
+    primary_error = RuntimeError("injected verifier failure")
+
+    def fail_verification(*_args: object, **_kwargs: object) -> None:
+        raise primary_error
+
+    def reject_stage_unlink(path: Path) -> None:
+        if path.name.startswith(".prepublish-residual.pptrans-"):
+            raise PermissionError(errno.EACCES, "injected persistent sharing violation")
+        path.unlink()
+
+    monkeypatch.setattr(deck_service, "verify_output", fail_verification)
+    monkeypatch.setattr(deck_service, "_unlink_path", reject_stage_unlink)
+    monkeypatch.setattr(deck_service.time, "sleep", lambda _delay: None)
+
+    with pytest.raises(PatchValidationError, match="staging cleanup was incomplete") as raised:
+        write_translated_deck(plan, translated_values(plan), output)
+
+    assert raised.value.__cause__ is primary_error
+    assert not output.exists()
+    assert len(tuple(tmp_path.glob(".prepublish-residual.pptrans-*.pptx"))) == 1
 
 
 def test_overwrite_rechecks_for_a_symlink_created_during_the_run(
