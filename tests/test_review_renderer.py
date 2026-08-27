@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shutil
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
@@ -17,6 +18,7 @@ from pptrans.adapters.renderers import (
     RendererUnavailable,
     RenderRequest,
     UnsafeRenderInput,
+    libreoffice,
 )
 
 
@@ -56,6 +58,7 @@ def _renderer(
     page_count: int = 1,
     slide_count: int | None = 1,
     linker: Callable[[Path, Path], None] = os.link,
+    tree_cleaner: Callable[[Path], None] = libreoffice._remove_tree_with_retry,
 ) -> LibreOfficeRenderer:
     executable = tmp_path / "soffice.exe"
     executable.write_bytes(b"fake executable")
@@ -74,6 +77,7 @@ def _renderer(
             runner=fake_runner,
             environment={"PATH": "safe", "OPENAI_API_KEY": "must-not-leak"},
             linker=linker,
+            tree_cleaner=tree_cleaner,
         )
     return LibreOfficeRenderer(
         executable=executable,
@@ -82,6 +86,7 @@ def _renderer(
         environment={"PATH": "safe", "OPENAI_API_KEY": "must-not-leak"},
         slide_counter=lambda _source: slide_count,
         linker=linker,
+        tree_cleaner=tree_cleaner,
     )
 
 
@@ -108,9 +113,11 @@ def test_libreoffice_renderer_uses_argument_list_and_isolated_profile(tmp_path: 
     assert result.slides[0].width == 40
     args, kwargs = calls[0]
     rendered_source = Path(args[-1])
-    assert rendered_source.name == source.name
+    assert rendered_source.name == "input.pptx"
     assert rendered_source != source.resolve()
-    assert rendered_source.parent.parent == output_dir.resolve()
+    assert rendered_source.parent.name.startswith(".pptrans-render-")
+    assert rendered_source.parent.parent != output_dir.resolve()
+    assert not rendered_source.parent.exists()
     assert kwargs["shell"] is False
     assert kwargs["check"] is False
     assert kwargs["cwd"]
@@ -121,6 +128,93 @@ def test_libreoffice_renderer_uses_argument_list_and_isolated_profile(tmp_path: 
     assert '"value":"true"' in export_filter
     assert "OPENAI_API_KEY" not in kwargs["env"]
     assert not (tmp_path / "do-not-run").exists()
+    assert list(output_dir.glob(".pptrans-*-*")) == []
+
+
+def test_renderer_removes_private_workspace_before_first_final_link(tmp_path: Path) -> None:
+    calls: list[tuple[list[str], dict[str, Any]]] = []
+    private_root: Path | None = None
+
+    def ordered_link(source: Path, destination: Path) -> None:
+        nonlocal private_root
+        rendered_source = Path(calls[0][0][-1])
+        private_root = rendered_source.parent
+        assert private_root.name.startswith(".pptrans-render-")
+        assert not private_root.exists()
+        os.link(source, destination)
+
+    renderer = _renderer(tmp_path, calls, linker=ordered_link)
+    source = tmp_path / "deck.pptx"
+    source.write_bytes(b"synthetic pptx")
+    output_dir = tmp_path / "renders"
+
+    result = renderer.render(RenderRequest(source, output_dir))
+
+    assert private_root is not None
+    assert not private_root.exists()
+    assert len(result.slides) == 1
+    assert list(output_dir.glob(".pptrans-*-*")) == []
+
+
+def test_private_cleanup_failure_prevents_publication(tmp_path: Path) -> None:
+    calls: list[tuple[list[str], dict[str, Any]]] = []
+    links = 0
+    private_cleanup_calls = 0
+
+    def cleaner(path: Path) -> None:
+        nonlocal private_cleanup_calls
+        if path.name.startswith(".pptrans-render-"):
+            private_cleanup_calls += 1
+            if private_cleanup_calls == 1:
+                raise RenderError("injected private cleanup exhaustion")
+        shutil.rmtree(path)
+
+    def linker(_source: Path, _destination: Path) -> None:
+        nonlocal links
+        links += 1
+
+    renderer = _renderer(
+        tmp_path,
+        calls,
+        linker=linker,
+        tree_cleaner=cleaner,
+    )
+    source = tmp_path / "deck.pptx"
+    source.write_bytes(b"synthetic pptx")
+    output_dir = tmp_path / "renders"
+
+    with pytest.raises(RenderError, match="injected private cleanup exhaustion"):
+        renderer.render(RenderRequest(source, output_dir))
+
+    assert private_cleanup_calls == 2
+    assert links == 0
+    assert list(output_dir.glob("*.png")) == []
+    assert list(output_dir.glob(".pptrans-*-*")) == []
+
+
+def test_publication_cleanup_failure_rolls_back_final_images(tmp_path: Path) -> None:
+    calls: list[tuple[list[str], dict[str, Any]]] = []
+    publication_cleanup_calls = 0
+
+    def cleaner(path: Path) -> None:
+        nonlocal publication_cleanup_calls
+        if path.name.startswith(".pptrans-publish-"):
+            publication_cleanup_calls += 1
+            if publication_cleanup_calls == 1:
+                raise RenderError("injected publication cleanup exhaustion")
+        shutil.rmtree(path)
+
+    renderer = _renderer(tmp_path, calls, tree_cleaner=cleaner)
+    source = tmp_path / "deck.pptx"
+    source.write_bytes(b"synthetic pptx")
+    output_dir = tmp_path / "renders"
+
+    with pytest.raises(RenderError, match="injected publication cleanup exhaustion"):
+        renderer.render(RenderRequest(source, output_dir))
+
+    assert publication_cleanup_calls == 2
+    assert list(output_dir.glob("*.png")) == []
+    assert list(output_dir.glob(".pptrans-*-*")) == []
 
 
 def test_renderer_uses_one_private_source_snapshot(tmp_path: Path) -> None:
@@ -182,10 +276,13 @@ def test_renderer_rejects_invalid_raster_output(tmp_path: Path) -> None:
 
     executable = tmp_path / "soffice.exe"
     executable.write_bytes(b"fake")
+    private_root: Path | None = None
 
     def fake_runner(args: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        nonlocal private_root
         conversion_dir = Path(args[args.index("--outdir") + 1])
         source = Path(args[-1])
+        private_root = source.parent
         (conversion_dir / f"{source.stem}.pdf").write_bytes(b"%PDF-fake")
         return subprocess.CompletedProcess(args, 0, "", "")
 
@@ -197,8 +294,13 @@ def test_renderer_rejects_invalid_raster_output(tmp_path: Path) -> None:
         runner=fake_runner,
         slide_counter=lambda _source: 1,
     )
+    output_dir = tmp_path / "out"
     with pytest.raises(RenderError, match="no slide images"):
-        renderer.render(RenderRequest(source, tmp_path / "out"))
+        renderer.render(RenderRequest(source, output_dir))
+
+    assert private_root is not None
+    assert not private_root.exists()
+    assert list(output_dir.glob(".pptrans-*-*")) == []
 
 
 def test_renderer_rejects_dropped_raster_pages_before_publication(tmp_path: Path) -> None:

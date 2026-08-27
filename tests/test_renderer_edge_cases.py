@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import errno
+import shutil
 import subprocess
 from dataclasses import replace
 from pathlib import Path
@@ -216,11 +218,132 @@ def test_page_and_pixel_helpers_accept_limits_and_reject_overflow() -> None:
         libreoffice._add_page_pixels(5, 2, 3, 10)
 
 
+def test_workspace_cleanup_retries_windows_directory_not_empty(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "late.tmp").write_bytes(b"late")
+    attempts = 0
+    sleeps: list[float] = []
+
+    def remover(path: Path) -> None:
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            error = OSError("directory is not empty")
+            error.winerror = 145  # type: ignore[attr-defined]
+            raise error
+        shutil.rmtree(path)
+
+    libreoffice._remove_tree_with_retry(
+        workspace,
+        remover=remover,
+        sleeper=sleeps.append,
+        retry_delays=(0.05, 0.1, 0.2),
+        settle_seconds=0,
+    )
+
+    assert attempts == 3
+    assert sleeps == [0.05, 0.1]
+    assert not workspace.exists()
+
+
+def test_workspace_cleanup_retry_is_bounded(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    attempts = 0
+    sleeps: list[float] = []
+    last_error: OSError | None = None
+
+    def remover(_path: Path) -> None:
+        nonlocal attempts, last_error
+        attempts += 1
+        last_error = OSError(errno.ENOTEMPTY, "directory is not empty")
+        raise last_error
+
+    with pytest.raises(RenderError, match="temporary render workspace") as raised:
+        libreoffice._remove_tree_with_retry(
+            workspace,
+            remover=remover,
+            sleeper=sleeps.append,
+            retry_delays=(0.05, 0.1),
+            settle_seconds=0,
+        )
+
+    assert attempts == 3
+    assert sleeps == [0.05, 0.1]
+    assert raised.value.__cause__ is last_error
+
+
+def test_workspace_cleanup_detects_late_recreation(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    removals = 0
+    recreated = False
+
+    def remover(path: Path) -> None:
+        nonlocal removals
+        removals += 1
+        shutil.rmtree(path)
+
+    def sleeper(_seconds: float) -> None:
+        nonlocal recreated
+        if removals == 1 and not recreated and not workspace.exists():
+            workspace.mkdir()
+            recreated = True
+
+    libreoffice._remove_tree_with_retry(
+        workspace,
+        remover=remover,
+        sleeper=sleeper,
+        retry_delays=(0.05,),
+        settle_seconds=0.01,
+    )
+
+    assert recreated is True
+    assert removals == 2
+    assert not workspace.exists()
+
+
+def test_workspace_cleanup_rejects_nontransient_error_immediately(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    attempts = 0
+    sleeps: list[float] = []
+
+    def remover(_path: Path) -> None:
+        nonlocal attempts
+        attempts += 1
+        raise OSError(errno.EIO, "device failure")
+
+    with pytest.raises(RenderError) as raised:
+        libreoffice._remove_tree_with_retry(
+            workspace,
+            remover=remover,
+            sleeper=sleeps.append,
+            retry_delays=(0.05, 0.1),
+            settle_seconds=0,
+        )
+
+    assert attempts == 1
+    assert sleeps == []
+    assert isinstance(raised.value.__cause__, OSError)
+
+
 def test_pymupdf_availability_uses_module_discovery(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(libreoffice.importlib.util, "find_spec", lambda _name: None)
+    discovered: list[str] = []
+
+    def missing(name: str) -> None:
+        discovered.append(name)
+
+    monkeypatch.setattr(libreoffice.importlib.util, "find_spec", missing)
     assert PyMuPdfRasterizer.available() is False
-    monkeypatch.setattr(libreoffice.importlib.util, "find_spec", lambda _name: object())
+    monkeypatch.setattr(
+        libreoffice.importlib.util,
+        "find_spec",
+        lambda name: object() if name == "pymupdf" else None,
+    )
     assert PyMuPdfRasterizer.available() is True
+    assert discovered == ["pymupdf"]
 
 
 def test_pymupdf_rasterizer_fails_closed_when_extra_is_missing(
@@ -273,7 +396,7 @@ class _FakeDocument:
         return iter(self._pages)
 
 
-def _fake_fitz(document: _FakeDocument) -> SimpleNamespace:
+def _fake_pymupdf(document: _FakeDocument) -> SimpleNamespace:
     return SimpleNamespace(
         open=lambda _path: document,
         Matrix=lambda x, y: (x, y),
@@ -287,7 +410,15 @@ def test_pymupdf_rasterizer_writes_numbered_pages(
     rasterizer = PyMuPdfRasterizer()
     document = _FakeDocument((_FakePage(10, 6), _FakePage(10, 6)))
     monkeypatch.setattr(rasterizer, "available", lambda: True)
-    monkeypatch.setattr(libreoffice.importlib, "import_module", lambda _name: _fake_fitz(document))
+    monkeypatch.setattr(
+        libreoffice.importlib,
+        "import_module",
+        lambda name: (
+            _fake_pymupdf(document)
+            if name == "pymupdf"
+            else pytest.fail(f"unexpected import: {name}")
+        ),
+    )
 
     paths = rasterizer.rasterize(
         tmp_path / "deck.pdf",
@@ -308,7 +439,15 @@ def test_pymupdf_rasterizer_preserves_policy_errors(
     rasterizer = PyMuPdfRasterizer()
     document = _FakeDocument((), page_count=0)
     monkeypatch.setattr(rasterizer, "available", lambda: True)
-    monkeypatch.setattr(libreoffice.importlib, "import_module", lambda _name: _fake_fitz(document))
+    monkeypatch.setattr(
+        libreoffice.importlib,
+        "import_module",
+        lambda name: (
+            _fake_pymupdf(document)
+            if name == "pymupdf"
+            else pytest.fail(f"unexpected import: {name}")
+        ),
+    )
 
     with pytest.raises(RenderError, match="empty PDF") as raised:
         rasterizer.rasterize(
@@ -332,7 +471,11 @@ def test_pymupdf_rasterizer_wraps_backend_failures(
         Matrix=lambda x, y: (x, y),
     )
     monkeypatch.setattr(rasterizer, "available", lambda: True)
-    monkeypatch.setattr(libreoffice.importlib, "import_module", lambda _name: backend)
+    monkeypatch.setattr(
+        libreoffice.importlib,
+        "import_module",
+        lambda name: backend if name == "pymupdf" else pytest.fail(f"unexpected import: {name}"),
+    )
 
     with pytest.raises(RenderError, match="could not rasterize") as raised:
         rasterizer.rasterize(

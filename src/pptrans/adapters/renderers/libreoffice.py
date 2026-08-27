@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
+import errno
 import importlib
 import importlib.util
 import math
 import os
 import re
 import shutil
+import stat
 
 # Required for a fixed argv with shell=False and the sanitized environment built below.
 import subprocess  # nosec B404
 import tempfile
+import time
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from pathlib import Path
 
 from pptrans.domain.errors import InvalidPresentationError
@@ -48,6 +52,79 @@ _SECRET_ENVIRONMENT_KEY = re.compile(
 
 SlideCounter = Callable[[Path], int]
 Linker = Callable[[Path, Path], None]
+TreeCleaner = Callable[[Path], None]
+
+_CLEANUP_RETRY_DELAYS_SECONDS = (0.05, 0.1, 0.2, 0.4, 0.8)
+_CLEANUP_SETTLE_SECONDS = 0.05
+_TRANSIENT_CLEANUP_ERRNOS = frozenset({errno.EACCES, errno.EBUSY, errno.ENOTEMPTY, errno.EPERM})
+_TRANSIENT_CLEANUP_WINERRORS = frozenset({5, 32, 33, 145})
+
+
+@dataclass(frozen=True, slots=True)
+class _StagedSlide:
+    staged_output: Path
+    final_output: Path
+    rendered_slide: RenderedSlide
+    device: int
+    inode: int
+
+
+@dataclass(slots=True)
+class _RenderTransaction:
+    private_root: Path
+    publication_root: Path
+    staged: tuple[_StagedSlide, ...] = ()
+    private_cleaned: bool = False
+    publication_cleaned: bool = False
+    published: bool = False
+
+
+def _is_transient_cleanup_error(error: OSError) -> bool:
+    winerror = getattr(error, "winerror", None)
+    return error.errno in _TRANSIENT_CLEANUP_ERRNOS or winerror in _TRANSIENT_CLEANUP_WINERRORS
+
+
+def _remove_tree_with_retry(
+    path: Path,
+    *,
+    remover: Callable[[Path], None] = shutil.rmtree,
+    sleeper: Callable[[float], None] = time.sleep,
+    retry_delays: tuple[float, ...] = _CLEANUP_RETRY_DELAYS_SECONDS,
+    settle_seconds: float = _CLEANUP_SETTLE_SECONDS,
+) -> None:
+    """Remove a workspace with bounded retries for short-lived Windows file races."""
+
+    attempts = len(retry_delays) + 1
+    last_error: OSError | None = None
+    for attempt in range(attempts):
+        try:
+            remover(path)
+        except FileNotFoundError:
+            pass
+        except OSError as error:
+            last_error = error
+            if not _is_transient_cleanup_error(error) or attempt == attempts - 1:
+                raise RenderError(f"could not remove temporary render workspace: {path}") from error
+            sleeper(retry_delays[attempt])
+            continue
+
+        if settle_seconds > 0:
+            sleeper(settle_seconds)
+        if not os.path.lexists(path):
+            return
+
+        last_error = OSError(
+            errno.ENOTEMPTY,
+            "temporary render workspace reappeared during cleanup",
+            str(path),
+        )
+        if attempt == attempts - 1:
+            raise RenderError(
+                f"could not remove temporary render workspace: {path}"
+            ) from last_error
+        sleeper(retry_delays[attempt])
+
+    raise RenderError(f"could not remove temporary render workspace: {path}") from last_error
 
 
 def _sanitized_environment(source: Mapping[str, str] | None = None) -> dict[str, str]:
@@ -85,14 +162,24 @@ def _count_pptx_slides(source: Path) -> int:
     return count
 
 
-def _remove_published_link(staged_output: Path, final_output: Path) -> str | None:
-    """Remove only a final path that is still the hard link this renderer created."""
+def _remove_published_link(staged: _StagedSlide) -> str | None:
+    """Remove only a final path that still has the staged file's identity."""
 
     try:
-        if final_output.exists() and final_output.samefile(staged_output):
-            final_output.unlink()
+        if not os.path.lexists(staged.final_output):
+            return None
+        final_stat = staged.final_output.lstat()
+        owned = (
+            stat.S_ISREG(final_stat.st_mode)
+            and final_stat.st_dev == staged.device
+            and final_stat.st_ino == staged.inode
+        )
+        if not owned and os.path.lexists(staged.staged_output):
+            owned = staged.final_output.samefile(staged.staged_output)
+        if owned:
+            staged.final_output.unlink()
     except OSError:
-        return final_output.name
+        return staged.final_output.name
     return None
 
 
@@ -101,7 +188,7 @@ class PyMuPdfRasterizer:
 
     @staticmethod
     def available() -> bool:
-        return importlib.util.find_spec("fitz") is not None
+        return importlib.util.find_spec("pymupdf") is not None
 
     def rasterize(
         self,
@@ -116,20 +203,20 @@ class PyMuPdfRasterizer:
             raise RendererUnavailable(
                 "PyMuPDF is required to rasterize LibreOffice PDF output; install pptrans[review]"
             )
-        fitz = importlib.import_module("fitz")
+        pymupdf = importlib.import_module("pymupdf")
 
         output_dir.mkdir(parents=True, exist_ok=True)
         rendered: list[Path] = []
         total_pixels = 0
         scale = dpi / 72.0
         try:
-            with fitz.open(pdf_path) as document:
+            with pymupdf.open(pdf_path) as document:
                 _validate_page_count(document.page_count, max_pages)
                 for index, page in enumerate(document):
                     width = max(1, math.ceil(page.rect.width * scale))
                     height = max(1, math.ceil(page.rect.height * scale))
                     total_pixels = _add_page_pixels(total_pixels, width, height, max_total_pixels)
-                    pixmap = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+                    pixmap = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False)
                     output_path = output_dir / f"page-{index + 1:04d}.png"
                     pixmap.save(str(output_path))
                     rendered.append(output_path)
@@ -162,6 +249,7 @@ class LibreOfficeRenderer(SlideRenderer):
         environment: Mapping[str, str] | None = None,
         slide_counter: SlideCounter = _count_pptx_slides,
         linker: Linker = os.link,
+        tree_cleaner: TreeCleaner = _remove_tree_with_retry,
     ) -> None:
         self._explicit_executable = executable
         self._rasterizer = rasterizer or PyMuPdfRasterizer()
@@ -169,6 +257,7 @@ class LibreOfficeRenderer(SlideRenderer):
         self._environment = environment
         self._slide_counter = slide_counter
         self._linker = linker
+        self._tree_cleaner = tree_cleaner
 
     def _find_executable(self) -> Path | None:
         if self._explicit_executable is not None:
@@ -278,53 +367,80 @@ class LibreOfficeRenderer(SlideRenderer):
             validated.append((image_path, width, height))
         return validated
 
-    def _publish_images(
-        self,
+    @staticmethod
+    def _stage_images(
         *,
         validated: list[tuple[Path, int, int]],
-        temp_root: Path,
+        publication_root: Path,
         output_dir: Path,
         safe_stem: str,
         source_digest: str,
-    ) -> tuple[RenderedSlide, ...]:
-        """Stage all images, then no-clobber link them with rollback on failure."""
+        max_total_pixels: int,
+    ) -> tuple[_StagedSlide, ...]:
+        """Copy validated PNGs into same-filesystem publication staging."""
 
-        staged: list[tuple[Path, Path, RenderedSlide]] = []
+        staged: list[_StagedSlide] = []
         for slide_number, (image_path, width, height) in enumerate(validated, start=1):
             output_name = f"{safe_stem}-{source_digest[:12]}-slide-{slide_number:04d}.png"
-            staged_output = temp_root / output_name
-            shutil.copyfile(image_path, staged_output)
+            staged_output = publication_root / output_name
+            try:
+                with (
+                    image_path.open("rb") as source_handle,
+                    staged_output.open("xb") as staged_handle,
+                ):
+                    shutil.copyfileobj(source_handle, staged_handle, length=1024 * 1024)
+            except OSError as error:
+                raise RenderError(
+                    f"could not stage rendered slide safely: {output_name}"
+                ) from error
+            staged_width, staged_height = validate_png(staged_output, max_pixels=max_total_pixels)
+            if (staged_width, staged_height) != (width, height):
+                raise RenderError("staged render dimensions changed during publication")
             final_output = output_dir / output_name
+            staged_stat = staged_output.stat()
             staged.append(
-                (
-                    staged_output,
-                    final_output,
-                    RenderedSlide(
+                _StagedSlide(
+                    staged_output=staged_output,
+                    final_output=final_output,
+                    rendered_slide=RenderedSlide(
                         slide_number=slide_number,
                         image_path=final_output,
-                        width=width,
-                        height=height,
+                        width=staged_width,
+                        height=staged_height,
                         sha256=sha256_file(staged_output),
                     ),
+                    device=staged_stat.st_dev,
+                    inode=staged_stat.st_ino,
                 )
             )
+        return tuple(staged)
 
-        collisions = [final for _staged, final, _slide in staged if os.path.lexists(final)]
+    @staticmethod
+    def _rollback_published_images(staged: tuple[_StagedSlide, ...]) -> list[str]:
+        return [
+            failure
+            for item in reversed(staged)
+            if (failure := _remove_published_link(item)) is not None
+        ]
+
+    def _publish_images(
+        self,
+        staged: tuple[_StagedSlide, ...],
+    ) -> tuple[RenderedSlide, ...]:
+        """No-clobber link every staged image with rollback on failure."""
+
+        collisions = [item.final_output for item in staged if os.path.lexists(item.final_output)]
         if collisions:
             names = ", ".join(path.name for path in collisions)
             raise RenderError(f"render output already exists; refusing to overwrite: {names}")
 
-        published: list[tuple[Path, Path]] = []
+        published: list[_StagedSlide] = []
         try:
-            for staged_output, final_output, _slide in staged:
-                published.append((staged_output, final_output))
-                self._linker(staged_output, final_output)
+            for item in staged:
+                published.append(item)
+                self._linker(item.staged_output, item.final_output)
         except OSError as exc:
-            cleanup_failures = [
-                failure
-                for staged_output, final_output in reversed(published)
-                if (failure := _remove_published_link(staged_output, final_output)) is not None
-            ]
+            cleanup_failures = self._rollback_published_images(tuple(published))
             if cleanup_failures:
                 names = ", ".join(cleanup_failures)
                 raise RenderError(
@@ -338,7 +454,7 @@ class LibreOfficeRenderer(SlideRenderer):
                 "filesystem does not support safe no-clobber render publication; no files published"
             ) from exc
 
-        return tuple(slide for _staged, _final, slide in staged)
+        return tuple(item.rendered_slide for item in staged)
 
     def _expected_slide_count(self, source: Path, request: RenderRequest) -> int | None:
         if source.suffix.lower() != ".pptx":
@@ -355,6 +471,142 @@ class LibreOfficeRenderer(SlideRenderer):
             raise RenderError("PPTX slide count exceeds the configured page limit")
         return count
 
+    def _create_transaction(self, output_dir: Path) -> _RenderTransaction:
+        private_root: Path | None = None
+        try:
+            private_root = Path(tempfile.mkdtemp(prefix=".pptrans-render-"))
+            publication_root = Path(tempfile.mkdtemp(prefix=".pptrans-publish-", dir=output_dir))
+        except OSError as error:
+            if private_root is not None:
+                try:
+                    self._tree_cleaner(private_root)
+                except RenderError as cleanup_error:
+                    raise RenderError(
+                        "could not create render workspaces and private cleanup was incomplete"
+                    ) from cleanup_error
+            raise RenderError(f"could not create render workspaces safely: {error}") from error
+        return _RenderTransaction(
+            private_root=private_root,
+            publication_root=publication_root,
+        )
+
+    @staticmethod
+    def _snapshot_source(source: Path, private_root: Path, request: RenderRequest) -> Path:
+        staged_source = private_root / f"input{source.suffix.lower()}"
+        try:
+            with (
+                source.open("rb") as source_handle,
+                staged_source.open("xb") as staged_handle,
+            ):
+                shutil.copyfileobj(source_handle, staged_handle, length=1024 * 1024)
+            snapshot_size = staged_source.stat().st_size
+        except OSError as error:
+            raise RenderError(f"could not snapshot render input safely: {error}") from error
+        if snapshot_size > request.max_input_bytes:
+            raise UnsafeRenderInput("render input exceeds the configured byte limit")
+        return staged_source
+
+    def _prepare_staging(
+        self,
+        *,
+        transaction: _RenderTransaction,
+        executable: Path,
+        source: Path,
+        output_dir: Path,
+        safe_stem: str,
+        request: RenderRequest,
+    ) -> tuple[str, tuple[_StagedSlide, ...]]:
+        conversion_dir = transaction.private_root / "converted"
+        profile_dir = transaction.private_root / "profile"
+        raster_dir = transaction.private_root / "raster"
+        try:
+            conversion_dir.mkdir()
+            profile_dir.mkdir()
+            raster_dir.mkdir()
+        except OSError as error:
+            raise RenderError(f"could not initialize render workspace: {error}") from error
+        staged_source = self._snapshot_source(source, transaction.private_root, request)
+
+        # Hash, inspect, and render one private snapshot so a concurrent source-path
+        # replacement cannot make the reported digest describe a different deck.
+        source_digest = sha256_file(staged_source)
+        expected_slide_count = self._expected_slide_count(staged_source, request)
+        expected_pdf = self._convert_to_pdf(
+            executable=executable,
+            source=staged_source,
+            conversion_dir=conversion_dir,
+            profile_dir=profile_dir,
+            temp_root=transaction.private_root,
+            request=request,
+        )
+        image_paths = self._rasterizer.rasterize(
+            expected_pdf,
+            raster_dir,
+            dpi=request.dpi,
+            max_pages=request.max_pages,
+            max_total_pixels=request.max_total_pixels,
+        )
+        validated = self._validate_images(
+            image_paths,
+            request,
+            expected_slide_count=expected_slide_count,
+        )
+        staged = self._stage_images(
+            validated=validated,
+            publication_root=transaction.publication_root,
+            output_dir=output_dir,
+            safe_stem=safe_stem,
+            source_digest=source_digest,
+            max_total_pixels=request.max_total_pixels,
+        )
+        return source_digest, staged
+
+    def _cleanup_failed_transaction(
+        self,
+        transaction: _RenderTransaction,
+        error: Exception,
+    ) -> None:
+        rollback_failures = (
+            self._rollback_published_images(transaction.staged) if transaction.published else []
+        )
+        cleanup_failures: list[tuple[str, RenderError]] = []
+        workspaces = (
+            (
+                "private render workspace",
+                transaction.private_root,
+                transaction.private_cleaned,
+            ),
+            (
+                "publication staging",
+                transaction.publication_root,
+                transaction.publication_cleaned,
+            ),
+        )
+        for label, path, cleaned in workspaces:
+            if cleaned:
+                continue
+            try:
+                self._tree_cleaner(path)
+            except RenderError as cleanup_error:
+                cleanup_failures.append((label, cleanup_error))
+
+        if not rollback_failures and not cleanup_failures:
+            return
+        details: list[str] = []
+        if rollback_failures:
+            details.append(
+                "final outputs could not be rolled back: " + ", ".join(rollback_failures)
+            )
+        if cleanup_failures:
+            details.append(
+                "temporary paths could not be removed: "
+                + ", ".join(label for label, _failure in cleanup_failures)
+            )
+        cause: Exception = cleanup_failures[-1][1] if cleanup_failures else error
+        raise RenderError(
+            "render transaction failed and cleanup was incomplete; " + "; ".join(details)
+        ) from cause
+
     def render(self, request: RenderRequest) -> RenderResult:
         source, output_dir = validate_render_request(request)
         availability = self.availability()
@@ -366,62 +618,36 @@ class LibreOfficeRenderer(SlideRenderer):
             raise UnsafeRenderInput("render output directory changed during validation")
         safe_stem = re.sub(r"[^A-Za-z0-9._-]+", "-", source.stem).strip(".-") or "deck"
 
-        with tempfile.TemporaryDirectory(prefix=".pptrans-render-", dir=output_dir) as temp_name:
-            temp_root = Path(temp_name)
-            conversion_dir = temp_root / "converted"
-            profile_dir = temp_root / "profile"
-            raster_dir = temp_root / "raster"
-            staged_source = temp_root / source.name
-            conversion_dir.mkdir()
-            profile_dir.mkdir()
-            raster_dir.mkdir()
-            try:
-                with source.open("rb") as source_handle, staged_source.open("xb") as staged_handle:
-                    shutil.copyfileobj(source_handle, staged_handle, length=1024 * 1024)
-            except OSError as exc:
-                raise RenderError(f"could not snapshot render input safely: {exc}") from exc
-            if staged_source.stat().st_size > request.max_input_bytes:
-                raise UnsafeRenderInput("render input exceeds the configured byte limit")
-
-            # Hash, inspect, and render one private snapshot so a concurrent source-path
-            # replacement cannot make the reported digest describe a different deck.
-            source_digest = sha256_file(staged_source)
-            expected_slide_count = self._expected_slide_count(staged_source, request)
-
-            expected_pdf = self._convert_to_pdf(
+        transaction = self._create_transaction(output_dir)
+        try:
+            source_digest, transaction.staged = self._prepare_staging(
+                transaction=transaction,
                 executable=availability.executable,
-                source=staged_source,
-                conversion_dir=conversion_dir,
-                profile_dir=profile_dir,
-                temp_root=temp_root,
-                request=request,
-            )
-            image_paths = self._rasterizer.rasterize(
-                expected_pdf,
-                raster_dir,
-                dpi=request.dpi,
-                max_pages=request.max_pages,
-                max_total_pixels=request.max_total_pixels,
-            )
-            validated = self._validate_images(
-                image_paths,
-                request,
-                expected_slide_count=expected_slide_count,
-            )
-            slides = self._publish_images(
-                validated=validated,
-                temp_root=temp_root,
+                source=source,
                 output_dir=output_dir,
                 safe_stem=safe_stem,
-                source_digest=source_digest,
+                request=request,
             )
 
-        return RenderResult(
-            backend=self.name,
-            fidelity=self.fidelity,
-            source_sha256=source_digest,
-            slides=slides,
-        )
+            # This is the transaction's commit barrier: no final image is visible until
+            # the source snapshot, PDF, raster workspace, and LibreOffice profile are gone.
+            self._tree_cleaner(transaction.private_root)
+            transaction.private_cleaned = True
+
+            slides = self._publish_images(transaction.staged)
+            transaction.published = True
+            self._tree_cleaner(transaction.publication_root)
+            transaction.publication_cleaned = True
+
+            return RenderResult(
+                backend=self.name,
+                fidelity=self.fidelity,
+                source_sha256=source_digest,
+                slides=slides,
+            )
+        except Exception as error:
+            self._cleanup_failed_transaction(transaction, error)
+            raise
 
 
 __all__ = ["LibreOfficeRenderer", "PyMuPdfRasterizer"]
