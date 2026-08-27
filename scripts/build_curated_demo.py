@@ -29,7 +29,7 @@ CURATED_TRANSLATIONS: Final[Mapping[str, str]] = {
     "Translate PowerPoint.\n": "翻译 PowerPoint。\n",
     "Preserve the PowerPoint.": "保留 PowerPoint 结构。",
     "PPTrans patches only planned text nodes, verifies the package, and never overwrites "
-    "the source deck.": "PPTrans 仅修改计划内文本节点，验证 OOXML 包，且绝不覆盖源演示文稿。",
+    "the source deck.": "PPTrans 只改目标文本，验证 OOXML，绝不覆盖源文稿。",
     "github.com/Z-MarkUs/PPTrans": "github.com/Z-MarkUs/PPTrans",
     "01": "01",
     "A translation becomes a verified transaction": "让翻译成为可验证事务",
@@ -38,7 +38,7 @@ CURATED_TRANSLATIONS: Final[Mapping[str, str]] = {
     ),
     "Inspect": "检查",
     "Stable shape IDs and source hashes locate every editable text span.": (
-        "稳定的形状 ID 与源哈希定位每个可编辑文本片段。"
+        "形状 ID 与源哈希定位可编辑文本。"
     ),
     "02": "02",
     "Translate": "翻译",
@@ -48,7 +48,7 @@ CURATED_TRANSLATIONS: Final[Mapping[str, str]] = {
     "03": "03",
     "Verify": "验证",
     "Only planned text nodes may change before the output is published atomically.": (
-        "输出原子发布前，只允许修改计划内文本节点。"
+        "发布前，只改目标文本。"
     ),
     "Structure stays fixed while text changes": "文本改变，结构不变",
     "This synthetic fixture exercises rich text, tables, Unicode, numbers, and literal "
