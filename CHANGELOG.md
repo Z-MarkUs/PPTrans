@@ -21,6 +21,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Cross-platform CI configuration, package smoke checks, dependency/security scanning, repository guidance, and Codex/Claude Code engineering skills.
 - A self-authored three-slide public demo deck, committed Artifact Tool authoring source, deterministic metadata normalization, rendered QA preview, source-distribution fixture checks, a deterministic core benchmark harness, and English/Chinese recruiter-facing documentation.
 - A clean-tree raw deterministic-core benchmark result with commit, fixture, environment, command, and distribution timings.
+- Deterministic property-based stress tests covering XML character handling, Unicode round trips, exact provider result ordering, relationship target containment, and byte-mutated presentation input.
 
 ### Changed
 

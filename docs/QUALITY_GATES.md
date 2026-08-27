@@ -16,6 +16,8 @@ python scripts/validate_agent_skills.py
 
 Default tests must use deterministic fake providers and temporary directories. They must not require network access, provider credentials, Microsoft PowerPoint, or private presentations.
 
+Property tests must disable the persistent Hypothesis example database, use deterministic generation, and remove deadlines that would turn machine speed into a test outcome. Keep example budgets explicit so README evidence can be recomputed from the test source.
+
 ## 2. PPTX integration gate
 
 Changes to OOXML inspection, locator resolution, text patching, preservation verification, layout repairs, reviews, or rendering require self-authored fixture decks covering the affected structures. Verify, as applicable:

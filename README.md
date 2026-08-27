@@ -133,6 +133,7 @@ The repository's quality claims are scoped to checks that actually run:
 
 - [OOXML core tests](tests/test_ooxml_core.py) use self-authored decks with mixed styling, hyperlinks, fields, merged/formatted tables, nested groups, rotations, and multiple slides.
 - [Safety tests](tests/test_ooxml_safety.py) cover stale sources, malicious archive paths, duplicate members, signature rejection, unplanned text changes, unrelated-part changes, and unsafe destinations.
+- [Deterministic property tests](tests/test_properties.py) exercise 9,346 generated examples across XML 1.0 character boundaries, Unicode serialization fidelity, provider span ordering, relationship-target containment, and byte-mutated PPTX handling.
 - [Provider contract tests](tests/test_provider_adapters.py) inject SDK clients and exercise strict schemas and safe error mapping without network access.
 - [Review-foundation tests](tests/test_security_review_foundation.py) scan the v2 package for dynamic execution calls and test renderer/image safety boundaries.
 - [The public demo test](tests/test_public_demo.py) keeps the committed PPTX synchronized with the real offline pipeline.
@@ -198,4 +199,4 @@ src/pptrans/
 
 Contributions should use synthetic fixtures, deterministic provider doubles, and the applicable [quality gates](docs/QUALITY_GATES.md). Do not commit credentials, private presentations, provider payloads containing user data, generated customer content, or translation-memory databases.
 
-The Git history includes imported upstream material with an ambiguous licensing record: a pre-import README asserted MIT, the referenced root license was absent, and a nested MIT file appeared upstream only after the import. The current engineering work does not erase that provenance or establish redistribution rights. Read [NOTICE.md](NOTICE.md) before reusing, packaging, or releasing this repository; it records the factual timeline and is not legal advice.
+The Git history includes imported upstream material with strong but incomplete evidence of MIT licensing: upstream asserted MIT before its first source commit and repeated that assertion in the exact snapshot imported here, but the referenced root license was absent; a full MIT text appeared later only beside a nested skill copy. The current engineering work does not erase that provenance or establish redistribution rights. Read [NOTICE.md](NOTICE.md) before reusing, packaging, or releasing this repository; it records the factual timeline and is not legal advice.
