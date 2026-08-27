@@ -1,16 +1,16 @@
-include README.md
+include .env.example
+include AGENTS.md
+include CHANGELOG.md
+include CLAUDE.md
+include CONTRIBUTING.md
 include LICENSE
-include requirements.txt
-include example.env
-include example_glossary.json
-recursive-include ppt_translator *.py
-global-exclude __pycache__
-global-exclude *.py[cod]
-global-exclude *.so
-global-exclude .DS_Store
-
-
-
-
-
-
+include NOTICE.md
+include README.md
+include README.zh-CN.md
+include SECURITY.md
+recursive-include .agents *.md *.yaml
+recursive-include .claude *.md *.yaml
+recursive-include docs *.md *.webp
+recursive-include examples *.pptx *.yaml
+recursive-include scripts *.py *.mjs
+recursive-include tests *.py

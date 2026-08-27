@@ -1,0 +1,7 @@
+interface:
+  display_name: "PPTrans Engineering"
+  short_description: "Build and verify PPTrans safely"
+  brand_color: "#6D5EF7"
+  default_prompt: "Use $pptrans-engineering to implement and validate a PPTrans change."
+policy:
+  allow_implicit_invocation: true

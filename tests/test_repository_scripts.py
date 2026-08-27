@@ -1,0 +1,99 @@
+"""Regression tests for repository tooling that writes user-selected paths."""
+
+from __future__ import annotations
+
+import importlib.util
+import os
+import sys
+from pathlib import Path
+from types import ModuleType
+
+import pytest
+from test_ooxml_helpers import create_complex_deck
+
+REPO_ROOT = Path(__file__).parents[1]
+
+
+def _load_script(name: str) -> ModuleType:
+    path = REPO_ROOT / "scripts" / name
+    spec = importlib.util.spec_from_file_location(f"test_{path.stem}", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_benchmark_output_guards_source_aliases_and_existing_files(tmp_path: Path) -> None:
+    benchmark = _load_script("benchmark_core.py")
+    source = tmp_path / "source.pptx"
+    create_complex_deck(source)
+    original = source.read_bytes()
+
+    with pytest.raises(ValueError, match="input presentation"):
+        benchmark._prepare_output(source, source, overwrite=True)
+    assert source.read_bytes() == original
+
+    alias = tmp_path / "source-hard-link.json"
+    try:
+        os.link(source, alias)
+    except OSError as exc:
+        pytest.skip(f"hard links unavailable on this filesystem: {exc}")
+    with pytest.raises(ValueError, match="input presentation"):
+        benchmark._prepare_output(source, alias, overwrite=True)
+    assert source.read_bytes() == original
+
+    existing = tmp_path / "result.json"
+    existing.write_text("preserve", encoding="utf-8")
+    with pytest.raises(FileExistsError, match="already exists"):
+        benchmark._prepare_output(source, existing, overwrite=False)
+    assert existing.read_text(encoding="utf-8") == "preserve"
+
+
+def test_benchmark_output_rejects_symlink_target(tmp_path: Path) -> None:
+    benchmark = _load_script("benchmark_core.py")
+    source = tmp_path / "source.pptx"
+    sentinel = tmp_path / "sentinel.json"
+    output = tmp_path / "output.json"
+    create_complex_deck(source)
+    sentinel.write_text("preserve", encoding="utf-8")
+    try:
+        output.symlink_to(sentinel)
+    except OSError as exc:
+        pytest.skip(f"symbolic links unavailable on this filesystem: {exc}")
+
+    with pytest.raises(ValueError, match="symbolic link"):
+        benchmark._prepare_output(source, output, overwrite=True)
+    assert sentinel.read_text(encoding="utf-8") == "preserve"
+
+
+def test_skill_sync_rejects_symlinked_ancestor_without_touching_external_tree(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sync = _load_script("sync_agent_skills.py")
+    repository = tmp_path / "repository"
+    canonical = repository / ".agents" / "skills" / "pptrans-engineering"
+    external = tmp_path / "external"
+    canonical.mkdir(parents=True)
+    external.mkdir()
+    (canonical / "SKILL.md").write_text("canonical", encoding="utf-8")
+    marker = external / "keep.txt"
+    marker.write_text("do not touch", encoding="utf-8")
+    try:
+        (repository / ".claude").symlink_to(external, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"symbolic links unavailable on this filesystem: {exc}")
+
+    monkeypatch.setattr(sync, "REPO_ROOT", repository)
+    monkeypatch.setattr(sync, "CANONICAL", canonical)
+    monkeypatch.setattr(
+        sync,
+        "MIRROR",
+        repository / ".claude" / "skills" / "pptrans-engineering",
+    )
+
+    with pytest.raises(ValueError, match="must not be symlinks"):
+        sync.synchronize()
+    assert marker.read_text(encoding="utf-8") == "do not touch"
+    assert not (external / "skills").exists()

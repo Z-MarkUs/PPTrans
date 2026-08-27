@@ -7,6 +7,13 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 
 # Virtual environments
 .venv/
@@ -29,7 +36,7 @@ env/
 # Test and generated files
 *.pptx
 *.ppt
-!example.pptx
+!examples/pptrans-demo.en.pptx
 *.xml
 *_temp/
 *_translated.pptx
@@ -38,11 +45,26 @@ env/
 slide_*.xml
 
 # Environment variables
-.env
-.env.local
+.env*
+!.env.example
 
 # Translation memory
 .translation_memory.json
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-shm
+*.sqlite3-wal
+*-journal
+*-shm
+*-wal
 
 # Logs
 *.log
@@ -60,7 +82,4 @@ dist/
 *.app
 *.dmg
 *.pkg
-
-# Gradio
-.gradio/
 

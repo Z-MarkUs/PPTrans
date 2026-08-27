@@ -1,670 +1,201 @@
-<div align="center">
+# PPTrans
 
-<img src="https://github.com/user-attachments/assets/21080ce6-1f77-4a90-99a2-ac2c1599b61b" width="30%" alt="PPT Translator Logo">
+**Translate editable PowerPoint decks by changing only the intended text nodes—then verify the package before publishing the output.**
 
-# PPT Translator / PPT 翻译器
+[简体中文](README.zh-CN.md)
 
-**English** | [中文](#中文)
+[![CI](https://github.com/Z-MarkUs/PPTrans/actions/workflows/ci.yml/badge.svg)](https://github.com/Z-MarkUs/PPTrans/actions/workflows/ci.yml)
+[![Security](https://github.com/Z-MarkUs/PPTrans/actions/workflows/security.yml/badge.svg)](https://github.com/Z-MarkUs/PPTrans/actions/workflows/security.yml)
 
-Convert your PowerPoint presentations to beautifully translated documents while preserving formatting
+PPTrans v2 treats a `.pptx` as an OOXML transaction, not a bag of strings. It inspects the original package, addresses text through stable shape and span IDs, accepts only schema-valid provider output, patches a staged copy, proves that unrelated content stayed unchanged, and atomically publishes a distinct presentation.
 
-将 PowerPoint 演示文稿转换为精美的翻译文档，同时保留格式
+The result is an engineering showcase in document integrity, untrusted AI-output handling, provider abstraction, local caching, defensive parsing, deterministic testing, and developer tooling—not a claim of universal PowerPoint compatibility.
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-yellow.svg) ![PyPI](https://img.shields.io/badge/PyPI-pptrans-blue.svg) ![Tests](https://img.shields.io/badge/Tests-Passing-green.svg)
+> [!IMPORTANT]
+> `2.0.0a1` is unreleased development work. Install it from source for evaluation. Package publication and another release are blocked by the unresolved provenance/licensing issue documented in [NOTICE.md](NOTICE.md).
 
-*Clean, fast, and reliable PowerPoint translation with multi-provider support, vision-based review, and formatting preservation*
+## What this project demonstrates
 
-*简洁、快速、可靠的 PowerPoint 翻译工具，支持多提供商、基于视觉的审查和格式保留*
+- **Data integrity:** source SHA-256 guards, per-unit source digests, copy-on-write OOXML patching, post-write structural verification, and a source path that can never be the destination.
+- **Safe AI integration:** OpenAI and Anthropic adapters return strict structured data; missing, invented, duplicated, partial, or reordered unit/span IDs fail closed.
+- **Clean boundaries:** immutable domain models, provider and memory ports, application services, SDK adapters, and a CLI built around explicit failure states.
+- **Practical privacy:** only selected text/context is sent to a chosen provider; deck binaries, raw XML, media, and formatting are not uploaded by the translation path.
+- **Bounded work:** archive structure, parsed XML, discovered text, provider units/calls, and serialized request volume all have explicit fail-closed ceilings.
+- **Testable engineering:** offline fake providers, self-authored PPTX fixtures, malicious-input tests, an executable public demo, cross-platform CI configuration, and security scanning.
+- **Agent-ready maintenance:** repository instructions and a synchronized engineering skill for Codex and Claude Code.
 
-</div>
+## Architecture: a verified text-patch transaction
 
----
-
-## English
-
-### ✨ Features
-
-• ⚡ **Lightning Fast**: Sub-2 second translation for most presentations
-• 🔄 **Multi-Provider Support**: Switch between DeepSeek, OpenAI, Anthropic, and Grok with a simple CLI flag
-• 🎨 **Rich Formatting**: Preserves fonts, colors, spacing, tables, and alignment after translation
-• 🔍 **AI-Guided Autofallback**: Vision-based quality review with automatic fallback to advanced formatting when needed  
-• 💾 **Translation Memory**: Ensures consistency across slides and reduces API costs  
-• 📚 **User Glossary**: Define preferred translations for consistent terminology  
-• 📝 **Interactive Review**: Edit translations in JSON/YAML and regenerate PPTs  
-• 📦 **Batch Processing**: Convert entire directories of presentations at once
-• 🛡️ **Robust Processing**: Handles all PowerPoint content types with graceful fallbacks
-
-### 📦 Installation
-
-#### Option 1: Install via pip (Recommended)
-
-```bash
-pip install pptrans
+```mermaid
+flowchart LR
+    A[Untrusted .pptx] --> B[Validate ZIP and XML]
+    B --> C[Inspect slide shapes and tables]
+    C --> D[Immutable DeckPlan<br/>source hash + stable IDs]
+    D --> E{Local memory hit?}
+    E -->|No| F[Exact-ID provider request]
+    E -->|Yes| G[Validated translations]
+    F --> G
+    G --> H[Build source-guarded PatchSet]
+    H --> I[Patch planned a:t nodes<br/>in a staged package]
+    I --> J[Verify inventory, structure,<br/>planned and untouched text]
+    J --> K[fsync + atomic destination publish]
 ```
 
-#### Option 2: Install from source
+The source presentation is read-only throughout. Verification checks ZIP integrity and member ordering, requires unrelated package members to retain identical payloads, compares a canonical structural fingerprint for changed slide XML, and confirms every planned and unplanned text node. A failed stage is deleted. Default publication is atomic and refuses to clobber a destination that appears during the run; replacement happens only with explicit `--overwrite`.
 
-```bash
-git clone https://github.com/Z-MarkUs/PPTrans.git
-cd PPTrans
-pip install -e .
-```
+See the full [architecture](docs/ARCHITECTURE.md) and [threat model](docs/THREAT_MODEL.md).
 
-#### Option 3: Use standalone applications
+Default package policy rejects more than 500 slides, 250,000 XML elements in one inspected slide part, 10,000 translation units, 50,000 text spans, 5,000,000 discovered source characters, 10,000 translatable spans in one unit, 100,000 source characters in one translatable span, or 10,000 accumulated diagnostics. These semantic limits sit alongside ZIP/member/XML expansion limits and are intentionally conservative denial-of-service boundaries, not PowerPoint capability claims.
 
-Download pre-built applications from [GitHub Releases](https://github.com/Z-MarkUs/PPTrans/releases):
+## What is—and is not—translated
 
-- **macOS Apple Silicon** (arm64): `PPTrans.app`
-- **macOS Intel** (x86_64): `PPTrans.app` (built with Rosetta 2)
-- **Windows** (x86): `PPTrans.exe`
-- **Linux** (x86_64): `pptrans`
+| Presentation content | v2 behavior |
+| --- | --- |
+| Regular text in slide-local shapes | Translated at existing DrawingML `a:t` boundaries |
+| Multiple paragraphs and styled runs | Boundaries and structure retained; text values may change |
+| Text in nested group shapes | Translated through nested non-visual shape-ID paths |
+| DrawingML table-cell text | Translated without rebuilding the table |
+| Generated fields such as dates | Preserved and integrity-checked, but locked from translation |
+| Charts and SmartArt/diagram text | Package content preserved; text not translated |
+| Notes, comments, masters/layouts, alt text, embedded objects, image text | Preserved where present; not translated |
+| Longer text and layout fit | No automatic font resizing, box expansion, or overflow repair |
+| `.ppt`, `.pptm`, `.ppsx`, `.potx` | Rejected; the translation engine accepts validated `.pptx` only |
+| Visual review and repair | Safety-oriented schemas, policies, budgets, and LibreOffice renderer exist; no end-to-end review provider, CLI workflow, or repair executor yet |
 
-Or build from source:
+Structural preservation does not prove visual fit. A valid translation can still wrap, clip, or render differently because of text expansion, fonts, language shaping, or the viewing application. Review output in the target presentation application. The detailed boundary is in [known limitations](docs/LIMITATIONS.md).
 
-```bash
-# macOS (Apple Silicon)
-python3 build_app.py macos arm64
+## Five-minute source quickstart
 
-# macOS (Intel) - Uses Rosetta 2 on arm64 machines
-python3 build_app.py macos x86_64
-
-# Windows
-python build_app.py windows
-
-# Linux
-python3 build_app.py linux
-```
-
-### 📋 Requirements
-
-- Python 3.10+ (for pip installation)
-- Provider API keys stored in environment variables (see Configuration)
-
-### 🔐 Configuration
-
-Copy `example.env` to `.env` and fill in the API keys for the providers you plan to use:
-
-```bash
-cp example.env .env
-```
-
-**Environment Variables:**
-
-| Provider  | Required Variable         | Optional Variables                 | Default Model           |
-|-----------|---------------------------|------------------------------------|-------------------------|
-| DeepSeek  | `DEEPSEEK_API_KEY`        | `DEEPSEEK_API_BASE`                | `deepseek-chat`         |
-| OpenAI    | `OPENAI_API_KEY`          | `OPENAI_ORG`                       | `gpt-5`                 |
-| Anthropic | `ANTHROPIC_API_KEY`       | —                                  | `claude-3.7-sonnet`     |
-| Grok      | `GROK_API_KEY`            | `GROK_API_BASE`                    | `grok-beta`             |
-
-> 💡 **Tip**: The CLI reads your `.env` file automatically. On macOS, add exports to `~/.zshrc` or use `direnv` for project-specific secrets.
-
-### 🚀 Quick Start
-
-After installation, use the `pptrans` command:
-
-```bash
-# Basic translation (no vision review - fastest)
-pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
-
-# Translate all PPT files in a directory
-pptrans ./presentations/ --provider openai
-
-# With vision-based quality review (translates AND reviews in one command)
-pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
-
-# Customize max refinement iterations (default is 3)
-pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_MODEL --max-refinement-iterations 5
-
-# Batch translation with vision review (all files in directory)
-pptrans ./presentations/ --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
-
-# Use a glossary for consistent terminology
-pptrans presentation.pptx --provider openai --glossary glossary.json
-
-# Generate review file for manual editing
-pptrans presentation.pptx --provider openai --generate-review
-
-# Regenerate PPT from edited review file
-pptrans presentation.pptx --regenerate-from-review translation_review.json
-
-# View all available options
-pptrans --help
-```
-
-**Important Notes:**
-- **Vision review is NOT automatic** - you must explicitly add `--vision-review` flag to enable it
-- Basic translation (without `--vision-review`) is faster and uses fewer API calls
-- Vision review requires a vision-capable model (specify with `--vision-model`)
-
-### 📖 Usage
-
-#### Basic Translation
-
-```bash
-pptrans /path/to/presentation.pptx \
-  --provider openai \
-  --model YOUR_MODEL_NAME \
-  --source-lang zh \
-  --target-lang en
-```
-
-#### Advanced Options
-
-```bash
-pptrans /path/to/decks \
-  --provider openai \
-  --source-lang zh \
-  --target-lang en \
-  --max-workers 4 \
-  --max-chunk-size 2000 \
-  --glossary my_glossary.json \
-  --vision-review \
-  --vision-quality-threshold 7.5 \
-  --max-refinement-iterations 3 \
-  --generate-review \
-  --review-format yaml
-```
-
-#### Command-Line Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--provider` | Model provider: `deepseek`, `openai`, `anthropic`, `grok` | `deepseek` |
-| `--model` | Override provider's default model (enter model name from your provider) | Provider default |
-| `--source-lang` | Source language code (ISO 639-1) | `zh` |
-| `--target-lang` | Target language code (ISO 639-1) | `en` |
-
-**Language Support**: PPTrans accepts any ISO 639-1 language code. Actual language support depends on your chosen LLM provider's capabilities. Common codes: `zh` (Chinese), `en` (English), `ja` (Japanese), `ko` (Korean), `es` (Spanish), `fr` (French), `de` (German), etc. See [LANGUAGE_SUPPORT.md](LANGUAGE_SUPPORT.md) for details.
-| `--max-chunk-size` | Character limit per translation request | `1000` |
-| `--max-workers` | Number of threads for slide processing | `4` |
-| `--glossary` | Path to glossary file (JSON/YAML) | None |
-| `--no-memory` | Disable translation memory | Enabled |
-| `--vision-review` | Enable vision-based quality review | Disabled |
-| `--vision-model` | Vision-capable model name (must support image/vision analysis) | Required if `--vision-review` enabled |
-| `--vision-quality-threshold` | Minimum quality score (0-10) | `7.0` |
-| `--max-refinement-iterations` | Max refinement attempts | `3` |
-| `--generate-review` | Generate editable review file | Disabled |
-| `--review-format` | Review file format: `json`, `yaml` | `json` |
-| `--regenerate-from-review` | Regenerate PPT from edited review file | None |
-| `--keep-intermediate` | Keep intermediate XML files | Cleaned up |
-
-#### Output Files
-
-The tool generates:
-
-1. `{deck}_original.xml` – Source deck contents (if `--keep-intermediate`)
-2. `{deck}_translated.xml` – Translated content (if `--keep-intermediate`)
-3. `{deck}_translated.pptx` – Rebuilt presentation with translated text
-4. `translation_review.{json|yaml}` – Review file (if `--generate-review`)
-
-### 🎯 Key Features Explained
-
-#### AI-Guided Autofallback & Vision Review
-
-**Note**: PPTrans is an application that uses your chosen models - we don't provide model services. You select both the translation model and vision review model based on your needs and API access.
-
-**Vision review is opt-in only** - it is NOT enabled by default. You must explicitly add the `--vision-review` flag to enable it. Basic translation (without vision review) is faster and uses fewer API calls.
-
-**Important**: When you use `--vision-review`, the system **translates AND reviews in a single command**. You do NOT need to run translation first, then review separately. The workflow is:
-
-1. **Translation**: Text is extracted and translated using your translation model
-2. **Vision Review**: Translated slides are rendered and analyzed by your vision model
-3. **Iterative Refinement**: If quality is below threshold, the system automatically refines the translation
-4. **Output**: Final translated PPTX file is generated
-
-**Example workflow:**
-```bash
-# Single command: Translates AND reviews in one go
-pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-4o --source-lang zh --target-lang en
-
-# This will:
-# 1. Translate the presentation (using OpenAI's default model or --model if specified)
-# 2. Review the translated slides (using gpt-4o vision model)
-# 3. Refine if needed
-# 4. Output: presentation_translated.pptx
-```
-
-When vision review is enabled (via `--vision-review` flag), the system uses your chosen vision-capable model to visually analyze slides:
-
-- **Pre-translation analysis**: Understands layout constraints and text hierarchy
-- **Post-translation review**: Quality scoring (0-10) with specific issues and suggestions
-- **AI-guided autofallback**: Automatically switches to advanced formatting methods when issues are detected:
-  - **Advanced paragraph formatting**: Preserves bullets, indentation, and multi-paragraph structure
-  - **TextFrame measurement**: Uses accurate text measurement instead of estimation for better font sizing
-- **Iterative refinement**: Automatically improves translations until quality threshold is met
-- **Prompt optimization**: Learning context is intelligently limited (~500 tokens max) to prevent prompt bloat across multiple iterations - only the most relevant and successful patterns are included
-
-The autofallback system reads AI suggestions and intelligently enables advanced features only when needed, keeping the process efficient for simple slides while ensuring quality for complex formatting. The learning system tracks successful fixes and avoids repeating failed patterns, with prompt size management to ensure efficient API usage.
-
-```bash
-# Use your vision-capable model (enter the model name from your provider)
-pptrans deck.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --vision-quality-threshold 8.0
-
-# Customize max refinement iterations (how many times to retry if quality is low)
-pptrans deck.pptx --provider openai --vision-review --vision-model YOUR_MODEL --max-refinement-iterations 5
-```
-
-#### Translation Memory
-
-Stores translations in a temporary JSON file to ensure consistency:
-
-- Reuses translations across multiple slides
-- Shared across all files in a batch
-- Automatically cleaned up after completion
-
-Disable with `--no-memory` if you don't need consistency.
-
-#### User-Defined Glossary
-
-Define preferred translations for consistent terminology:
-
-**glossary.json:**
-```json
-{
-  "AI": "人工智能",
-  "Machine Learning": "机器学习",
-  "Neural Network": "神经网络"
-}
-```
-
-```bash
-pptrans deck.pptx --glossary glossary.json
-```
-
-The glossary is included in LLM prompts and applied as post-processing fallback.
-
-#### Interactive Review Mode
-
-Generate editable review files for manual translation editing:
-
-```bash
-# Generate review file
-pptrans deck.pptx --generate-review --review-format yaml
-
-# Edit translation_review.yaml manually, then regenerate PPT
-pptrans deck.pptx --regenerate-from-review translation_review.yaml
-```
-
-Review files include:
-- Original and translated texts per slide
-- Quality scores and issues (if vision review enabled)
-- Editable translation fields
-
-### 🧪 Testing
-
-Run unit tests with Pytest:
-
-```bash
-pytest
-```
-
-The test suite focuses on translation chunking/caching, CLI utilities, and provider integration.
-
-### 🛠️ Project Structure
-
-```
-.
-├── ppt_translator/
-│   ├── cli.py               # CLI parsing and orchestration
-│   ├── pipeline.py           # PPT extraction, translation, regeneration
-│   ├── translation.py       # Chunking + caching translation service
-│   ├── memory.py            # Translation memory and glossary
-│   ├── vision.py            # Vision-based review system
-│   ├── review.py            # Interactive review file management
-│   ├── render.py            # Slide rendering utilities
-│   ├── utils.py             # Filesystem helpers
-│   └── providers/           # DeepSeek, OpenAI, Anthropic, Grok adapters
-│       ├── base.py          # Base provider classes
-│       ├── deepseek.py
-│       ├── openai_provider.py
-│       ├── anthropic_provider.py
-│       └── grok_provider.py
-├── tests/                   # Pytest suite
-├── example.env              # Environment variable template
-├── requirements.txt         # Python dependencies
-├── pyproject.toml          # Package configuration
-├── build_app.py            # Standalone app builder
-└── main.py                  # Entry point (delegates to CLI)
-```
-
-### 🤝 Contributing
-
-Pull requests and issues are welcome! Please:
-
-1. Run `pytest` before submitting changes
-2. Document any new providers or features in the README
-3. Follow existing code style (Black formatting)
-
-### 📄 License
-
-This project is licensed under the MIT License. See `LICENSE` for details.
-
-### 🔗 Links
-
-- **GitHub Repository**: https://github.com/Z-MarkUs/PPTrans
-- **PyPI Package**: https://pypi.org/project/pptrans/
-- **Issues**: https://github.com/Z-MarkUs/PPTrans/issues
-
----
-
-## 中文
-
-### ✨ 功能特性
-
-• ⚡ **极速翻译**: 大多数演示文稿可在 2 秒内完成翻译  
-• 🔄 **多提供商支持**: 通过简单的 CLI 标志在 DeepSeek、OpenAI、Anthropic 和 Grok 之间切换  
-• 🎨 **丰富格式**: 翻译后保留字体、颜色、间距、表格和对齐方式  
-• 🔍 **AI 引导的自动回退**: 基于视觉的质量审查，需要时自动切换到高级格式处理  
-• 💾 **翻译记忆库**: 确保跨幻灯片的一致性并降低 API 成本  
-• 📚 **用户词汇表**: 定义首选翻译以保持术语一致性  
-• 📝 **交互式审查**: 在 JSON/YAML 中编辑翻译并重新生成 PPT  
-• 📦 **批量处理**: 一次性转换整个目录的演示文稿  
-• 🛡️ **稳健处理**: 优雅地处理所有 PowerPoint 内容类型  
-
-### 📦 安装
-
-#### 方式 1: 通过 pip 安装（推荐）
-
-```bash
-pip install pptrans
-```
-
-#### 方式 2: 从源码安装
+PPTrans v2 is intentionally not advertised as a PyPI or binary release. Run the current alpha from a checkout:
 
 ```bash
 git clone https://github.com/Z-MarkUs/PPTrans.git
 cd PPTrans
-pip install -e .
+python -m venv .venv
 ```
 
-#### 方式 3: 使用独立应用程序
-
-从 [GitHub Releases](https://github.com/Z-MarkUs/PPTrans/releases) 下载预构建应用程序：
-
-- **macOS Apple Silicon** (arm64): `PPTrans.app`
-- **macOS Intel** (x86_64): `PPTrans.app` (使用 Rosetta 2 构建)
-- **Windows** (x86): `PPTrans.exe`
-- **Linux** (x86_64): `pptrans`
-
-或从源码构建：
+Activate the environment:
 
 ```bash
-# macOS (Apple Silicon)
-python3 build_app.py macos arm64
+# macOS / Linux
+source .venv/bin/activate
 
-# macOS (Intel) - 在 arm64 机器上使用 Rosetta 2
-python3 build_app.py macos x86_64
-
-# Windows
-python build_app.py windows
-
-# Linux
-python3 build_app.py linux
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
 ```
 
-### 📋 要求
-
-- Python 3.10+（用于 pip 安装）
-- 存储在环境变量中的提供商 API 密钥（见配置部分）
-
-### 🔐 配置
-
-将 `example.env` 复制为 `.env` 并填入您计划使用的提供商的 API 密钥：
+Install the development environment and inspect the public demo without exposing its text:
 
 ```bash
-cp example.env .env
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+pptrans doctor
+pptrans inspect examples/pptrans-demo.en.pptx --source en --target en
 ```
 
-**环境变量：**
-
-| 提供商    | 必需变量              | 可选变量                 | 默认模型               |
-|-----------|----------------------|--------------------------|------------------------|
-| DeepSeek  | `DEEPSEEK_API_KEY`    | `DEEPSEEK_API_BASE`      | `deepseek-chat`        |
-| OpenAI    | `OPENAI_API_KEY`      | `OPENAI_ORG`             | `gpt-5`                |
-| Anthropic | `ANTHROPIC_API_KEY`   | —                        | `claude-3.7-sonnet`    |
-| Grok      | `GROK_API_KEY`        | `GROK_API_BASE`          | `grok-beta`            |
-
-> 💡 **提示**: CLI 会自动读取您的 `.env` 文件。在 macOS 上，可以将导出添加到 `~/.zshrc` 或使用 `direnv` 进行项目特定的密钥管理。
-
-### 🚀 快速开始
-
-安装后，使用 `pptrans` 命令：
+Then exercise the complete transaction offline:
 
 ```bash
-# 基本翻译（无视觉审查 - 最快）
-pptrans presentation.pptx --provider openai --source-lang zh --target-lang en
-
-# 翻译目录中的所有 PPT 文件
-pptrans ./presentations/ --provider openai
-
-# 使用基于视觉的质量审查（在单个命令中完成翻译和审查）
-pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
-
-# 自定义最大优化迭代次数（默认为 3）
-pptrans presentation.pptx --provider openai --vision-review --vision-model YOUR_MODEL --max-refinement-iterations 5
-
-# 批量翻译并审查（目录中的所有文件）
-pptrans ./presentations/ --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --source-lang zh --target-lang en
-
-# 使用词汇表保持术语一致性
-pptrans presentation.pptx --provider openai --glossary glossary.json
-
-# 生成审查文件以便手动编辑
-pptrans presentation.pptx --provider openai --generate-review
-
-# 从编辑后的审查文件重新生成 PPT
-pptrans presentation.pptx --regenerate-from-review translation_review.json
-
-# 查看所有可用选项
-pptrans --help
+pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --output pptrans-demo.identity.pptx --json
 ```
 
-**重要提示：**
-- **视觉审查不是自动的** - 必须显式添加 `--vision-review` 标志才能启用
-- 基本翻译（不使用 `--vision-review`）更快且使用更少的 API 调用
-- 视觉审查需要支持视觉的模型（使用 `--vision-model` 指定）
+![Rendered first slide of the synthetic PPTrans public demo](docs/assets/pptrans-demo-preview.webp)
 
-### 📖 使用方法
+`identity` is deliberately not a translator: it returns each source span unchanged. This demo proves inspection, exact-ID orchestration, patch construction, staging, verification, and output publication without a network call or API key. The committed integration test currently asserts 3 slides, 41 translation units, 45 verified spans, zero inspection warnings, normalized author-owned metadata, and a successful independent `python-pptx` reopen in [tests/test_public_demo.py](tests/test_public_demo.py). The preview above is a rendered QA artifact, not proof of pixel identity with PowerPoint. See [demo source, rebuild, and QA notes](docs/DEMO.md).
 
-#### 基本翻译
+## Translate with a provider
+
+Either export the provider credential or copy [.env.example](.env.example) to `.env` and pass `--env-file .env`. PPTrans never discovers dotenv files implicitly and has no hidden paid-model default. Built-in adapters pin the official provider endpoint, reject ambient `*_BASE_URL` or `*_CUSTOM_HEADERS` SDK routing overrides, and construct their HTTP clients with `trust_env=False` so environment proxy and TLS-routing settings are not inherited. An explicitly injected Python SDK client is caller-owned and outside that default.
 
 ```bash
-pptrans /path/to/presentation.pptx \
-  --provider openai \
-  --model YOUR_MODEL_NAME \
-  --source-lang zh \
-  --target-lang en
+pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <explicit-model-name> --env-file .env --glossary examples/glossary.example.yaml --output pptrans-demo.zh-CN.pptx
 ```
 
-#### 高级选项
+Use `--provider anthropic` with `ANTHROPIC_API_KEY` for the Anthropic adapter. Use `--no-memory` to disable local persistence, `--memory <path>` to select a cache, `--style <instruction>` for an audience/tone constraint, and `--json` for a machine-readable completion report. Machine JSON is compact, ASCII-escaped, and written without Rich styling; human-facing values escape every Unicode `Cc` control character as visible `\uXXXX` text (except intentional newlines in inspected text). Run `pptrans --help` for the implemented CLI surface.
 
-```bash
-pptrans /path/to/decks \
-  --provider openai \
-  --source-lang zh \
-  --target-lang en \
-  --max-workers 4 \
-  --max-chunk-size 2000 \
-  --glossary my_glossary.json \
-  --vision-review \
-  --vision-quality-threshold 7.5 \
-  --max-refinement-iterations 3 \
-  --generate-review \
-  --review-format yaml
+The CLI conservatively preflights the complete plan before constructing a paid-provider client, then rechecks only cache misses. Defaults allow at most 2,000 provider units (`--max-provider-units`), 100 logical provider calls (`--max-provider-calls`; SDK retries are separate), 2,000,000 source/context characters (`--max-provider-source-characters`), and 5,000,000 serialized request characters across all logical batches (`--max-provider-request-characters`). Every individual serialized request is independently capped at 1,000,000 characters. Raising a ceiling is an explicit cost/risk decision, not a claim that the deck will translate well.
+
+### Provider contract and privacy
+
+| Adapter | Contract | Credential |
+| --- | --- | --- |
+| OpenAI | Responses API with strict JSON Schema; requests set `store=False` | `OPENAI_API_KEY` |
+| Anthropic | Messages API with exactly one forced schema tool call | `ANTHROPIC_API_KEY` |
+| Identity | Offline, deterministic pass-through for pipeline verification | None |
+
+The provider request includes selected slide text, adjacent paragraph context, source/target language, optional style, and glossary terms. It excludes the `.pptx` binary, file path, raw XML, formatting, images, notes, relationships, and embedded files. Selected text is still a data export: obtain authorization and review the provider's retention terms before processing sensitive content.
+
+The default translation memory is a local, persistent, **unencrypted** SQLite database. Its semantic key includes languages, provider/model, a fingerprint derived from the exact provider instructions and response schema, style, glossary, adjacent context, source strings, span kinds, order, and segmentation. Cache-path symlink leaves are rejected. On POSIX, newly created cache directories request mode `0700` and a new database requests `0600`; existing permissions/ACLs are preserved, Windows relies on inherited ACLs, and neither behavior is an ACL audit. SQLite is forced to `DELETE` journaling so successful runs do not retain WAL/SHM sidecars, though a plaintext rollback journal can exist during a transaction or after a crash. Use `--no-memory` when plaintext local retention is inappropriate. Details are in [provider integration](docs/PROVIDERS.md) and [security policy](SECURITY.md).
+
+## Evidence, not slogans
+
+The repository's quality claims are scoped to checks that actually run:
+
+- [OOXML core tests](tests/test_ooxml_core.py) use self-authored decks with mixed styling, hyperlinks, fields, merged/formatted tables, nested groups, rotations, and multiple slides.
+- [Safety tests](tests/test_ooxml_safety.py) cover stale sources, malicious archive paths, duplicate members, signature rejection, unplanned text changes, unrelated-part changes, and unsafe destinations.
+- [Provider contract tests](tests/test_provider_adapters.py) inject SDK clients and exercise strict schemas and safe error mapping without network access.
+- [Review-foundation tests](tests/test_security_review_foundation.py) scan the v2 package for dynamic execution calls and test renderer/image safety boundaries.
+- [The public demo test](tests/test_public_demo.py) keeps the committed PPTX synchronized with the real offline pipeline.
+- [CI](.github/workflows/ci.yml) is configured for linting, formatting, strict typing, branch coverage, Bandit, dependency audit, skill validation, and package checks on Python 3.12, plus deterministic tests on Linux, Windows, and macOS at Python 3.10 and 3.13.
+- [Security automation](.github/workflows/security.yml) configures CodeQL, full-history secret scanning, and a weekly schedule; actions are pinned to commit SHAs.
+
+The configured branch-coverage floor is visible in [pyproject.toml](pyproject.toml). A green badge is useful evidence for its workflow and commit only; it is not proof of universal formatting preservation or translation quality.
+
+### Benchmark status
+
+No public speed, cost, or translation-quality benchmark is claimed yet. The benchmark gate requires raw results to record the commit SHA, fixture revision, Python and OS versions, exact provider/model, cold versus warm translation-memory state, token usage, renderer version when applicable, and the complete command. Results will be added only with reproducible artifacts; see [quality gates](docs/QUALITY_GATES.md).
+
+<!-- BENCHMARK_RESULT_PLACEHOLDER: replace only after committing a raw result from a clean tree. -->
+
+## Optional review foundation
+
+Installing `.[review]` adds PyMuPDF support for a local LibreOffice → PDF → bounded PNG renderer. Its explicit Impress PDF export includes hidden slides so page-count verification covers the full deck. The repository also contains strict issue schemas, deterministic local score/pass evaluation, privacy modes, endpoint checks, log redaction, request/pixel/token/repair budgets, and typed allowlisted repair plans.
+
+These are reviewed building blocks, not a completed visual-review product. There is no multimodal review-provider adapter, CLI review command, PowerPoint-equivalent rendering guarantee, or repair executor in v2 today. LibreOffice is a separate system dependency and should be isolated at the OS level when opening untrusted decks.
+
+## Built for Codex and Claude Code
+
+PPTrans includes repository-native guidance so coding agents inherit the same invariants as human contributors:
+
+- [AGENTS.md](AGENTS.md) defines architecture, safety, testing, and Git rules.
+- [.agents/skills/pptrans-engineering/](.agents/skills/pptrans-engineering/) is the canonical Codex Agent Skill. Invoke it as `$pptrans-engineering`.
+- [.claude/skills/pptrans-engineering/](.claude/skills/pptrans-engineering/) is a generated byte-identical Claude Code mirror. Invoke it as `/pptrans-engineering`.
+- [CLAUDE.md](CLAUDE.md) imports the repository guidance, while deterministic sync and validation scripts prevent the two skill copies from drifting.
+
+The skill routes OOXML, verification, provider, benchmark, and release tasks to focused references and explicitly forbids unsupported claims or model-generated code execution.
+
+## Project map
+
+```text
+src/pptrans/
+├── domain/              immutable plans, locators, spans, patches, reports
+├── ooxml/               safe package inspection, location, patching, verification
+├── ports/               provider and translation-memory protocols
+├── application/         translation and deck transaction orchestration
+├── adapters/
+│   ├── providers/       OpenAI, Anthropic, offline identity
+│   ├── renderers/       optional LibreOffice/PDF/PNG foundation
+│   └── sqlite_memory.py local semantic translation cache
+├── schemas/             strict untrusted translation/review payloads
+├── review/              budgets, privacy policy, allowlisted repair plans
+└── cli.py               inspect, translate, doctor
 ```
 
-#### 命令行选项
+## Engineering documentation
 
-| 选项 | 说明 | 默认值 |
-|------|------|--------|
-| `--provider` | 模型提供商: `deepseek`, `openai`, `anthropic`, `grok` | `deepseek` |
-| `--model` | 覆盖默认模型（如 `gpt-5-nano`, `gpt-5-mini`） | 提供商默认值 |
-| `--source-lang` | 源语言代码 (ISO 639-1) | `zh` |
-| `--target-lang` | 目标语言代码 (ISO 639-1) | `en` |
-| `--max-chunk-size` | 每次翻译请求的字符限制 | `1000` |
-| `--max-workers` | 幻灯片处理的线程数 | `4` |
-| `--glossary` | 词汇表文件路径 (JSON/YAML) | 无 |
-| `--no-memory` | 禁用翻译记忆库 | 启用 |
-| `--vision-review` | 启用基于视觉的质量审查 | 禁用 |
-| `--vision-model` | 视觉模型名称（必须支持图像/视觉分析功能） | 启用 `--vision-review` 时必需 |
-| `--vision-quality-threshold` | 最低质量分数 (0-10) | `7.0` |
-| `--max-refinement-iterations` | 最大优化尝试次数 | `3` |
-| `--generate-review` | 生成可编辑的审查文件 | 禁用 |
-| `--review-format` | 审查文件格式: `json`, `yaml` | `json` |
-| `--regenerate-from-review` | 从编辑后的审查文件重新生成 PPT | 无 |
-| `--keep-intermediate` | 保留中间 XML 文件 | 清理 |
+- [Architecture](docs/ARCHITECTURE.md)
+- [Providers and data boundary](docs/PROVIDERS.md)
+- [Known limitations](docs/LIMITATIONS.md)
+- [Threat model](docs/THREAT_MODEL.md)
+- [Security policy](SECURITY.md)
+- [Quality gates](docs/QUALITY_GATES.md)
+- [Public demo source and QA](docs/DEMO.md)
+- [Contributing](CONTRIBUTING.md)
+- [Unreleased changelog](CHANGELOG.md)
+- [Provenance and licensing notice](NOTICE.md)
 
-#### 输出文件
+## Contributing and release status
 
-工具会生成：
+Contributions should use synthetic fixtures, deterministic provider doubles, and the applicable [quality gates](docs/QUALITY_GATES.md). Do not commit credentials, private presentations, provider payloads containing user data, generated customer content, or translation-memory databases.
 
-1. `{deck}_original.xml` – 源演示文稿内容（如果使用 `--keep-intermediate`）
-2. `{deck}_translated.xml` – 翻译后的内容（如果使用 `--keep-intermediate`）
-3. `{deck}_translated.pptx` – 使用翻译文本重建的演示文稿
-4. `translation_review.{json|yaml}` – 审查文件（如果使用 `--generate-review`）
-
-### 🎯 核心功能说明
-
-#### AI 引导的自动回退和视觉审查
-
-**注意**: PPTrans 是一个使用您选择的模型的应用 - 我们不提供模型服务。您可以根据需求和 API 访问权限选择翻译模型和视觉审查模型。
-
-**视觉审查是可选的** - 默认情况下不启用。必须显式添加 `--vision-review` 标志才能启用。基本翻译（不使用视觉审查）更快且使用更少的 API 调用。
-
-**重要提示**: 当您使用 `--vision-review` 时，系统会在**单个命令中完成翻译和审查**。您不需要先运行翻译，然后再单独运行审查。工作流程是：
-
-1. **翻译**: 提取文本并使用您的翻译模型进行翻译
-2. **视觉审查**: 渲染翻译后的幻灯片并使用您的视觉模型进行分析
-3. **迭代优化**: 如果质量低于阈值，系统会自动优化翻译
-4. **输出**: 生成最终的翻译 PPTX 文件
-
-**示例工作流程:**
-```bash
-# 单个命令：一次性完成翻译和审查
-pptrans presentation.pptx --provider openai --vision-review --vision-model gpt-4o --source-lang zh --target-lang en
-
-# 这将：
-# 1. 翻译演示文稿（使用 OpenAI 的默认模型或指定的 --model）
-# 2. 审查翻译后的幻灯片（使用 gpt-4o 视觉模型）
-# 3. 根据需要优化
-# 4. 输出：presentation_translated.pptx
-```
-
-启用视觉审查后（通过 `--vision-review` 标志），系统使用您选择的视觉模型来视觉分析幻灯片：
-
-- **翻译前分析**: 理解布局约束和文本层次结构
-- **翻译后审查**: 质量评分 (0-10) 并提供具体问题和建议
-- **AI 引导的自动回退**: 检测到问题时自动切换到高级格式处理方法：
-  - **高级段落格式**: 保留项目符号、缩进和多段落结构
-  - **TextFrame 测量**: 使用准确的文本测量而非估算，实现更好的字体大小调整
-- **迭代优化**: 自动改进翻译直到达到质量阈值
-- **提示优化**: 学习上下文智能限制（最多约 500 个 token），防止多次迭代时提示膨胀 - 仅包含最相关和成功的模式
-
-自动回退系统读取 AI 建议，仅在需要时智能启用高级功能，对简单幻灯片保持高效，同时确保复杂格式的质量。学习系统跟踪成功的修复并避免重复失败的模式，通过提示大小管理确保高效的 API 使用。
-
-```bash
-# 使用您的视觉模型（输入您提供商提供的模型名称）
-pptrans deck.pptx --provider openai --vision-review --vision-model YOUR_VISION_MODEL_NAME --vision-quality-threshold 8.0
-```
-
-#### 翻译记忆库
-
-将翻译存储在临时 JSON 文件中以确保一致性：
-
-- 在多个幻灯片之间重用翻译
-- 在批次中的所有文件之间共享
-- 完成后自动清理
-
-如果不需要一致性，可使用 `--no-memory` 禁用。
-
-#### 用户定义词汇表
-
-定义首选翻译以保持术语一致性：
-
-**glossary.json:**
-```json
-{
-  "AI": "人工智能",
-  "Machine Learning": "机器学习",
-  "Neural Network": "神经网络"
-}
-```
-
-```bash
-pptrans deck.pptx --glossary glossary.json
-```
-
-词汇表会包含在 LLM 提示中，并作为后处理备用方案应用。
-
-#### 交互式审查模式
-
-生成可编辑的审查文件以便手动编辑翻译：
-
-```bash
-# 生成审查文件
-pptrans deck.pptx --generate-review --review-format yaml
-
-# 手动编辑 translation_review.yaml，然后重新生成 PPT
-pptrans deck.pptx --regenerate-from-review translation_review.yaml
-```
-
-审查文件包括：
-- 每张幻灯片的原始文本和翻译文本
-- 质量分数和问题（如果启用了视觉审查）
-- 可编辑的翻译字段
-
-### 🧪 测试
-
-使用 Pytest 运行单元测试：
-
-```bash
-pytest
-```
-
-测试套件专注于翻译分块/缓存、CLI 实用程序和提供商集成。
-
-### 🛠️ 项目结构
-
-```
-.
-├── ppt_translator/
-│   ├── cli.py               # CLI 解析和编排
-│   ├── pipeline.py         # PPT 提取、翻译、重建
-│   ├── translation.py      # 分块 + 缓存翻译服务
-│   ├── memory.py           # 翻译记忆库和词汇表
-│   ├── vision.py           # 基于视觉的审查系统
-│   ├── review.py           # 交互式审查文件管理
-│   ├── render.py           # 幻灯片渲染工具
-│   ├── utils.py            # 文件系统辅助函数
-│   └── providers/          # DeepSeek、OpenAI、Anthropic、Grok 适配器
-│       ├── base.py         # 基础提供商类
-│       ├── deepseek.py
-│       ├── openai_provider.py
-│       ├── anthropic_provider.py
-│       └── grok_provider.py
-├── tests/                  # Pytest 测试套件
-├── example.env            # 环境变量模板
-├── requirements.txt       # Python 依赖项
-├── pyproject.toml        # 包配置
-├── build_app.py          # 独立应用程序构建器
-└── main.py               # 入口点（委托给 CLI）
-```
-
-### 🤝 贡献
-
-欢迎提交 Pull Request 和 Issue！请：
-
-1. 提交更改前运行 `pytest`
-2. 在 README 中记录任何新的提供商或功能
-3. 遵循现有代码风格（Black 格式化）
-
-### 📄 许可证
-
-本项目采用 MIT 许可证。详情请参阅 `LICENSE`。
-
-### 🔗 链接
-
-- **GitHub 仓库**: https://github.com/Z-MarkUs/PPTrans
-- **PyPI 包**: https://pypi.org/project/pptrans/
-- **问题反馈**: https://github.com/Z-MarkUs/PPTrans/issues
+The Git history includes imported upstream material with an ambiguous licensing record: a pre-import README asserted MIT, the referenced root license was absent, and a nested MIT file appeared upstream only after the import. The current engineering work does not erase that provenance or establish redistribution rights. Read [NOTICE.md](NOTICE.md) before reusing, packaging, or releasing this repository; it records the factual timeline and is not legal advice.
