@@ -20,9 +20,18 @@ SDIST_REQUIRED_SUFFIXES = {
     "benchmarks/results/2026-08-28-windows-python312.json",
     "docs/ARCHITECTURE.md",
     "docs/assets/pptrans-demo-preview.webp",
+    "docs/assets/pptrans-demo-source-slide-01.webp",
+    "docs/assets/pptrans-demo-source-slide-02.webp",
+    "docs/assets/pptrans-demo-source-slide-03.webp",
+    "docs/assets/pptrans-demo-zh-CN-slide-01.webp",
+    "docs/assets/pptrans-demo-zh-CN-slide-02.webp",
+    "docs/assets/pptrans-demo-zh-CN-slide-03.webp",
     "docs/qa/2026-08-28-windows-libreoffice.json",
     "examples/pptrans-demo.en.pptx",
+    "examples/pptrans-demo.zh-CN.pptx",
+    "scripts/build_curated_demo.py",
     "scripts/build_demo.mjs",
+    "scripts/render_demo_comparison.mjs",
     "tests/test_public_demo.py",
 }
 FORBIDDEN_FRAGMENTS = {
@@ -73,10 +82,23 @@ def inspect_sdist(path: Path) -> tuple[str, ...]:
         for required in sorted(SDIST_REQUIRED_SUFFIXES)
         if not any(member.endswith(required) for member in members)
     )
-    pptx_members = tuple(member for member in members if member.lower().endswith(".pptx"))
-    if len(pptx_members) != 1 or not pptx_members[0].endswith("examples/pptrans-demo.en.pptx"):
+    pptx_members = {
+        suffix
+        for member in members
+        for suffix in (
+            "examples/pptrans-demo.en.pptx",
+            "examples/pptrans-demo.zh-CN.pptx",
+        )
+        if member.endswith(suffix)
+    }
+    expected_pptx_members = {
+        "examples/pptrans-demo.en.pptx",
+        "examples/pptrans-demo.zh-CN.pptx",
+    }
+    all_pptx_members = tuple(member for member in members if member.lower().endswith(".pptx"))
+    if pptx_members != expected_pptx_members or len(all_pptx_members) != len(expected_pptx_members):
         failures.append(
-            "source distribution must contain only examples/pptrans-demo.en.pptx as PPTX data"
+            "source distribution must contain only the English and curated zh-CN demo PPTX files"
         )
     return tuple(failures)
 

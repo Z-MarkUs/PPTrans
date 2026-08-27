@@ -159,6 +159,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["PLR2004", "S101"]
 "scripts/**/*.py" = ["PLR0911", "T201"]
+"scripts/build_curated_demo.py" = ["RUF001"]
 "src/pptrans/cli.py" = ["FBT002", "PLR0917"]
 
 [tool.ruff.format]
