@@ -20,6 +20,7 @@ from pptrans.ooxml import inspect_deck
 DEMO_PATH = Path(__file__).parents[1] / "examples" / "pptrans-demo.en.pptx"
 CURATED_DEMO_PATH = Path(__file__).parents[1] / "examples" / "pptrans-demo.zh-CN.pptx"
 NATIVE_QA_PATH = Path(__file__).parents[1] / "docs" / "qa" / "2026-08-28-windows-libreoffice.json"
+CURATED_QA_PATH = Path(__file__).parents[1] / "docs" / "qa" / "2026-08-28-curated-zh-cn.json"
 
 
 def _load_curated_demo_script() -> ModuleType:
@@ -121,3 +122,58 @@ def test_curated_zh_cn_demo_is_reproducible_and_structurally_verified(tmp_path: 
     reopened = Presentation(CURATED_DEMO_PATH)
     assert len(reopened.slides) == 3
     assert reopened.core_properties.author == "Hehan Zhao"
+
+
+def test_curated_zh_cn_qa_record_is_pinned_to_committed_evidence() -> None:
+    record = json.loads(CURATED_QA_PATH.read_text(encoding="utf-8"))
+    source_bytes = DEMO_PATH.read_bytes()
+    target_bytes = CURATED_DEMO_PATH.read_bytes()
+
+    assert record["schema_version"] == 1
+    assert record["tested_commit"] == "6d80dc3d093bface37c19d28c2e0ec8f8192ec8d"
+    assert record["presentations"] == {
+        "source": {
+            "path": "examples/pptrans-demo.en.pptx",
+            "bytes": len(source_bytes),
+            "sha256": hashlib.sha256(source_bytes).hexdigest(),
+        },
+        "curated_target": {
+            "path": "examples/pptrans-demo.zh-CN.pptx",
+            "bytes": len(target_bytes),
+            "sha256": hashlib.sha256(target_bytes).hexdigest(),
+            "byte_identical_to_source": False,
+        },
+    }
+    assert record["pipeline"]["changed_parts"] == [
+        "ppt/slides/slide1.xml",
+        "ppt/slides/slide2.xml",
+        "ppt/slides/slide3.xml",
+    ]
+    assert record["pipeline"]["verified_patches"] == 41
+    assert record["pipeline"]["verified_spans"] == 45
+    assert record["package_verification"] == {
+        "zip_member_order_equal": True,
+        "only_planned_slide_members_changed": True,
+        "unchanged_members_byte_identical": True,
+        "changed_slide_structure_verified": True,
+        "planned_and_unplanned_text_nodes_verified": True,
+        "committed_output_byte_reproducible": True,
+    }
+
+    preview_groups = record["repository_previews"]
+    for group in ("source", "curated_target"):
+        assert len(preview_groups[group]) == 3
+        for preview in preview_groups[group]:
+            path = Path(__file__).parents[1] / preview["path"]
+            assert hashlib.sha256(path.read_bytes()).hexdigest() == preview["sha256"]
+
+    assert [slide["slide_number"] for slide in record["slides"]] == [1, 2, 3]
+    assert all(slide["dimensions_equal"] is True for slide in record["slides"])
+    assert record["overflow_review"]["result"] == "passed"
+    assert record["overflow_review"]["pad_px"] == 100
+    assert record["visual_review"]["reviewed_slide_count"] == 3
+    assert record["cleanup"] == {
+        "private_render_workspace_present_after_success": False,
+        "publication_staging_present_after_success": False,
+        "libreoffice_process_present_after_success": False,
+    }

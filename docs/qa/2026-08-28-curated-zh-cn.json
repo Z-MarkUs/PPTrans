@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-08-27T19:46:49.4389244Z",
+  "local_test_date": "2026-08-28",
+  "tested_commit": "6d80dc3d093bface37c19d28c2e0ec8f8192ec8d",
+  "platform": {
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "architecture": "AMD64",
+    "python": "3.12.13"
+  },
+  "pipeline": {
+    "provider": "curated-demo",
+    "model": "author-reviewed-zh-CN-v1",
+    "network_access": false,
+    "translation_memory": false,
+    "source_language": "en",
+    "target_language": "zh-CN",
+    "command": "python scripts/build_curated_demo.py examples/pptrans-demo.en.pptx examples/pptrans-demo.zh-CN.pptx",
+    "provider_calls": 2,
+    "verified_patches": 41,
+    "verified_spans": 45,
+    "changed_parts": [
+      "ppt/slides/slide1.xml",
+      "ppt/slides/slide2.xml",
+      "ppt/slides/slide3.xml"
+    ]
+  },
+  "package_verification": {
+    "zip_member_order_equal": true,
+    "only_planned_slide_members_changed": true,
+    "unchanged_members_byte_identical": true,
+    "changed_slide_structure_verified": true,
+    "planned_and_unplanned_text_nodes_verified": true,
+    "committed_output_byte_reproducible": true
+  },
+  "renderer": {
+    "backend": "libreoffice",
+    "libreoffice_version": "26.8.0.3",
+    "libreoffice_build": "bce0998afefdbc355585ca324285661a2170ba77",
+    "distribution": "LibreOffice_26.8.0.3_Machine_X64_msi_zh-CN.msi",
+    "distribution_sha256": "4aa6c6e1895f4055104effcb556bd3362d20c6ad707c149543304f395ef9db95",
+    "installation_mode": "administrative extraction into a disposable audit directory; no system installation",
+    "pymupdf_version": "1.28.2",
+    "dpi": 144,
+    "render_api": "LibreOfficeRenderer(executable=soffice).render(RenderRequest(deck, output_dir, dpi=144, timeout_seconds=180))"
+  },
+  "presentations": {
+    "source": {
+      "path": "examples/pptrans-demo.en.pptx",
+      "bytes": 18687,
+      "sha256": "dd36b4f92edf915942d4300aeebd1854a049acc521dfc29e78b286c774d8e9d8"
+    },
+    "curated_target": {
+      "path": "examples/pptrans-demo.zh-CN.pptx",
+      "bytes": 18891,
+      "sha256": "efc6781d8f952e3a5452db03a0f385bb13a03d4e58b3544c57270f48649bb0b7",
+      "byte_identical_to_source": false
+    }
+  },
+  "slides": [
+    {
+      "slide_number": 1,
+      "width": 1921,
+      "height": 1080,
+      "source_png_bytes": 68092,
+      "source_png_sha256": "c5442ade6848d1eb07edf89d41080a452349850a6e6af5653e048d83bacf2c30",
+      "target_png_bytes": 77994,
+      "target_png_sha256": "4393320535d4cd8afe4fd84ec52a0f4efa22e11b214213a8c18cacc16aeff11a",
+      "dimensions_equal": true
+    },
+    {
+      "slide_number": 2,
+      "width": 1921,
+      "height": 1080,
+      "source_png_bytes": 77877,
+      "source_png_sha256": "3809cbcb6605a37f9400191f8fa0c62c2be629201c1d1c74b2ebade589a3371b",
+      "target_png_bytes": 93781,
+      "target_png_sha256": "73d01b5ce0c4242c7d3e1e3d563eb794fa3b5409292e7bb7023c8644727acc3b",
+      "dimensions_equal": true
+    },
+    {
+      "slide_number": 3,
+      "width": 1921,
+      "height": 1080,
+      "source_png_bytes": 96606,
+      "source_png_sha256": "50148e0c59c73a6cbb466f590aa1a53ca1531a434c8be3a60e2dfb49f88436de",
+      "target_png_bytes": 100623,
+      "target_png_sha256": "b2236a0bf2d87702e31bbec7f3fe96ea93c962e3cdad1a16318f140a9086acf8",
+      "dimensions_equal": true
+    }
+  ],
+  "repository_previews": {
+    "renderer": "@oai/artifact-tool 2.8.52 importPptx/export",
+    "source": [
+      {
+        "path": "docs/assets/pptrans-demo-source-slide-01.webp",
+        "sha256": "9d152e94235bd0a88c60edada9e3ada72b6711bbb6d2bff57f167c5a20a6a1ba"
+      },
+      {
+        "path": "docs/assets/pptrans-demo-source-slide-02.webp",
+        "sha256": "6bf9b3c1eb5bc28986dbf3e04e77f0e484c19cf3751d038aa9e16f44ef54ecbf"
+      },
+      {
+        "path": "docs/assets/pptrans-demo-source-slide-03.webp",
+        "sha256": "810857514b1bfc21c2830f9fb354d5aca827fb018fb1e10db4a4511ab4106011"
+      }
+    ],
+    "curated_target": [
+      {
+        "path": "docs/assets/pptrans-demo-zh-CN-slide-01.webp",
+        "sha256": "bfb4045ed2a289a51441e22084305257e4dca33b3041a13bcb0f24ce1cecde68"
+      },
+      {
+        "path": "docs/assets/pptrans-demo-zh-CN-slide-02.webp",
+        "sha256": "feba971b1ce5ca15d21d4e694b6830c63b89b2973fdcd0b9c569059778464d31"
+      },
+      {
+        "path": "docs/assets/pptrans-demo-zh-CN-slide-03.webp",
+        "sha256": "ef953c7070e05daee8c501e662350b58e3d8385d39c0722d2441793316c9dced"
+      }
+    ]
+  },
+  "overflow_review": {
+    "result": "passed",
+    "method": "Presentations skill slides_test.py enlarged the PPTX with 100 px padded margins, rendered through @oai/artifact-tool 2.8.52, and checked every margin for non-padding pixels.",
+    "command": "python <presentations-skill>/container_tools/slides_test.py examples/pptrans-demo.zh-CN.pptx",
+    "width": 1600,
+    "height": 900,
+    "pad_px": 100
+  },
+  "cleanup": {
+    "private_render_workspace_present_after_success": false,
+    "publication_staging_present_after_success": false,
+    "libreoffice_process_present_after_success": false
+  },
+  "visual_review": {
+    "reviewed_slide_count": 3,
+    "reviewed_renderer": "LibreOffice",
+    "reviewed_at_original_resolution": true,
+    "clipping_detected": false,
+    "overlap_detected": false,
+    "off_slide_content_detected": false,
+    "notes": "Every curated-target LibreOffice PNG was inspected at 1921 x 1080. The authoring-runtime previews were also inspected separately."
+  },
+  "scope": [
+    "The target strings are a fixed, author-reviewed fixture mapping, not output from a paid or production translation provider.",
+    "This is one synthetic deck on one Windows and LibreOffice configuration.",
+    "The review does not measure translation quality on arbitrary text or longer-text layout fit.",
+    "LibreOffice acceptance does not establish pixel identity with Microsoft PowerPoint."
+  ]
+}

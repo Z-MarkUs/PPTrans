@@ -7,22 +7,36 @@
 [![CI](https://github.com/Z-MarkUs/PPTrans/actions/workflows/ci.yml/badge.svg)](https://github.com/Z-MarkUs/PPTrans/actions/workflows/ci.yml)
 [![Security](https://github.com/Z-MarkUs/PPTrans/actions/workflows/security.yml/badge.svg)](https://github.com/Z-MarkUs/PPTrans/actions/workflows/security.yml)
 
-PPTrans v2 把 `.pptx` 当作一次可验证的 OOXML 事务，而不是一组字符串。它检查原始包，通过稳定的形状与文本片段 ID 定位内容，只接受符合严格结构的模型输出，在临时副本中打补丁，证明无关内容未改变，最后原子发布一个独立的演示文稿。
+## 60 秒概览
 
-这个项目展示的是文档完整性、不可信 AI 输出处理、服务商抽象、本地缓存、防御式解析、确定性测试和开发者工具链；它不宣称兼容所有 PowerPoint 功能。
+- **结果：** 在现有 DrawingML `a:t` 边界上翻译可编辑文本，同时保留周边包结构与格式对象。
+- **完整性：** 以源文件 SHA-256 和稳定的单元/片段地址绑定任务，在临时副本中修改，验证计划内与未修改内容，再原子发布。
+- **不可信 AI 边界：** OpenAI 与 Anthropic 结果必须满足严格 schema 与精确 ID；缺失、乱序、重复或伪造输出都会失败关闭。
+- **隐私与安全：** 对 ZIP、XML 和资源使用量设置防御上限；只向明确选择的服务商发送必要文本与上下文，不发送 deck 二进制、媒体或原始 XML。
+- **证据：** 最近一次本地审计为 392 项测试通过、分支覆盖率 92.47%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包检查与安全扫描。
+- **可运行证明：** 3 张幻灯片 / 41 个单元 / 45 个片段的合成 demo、真实改字的简体中文输出，以及有明确边界的 LibreOffice 验收证据。
+
+### 前后对比：文本确实发生变化
+
+| 英文源文件 | 人工复核的简体中文输出 |
+| --- | --- |
+| ![英文源幻灯片](docs/assets/pptrans-demo-source-slide-01.webp) | ![简体中文输出幻灯片](docs/assets/pptrans-demo-zh-CN-slide-01.webp) |
+
+可下载[英文源 deck](examples/pptrans-demo.en.pptx)与[已验证的简体中文输出](examples/pptrans-demo.zh-CN.pptx)，也可查看确定性的 [fixture 生成脚本](scripts/build_curated_demo.py)。目标文本是人工复核的固定测试数据，并通过真实的精确 ID 补丁、验证与发布流水线；这证明 OOXML 确实改字且结构受到保护，不代表生产服务商的翻译质量。三张幻灯片的完整前后对比与原生 QA 边界见 [demo 说明](docs/DEMO.md)。
+
+## 我的角色与贡献
+
+PPTrans 由 Hehan Zhao 维护。v2 中，我确定了产品方向与安全标准，并主导当前端到端重构：防御式 OOXML 检查、稳定 ID 服务商契约、事务式补丁/验证/发布、确定性测试与 CI，以及公开 demo。我不会把整个仓库历史描述为 clean-room 原创；导入上游的来源问题已记录在 [NOTICE.md](NOTICE.md)，并且仍阻止新版本发布。
+
+## 版本状态
+
+| 轨道 | 状态 | 含义 | 建议用途 |
+| --- | --- | --- | --- |
+| v1.1.x | 已发布的旧版本 | 早期实现，不代表 v2 的完整性架构 | 仅作历史参考 |
+| v2 / `2.0.0a1` | 未发布的展示版本 | 当前架构、测试、改字 demo 与原生 QA | 仅从源码评估；不是已发布软件包 |
 
 > [!IMPORTANT]
 > `2.0.0a1` 仍是未发布的开发版本，请从源码安装评估。由于 [NOTICE.md](NOTICE.md) 记录的来源与上游许可问题尚未解决，目前不得发布新软件包或新版本。
-
-## 项目体现的工程能力
-
-- **数据完整性：** 源文件 SHA-256、每个翻译单元的源摘要、写时复制、写后结构验证，并禁止把源文件作为输出路径。
-- **安全的 AI 集成：** OpenAI 与 Anthropic 只返回严格结构化数据；缺失、伪造、重复、不完整或顺序错误的单元/片段 ID 都会失败关闭。
-- **清晰分层：** 不可变领域模型、provider/memory 接口、应用服务、SDK 适配器，以及显式处理失败状态的 CLI。
-- **隐私边界：** 翻译流程只向所选服务商发送必要文本和上下文，不上传 PPTX 二进制、原始 XML、媒体或格式信息。
-- **工作量有界：** 压缩包结构、解析 XML、发现文本、服务商单元/调用次数和序列化请求量都有显式、失败关闭的上限。
-- **可验证测试：** 离线假服务商、自建 PPTX fixture、恶意输入测试、可执行公开 demo、跨平台 CI 配置和安全扫描。
-- **Agent 工程化：** Codex 与 Claude Code 共用同一套仓库规则和同步校验的工程 skill。
 
 ## 架构：可验证的文本补丁事务
 
@@ -41,11 +55,7 @@ flowchart LR
     J --> K[fsync + 原子发布目标文件]
 ```
 
-源演示文稿始终只读。验证会检查 ZIP 完整性和成员顺序，要求无关包成员保持相同内容，对变化的幻灯片 XML 比较规范化结构指纹，并核对所有计划内及计划外文本节点。任一步失败都会删除临时文件。默认发布使用原子且禁止覆盖的路径；运行中若出现同名目标会失败，只有显式使用 `--overwrite` 才会替换。
-
-详细设计见[架构文档](docs/ARCHITECTURE.md)与[威胁模型](docs/THREAT_MODEL.md)。
-
-默认包策略会拒绝超过 500 张幻灯片、单个被检查的幻灯片 XML part 超过 250,000 个元素、超过 10,000 个翻译单元、50,000 个文本片段、5,000,000 个已发现源字符、单个单元超过 10,000 个可翻译片段、单个可翻译片段超过 100,000 个源字符，或累计超过 10,000 条诊断信息的输入。这些语义上限与 ZIP/member/XML 解压上限共同构成保守的拒绝服务边界，并不代表 PowerPoint 本身的能力范围。
+源文件始终只读。原子且禁止覆盖的发布之前，验证会检查包清单、无关成员字节、变化幻灯片的结构指纹，以及所有计划内和未修改文本节点。完整上限与失败行为见[架构文档](docs/ARCHITECTURE.md)和[威胁模型](docs/THREAT_MODEL.md)。
 
 ## 支持与不支持的内容
 
@@ -99,23 +109,17 @@ pptrans inspect examples/pptrans-demo.en.pptx --source en --target en
 pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --output pptrans-demo.identity.pptx --json
 ```
 
-![PPTrans 合成公开 demo 的第一张幻灯片渲染预览](docs/assets/pptrans-demo-preview.webp)
-
-`identity` 并不翻译，而是原样返回每个源文本片段。这个 demo 无需网络或 API key，即可验证检查、精确 ID 编排、补丁构建、临时写入、验证和输出发布。当前 [tests/test_public_demo.py](tests/test_public_demo.py) 明确断言：3 张幻灯片、41 个翻译单元、45 个已验证文本片段、零检查警告、规范化的作者自有元数据，并能由独立的 `python-pptx` 成功重新打开。
-
-在 commit `37733fa`，同一源 deck 与 identity 输出还通过了 Windows 上 LibreOffice 26.8.0.3 的原生验收：两份 PPTX 字节一致；三组 1921 × 1080 渲染图的 SHA-256 与像素缓冲区逐一一致；每张幻灯片均通过人工视觉检查与自动越界检查；renderer 完成后没有留下私有工作目录或辅助进程。[机器可读的原生 QA 记录](docs/qa/2026-08-28-windows-libreoffice.json)包含精确版本、hash、尺寸与证据边界。这只是一个合成 fixture 的 LibreOffice 证据，不衡量翻译质量，也不代表与 Microsoft PowerPoint 像素一致。源文件、重建与 QA 说明见[公开 demo 文档](docs/DEMO.md)。
+`identity` 是用于证明离线事务的透传服务商；人工复核的简体中文 fixture 用于证明真实改字。两者都由集成测试和有明确边界的原生记录固定，详见[完整 demo 与 QA 说明](docs/DEMO.md)。
 
 ## 使用真实服务商翻译
 
-可以导出服务商凭证；也可以把 [.env.example](.env.example) 复制为 `.env`，并显式传入 `--env-file .env`。PPTrans 不会自动搜索 dotenv 文件，也不会暗中选择付费模型。内置适配器固定使用服务商官方 endpoint，拒绝环境中的 `*_BASE_URL` 与 `*_CUSTOM_HEADERS` SDK 路由覆盖，并以 `trust_env=False` 构造 HTTP client，因此不会继承环境代理与 TLS 路由设置。Python 调用方显式注入的 SDK client 由调用方负责，不受此默认值约束。
+导出服务商凭证或显式传入 `--env-file`；PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。
 
 ```bash
 pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <明确的模型名称> --env-file .env --glossary examples/glossary.example.yaml --output pptrans-demo.zh-CN.pptx
 ```
 
-Anthropic 适配器使用 `--provider anthropic` 和 `ANTHROPIC_API_KEY`。`--no-memory` 可关闭本地持久化，`--memory <路径>` 可指定缓存文件，`--style <说明>` 可添加受众/语气要求，`--json` 可输出机器可读报告。机器 JSON 使用紧凑格式、ASCII 转义且不经过 Rich；人类可读输出会把所有 Unicode `Cc` 控制字符显示为 `\uXXXX`（检查文本中有意保留的换行除外）。以 `pptrans --help` 为当前已实现的 CLI 准则。
-
-CLI 会在构造付费服务商 client 前保守检查完整计划，缓存查询后再只对未命中部分复核。默认最多允许 2,000 个服务商单元（`--max-provider-units`）、100 次逻辑服务商调用（`--max-provider-calls`；SDK 内部重试另计）、2,000,000 个源文本/上下文字符（`--max-provider-source-characters`），以及所有逻辑批次合计 5,000,000 个序列化请求字符（`--max-provider-request-characters`）。每个单独请求还独立限制为 1,000,000 字符。提高上限意味着显式接受成本与风险，并不保证大 deck 的翻译效果。
+Anthropic 使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`。`--no-memory` 关闭本地留存，`--style`、`--glossary` 与 `--json` 提供主要控制项。付费工作会预先检查单元数、调用数、源文本/上下文和序列化请求上限；完整 CLI、路由与成本边界见[服务商文档](docs/PROVIDERS.md)。
 
 ### 服务商契约与隐私
 
@@ -127,19 +131,15 @@ CLI 会在构造付费服务商 client 前保守检查完整计划，缓存查�
 
 服务商会收到选定的幻灯片文本、相邻段落上下文、源/目标语言、可选 style 和术语表；不会收到 PPTX 二进制、文件路径、原始 XML、格式、图片、备注、关系或嵌入文件。但文本本身仍是数据导出，处理敏感材料前必须获得授权并检查服务商的数据保留条款。
 
-默认翻译记忆库是本地、持久化且**未加密**的 SQLite 数据库。其语义 key 包含语言、服务商/模型、由精确服务商指令与响应 schema 计算的契约指纹、style、术语表、相邻上下文、源文本、片段类型、顺序与切分。缓存路径的符号链接叶节点会被拒绝。POSIX 上新建缓存目录请求 `0700`，新数据库请求 `0600`；已有权限/ACL 保持不变，Windows 依赖继承 ACL，这些都不等于 ACL 审计。SQLite 强制使用 `DELETE` journal，使成功运行不保留 WAL/SHM sidecar；事务期间或崩溃后仍可能存在明文 rollback journal。若不适合保留明文，请使用 `--no-memory`。详见[服务商文档](docs/PROVIDERS.md)和[安全策略](SECURITY.md)。
+默认翻译记忆库是本地、持久化且**未加密**的 SQLite；敏感工作请使用 `--no-memory`。缓存身份、权限、journal、endpoint 固定、代理行为及调用方注入 client 的责任见[服务商文档](docs/PROVIDERS.md)和[安全策略](SECURITY.md)。
 
 ## 有边界的质量证据
 
-- [OOXML 核心测试](tests/test_ooxml_core.py)使用自建 deck，覆盖混合格式、超链接、字段、合并/格式化表格、多层组合、旋转和多张幻灯片。
-- [安全测试](tests/test_ooxml_safety.py)覆盖过期源文件、恶意压缩包路径、重复成员、数字签名、计划外文本变化、无关部件变化和危险输出路径。
-- [确定性属性测试](tests/test_properties.py)运行 9,346 个生成样例，覆盖 XML 1.0 字符边界、Unicode 序列化保真、服务商文本片段顺序、关系目标路径约束与字节变异 PPTX 处理。
+- [核心、安全与属性测试](tests/)覆盖丰富 OOXML fixture、恶意包、过期源、计划外变化，以及 9,346 个 Unicode/顺序/路径/变异生成样例。
 - [服务商契约测试](tests/test_provider_adapters.py)注入 SDK client，在不联网的情况下检查严格 schema 与安全错误映射。
 - [审查基础安全测试](tests/test_security_review_foundation.py)扫描 v2 包中的动态执行调用，并验证 renderer/图片边界。
-- [公开 demo 测试](tests/test_public_demo.py)确保仓库中的 PPTX 始终与真实离线流水线同步。
-- [原生 renderer 验收记录](docs/qa/2026-08-28-windows-libreoffice.json)把一次完整的 Windows/LibreOffice 运行绑定到 commit、fixture digest、精确 renderer 版本、逐页 hash、像素比较、人工视觉检查、自动越界检查与清理结果。
-- [CI](.github/workflows/ci.yml)在 Python 3.12 上配置了 lint、格式、严格类型检查、分支覆盖率、Bandit、依赖审计、skill 校验与构建检查，并在 Python 3.10 和 3.13 的 Linux、Windows、macOS 上运行确定性测试。
-- [安全工作流](.github/workflows/security.yml)配置了 CodeQL、完整 Git 历史 secret scan 和每周定时任务；Actions 均固定到 commit SHA。
+- [公开 demo 测试](tests/test_public_demo.py)固定逐字节可重建 deck、精确变化成员，以及 [identity](docs/qa/2026-08-28-windows-libreoffice.json) 与[改字](docs/qa/2026-08-28-curated-zh-cn.json)两份原生记录。
+- [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、打包、多系统测试、Bandit、依赖审计、CodeQL 与完整历史 secret scan，Actions 固定到 commit SHA。
 
 [pyproject.toml](pyproject.toml) 中可查看配置的分支覆盖率下限。绿色 badge 只代表对应工作流和 commit 的结果，不代表所有 PowerPoint 格式或翻译质量都已被证明。
 
@@ -151,9 +151,7 @@ CLI 会在构造付费服务商 client 前保守检查完整计划，缓存查�
 
 ## 可选视觉审查基础
 
-安装 `.[review]` 会加入 PyMuPDF，用于本地 LibreOffice → PDF → 有界 PNG 渲染。其显式 Impress PDF 导出会包含隐藏幻灯片，因此页数校验覆盖完整 deck。渲染使用彼此分离的私有工作目录与发布暂存目录：只有在有界重试成功清除源文件快照、PDF、光栅工作区与隔离的 LibreOffice profile 后，最终图片才会被链接到目标目录；清理或发布失败会安全终止，并回滚属于本次事务的输出。仓库也包含严格问题 schema、本地确定性评分/通过判定、隐私模式、endpoint 校验、日志脱敏、请求/像素/token/修复轮次预算，以及类型化的 allowlist 修复计划。
-
-这些只是经过测试的基础组件，不是已完成的视觉审查产品。目前没有多模态审查服务商、CLI 审查命令、与 PowerPoint 像素等价的渲染保证或修复执行器。LibreOffice 是独立系统依赖；处理不可信 deck 时仍应使用操作系统级隔离。
+安装 `.[review]` 会加入有界的 LibreOffice → PDF → PNG renderer，以及类型化的审查/修复 schema 与预算。renderer 清理是发布屏障：源快照、PDF、profile 与光栅图必须先清除，失败则回滚本次拥有的输出。这只是基础代码，不是多模态审查流程、PowerPoint 等价保证或修复执行器；详见[架构文档](docs/ARCHITECTURE.md)。
 
 ## Codex 与 Claude Code 支持
 

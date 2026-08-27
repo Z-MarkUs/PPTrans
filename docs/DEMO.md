@@ -1,10 +1,25 @@
 # Public demo source and QA
 
-[`examples/pptrans-demo.en.pptx`](../examples/pptrans-demo.en.pptx) is a three-slide synthetic fixture for exercising the v2 pipeline without private presentation data, a network call, or an API key. It is not a translation-quality sample: the documented offline run uses the `identity` adapter, which returns source text unchanged.
+[`examples/pptrans-demo.en.pptx`](../examples/pptrans-demo.en.pptx) is a three-slide synthetic fixture for exercising the v2 pipeline without private presentation data, a network call, or an API key. It has two deliberately separate evidence paths:
+
+- the built-in `identity` adapter returns source text unchanged and proves the no-op transaction; and
+- [`examples/pptrans-demo.zh-CN.pptx`](../examples/pptrans-demo.zh-CN.pptx) uses a fixed, author-reviewed mapping to prove real changed-text patching and preservation.
+
+The curated target is not a production-provider or general translation-quality benchmark. Its value is reproducibility: [`scripts/build_curated_demo.py`](../scripts/build_curated_demo.py) routes every mapped string through the real exact-ID translation orchestration, transactional writer, and post-write verifier.
 
 ![Rendered first slide of the synthetic PPTrans public demo](assets/pptrans-demo-preview.webp)
 
 The preview is the first slide exported by the authoring runtime. It is useful for repository presentation and visual inspection, but it does not prove pixel identity with Microsoft PowerPoint or cover the other two slides.
+
+## Complete before / after
+
+| Slide | English source | Curated Simplified Chinese target |
+| --- | --- | --- |
+| 1 | ![English source slide 1](assets/pptrans-demo-source-slide-01.webp) | ![Curated zh-CN slide 1](assets/pptrans-demo-zh-CN-slide-01.webp) |
+| 2 | ![English source slide 2](assets/pptrans-demo-source-slide-02.webp) | ![Curated zh-CN slide 2](assets/pptrans-demo-zh-CN-slide-02.webp) |
+| 3 | ![English source slide 3](assets/pptrans-demo-source-slide-03.webp) | ![Curated zh-CN slide 3](assets/pptrans-demo-zh-CN-slide-03.webp) |
+
+These repository previews come from `@oai/artifact-tool` 2.8.52 importing the committed PPTX files. The separate LibreOffice evidence below is the native-application acceptance result.
 
 ## Committed evidence
 
@@ -16,6 +31,8 @@ The preview is the first slide exported by the authoring runtime. It is useful f
 - no inspection warnings;
 - 41 verified patches and 45 verified spans; and
 - core metadata identifying Hehan Zhao and describing the deck as synthetic.
+
+The same test deterministically rebuilds the curated zh-CN deck byte for byte. It verifies 41 patches / 45 spans, confirms that only the three planned slide XML members changed, re-inspects the result, matches every resulting span to the reviewed mapping, and reopens the output independently.
 
 Document properties are normalized by [`scripts/sanitize_demo_metadata.py`](../scripts/sanitize_demo_metadata.py):
 
@@ -30,7 +47,7 @@ Document properties are normalized by [`scripts/sanitize_demo_metadata.py`](../s
 
 This removes tool-default metadata; it is not a general metadata scrubber for arbitrary presentations.
 
-## Native LibreOffice acceptance record
+## Native LibreOffice identity acceptance
 
 The demo received a separate native acceptance run on Windows at commit `37733faf71e660737177ff991be2a8437c9a6858`. The source deck first completed the offline `identity` transaction with translation memory disabled. The 18,687-byte output had the same SHA-256 as its source (`dd36b4f92edf915942d4300aeebd1854a049acc521dfc29e78b286c774d8e9d8`), so the no-op transaction was package-byte-identical.
 
@@ -40,9 +57,19 @@ The run additionally verified that neither the private render workspace nor publ
 
 This result is intentionally narrow. It proves that one synthetic fixture and its identity output opened and rendered identically in the recorded LibreOffice environment. It does not measure translation quality, longer-text layout fit, provider behavior, other decks, other LibreOffice versions, or Microsoft PowerPoint pixel identity.
 
+## Native LibreOffice changed-text acceptance
+
+The curated zh-CN output received a second acceptance run at commit `6d80dc3d093bface37c19d28c2e0ec8f8192ec8d`. Its deterministic offline generator made 41 verified patches / 45 verified spans across exactly `slide1.xml`, `slide2.xml`, and `slide3.xml`. ZIP member order remained equal, every other package member remained byte-identical, and PPTrans reverified changed-slide structure plus planned and unplanned text nodes.
+
+The English and zh-CN decks were then rendered with the same LibreOffice 26.8.0.3 build, PyMuPDF 1.28.2, Windows environment, and 144 DPI settings used for the identity record. Each produced three 1921 × 1080 PNGs. Every target render was inspected at original resolution with no visible clipping, overlap, or off-slide content. The Presentations skill's padded-canvas harness also passed all three target slides using its documented 100 px margin check. No private renderer workspace, publication staging directory, or LibreOffice helper process remained after the clean run.
+
+The [changed-text machine-readable record](qa/2026-08-28-curated-zh-cn.json) pins the generator, tested commit, package and preview hashes, exact changed members, native render hashes, overflow method, visual review, and evidence scope. This proves one reviewed fixture in one environment. It does not establish arbitrary translation quality, fit for longer target text, or Microsoft PowerPoint pixel equivalence.
+
 ## Authoring source
 
 [`scripts/build_demo.mjs`](../scripts/build_demo.mjs) contains the complete slide-authoring source. It uses Codex's bundled `@oai/artifact-tool` runtime to generate the raw deck, per-slide PNGs, per-slide layout JSON, an inspection snapshot, and the first-slide WebP preview.
+
+[`scripts/build_curated_demo.py`](../scripts/build_curated_demo.py) contains the complete reviewed EN → zh-CN fixture mapping and builds the committed target through PPTrans itself. [`scripts/render_demo_comparison.mjs`](../scripts/render_demo_comparison.mjs) imports both committed decks and emits the six repository previews plus disposable PNG/layout/inspection evidence.
 
 The authoring package is deliberately not a PPTrans runtime or Python development dependency. The build command therefore works only in an environment where the bundled `@oai/artifact-tool` module is already resolvable; the repository does not claim that this package can be installed from a public npm registry. The committed `.pptx` remains testable with PPTrans and `python-pptx` without that authoring runtime.
 
@@ -52,6 +79,7 @@ In a compatible Codex workspace, after making the bundled module resolvable acco
 node scripts/build_demo.mjs .tmp-demo/pptrans-demo.raw.pptx .tmp-demo/qa
 python scripts/sanitize_demo_metadata.py .tmp-demo/pptrans-demo.raw.pptx .tmp-demo/pptrans-demo.en.pptx
 pptrans inspect .tmp-demo/pptrans-demo.en.pptx --source en --target en
+python scripts/build_curated_demo.py .tmp-demo/pptrans-demo.en.pptx .tmp-demo/pptrans-demo.zh-CN.pptx
 python -m pytest -q tests/test_public_demo.py tests/test_repository_scripts.py
 ```
 

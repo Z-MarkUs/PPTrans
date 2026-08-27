@@ -26,6 +26,7 @@ SDIST_REQUIRED_SUFFIXES = {
     "docs/assets/pptrans-demo-zh-CN-slide-01.webp",
     "docs/assets/pptrans-demo-zh-CN-slide-02.webp",
     "docs/assets/pptrans-demo-zh-CN-slide-03.webp",
+    "docs/qa/2026-08-28-curated-zh-cn.json",
     "docs/qa/2026-08-28-windows-libreoffice.json",
     "examples/pptrans-demo.en.pptx",
     "examples/pptrans-demo.zh-CN.pptx",
