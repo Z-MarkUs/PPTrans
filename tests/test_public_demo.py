@@ -22,7 +22,7 @@ CURATED_DEMO_PATH = Path(__file__).parents[1] / "examples" / "pptrans-demo.zh-CN
 NATIVE_QA_PATH = Path(__file__).parents[1] / "docs" / "qa" / "2026-08-28-windows-libreoffice.json"
 CURATED_QA_PATH = Path(__file__).parents[1] / "docs" / "qa" / "2026-08-28-curated-zh-cn.json"
 NATIVE_QA_CANONICAL_SHA256 = "43ad1b27fe86d4b564023e8dab83084e851f78c387229f2d72c8c59a2d29e05b"
-CURATED_QA_CANONICAL_SHA256 = "e41fa804ab77d53a2c7861e8217dd1ff0918baf90f22403705c94e2ed000ccfa"
+CURATED_QA_CANONICAL_SHA256 = "46895de50b54548d1c1d7b07105560ead059dcd3c5d770ccfb10b8e351e0838a"
 
 
 def _canonical_record_sha256(record: object) -> str:

@@ -15,7 +15,7 @@
     "translation_memory": false,
     "source_language": "en",
     "target_language": "zh-CN",
-    "command": "python scripts/build_curated_demo.py examples/pptrans-demo.en.pptx examples/pptrans-demo.zh-CN.pptx",
+    "command": "python scripts/build_curated_demo.py examples/pptrans-demo.en.pptx examples/pptrans-demo.zh-CN.pptx --overwrite",
     "provider_calls": 2,
     "verified_patches": 41,
     "verified_spans": 45,
