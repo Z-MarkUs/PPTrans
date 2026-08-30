@@ -73,7 +73,7 @@ Do not advertise standalone binaries unless each advertised platform artifact wa
 
 ## 5. Documentation and benchmark gate
 
-Every README benchmark metric must come from a committed raw result that records the commit SHA, fixture hash/revision, Python version, operating system, and complete command. Record provider/model, cold versus warm translation-memory state, token usage, and renderer version whenever those systems participate. Separate deterministic OOXML-core results from provider-dependent translation quality, latency, cost, and visual-render results.
+Every README benchmark metric must come from a committed raw result that records the commit SHA, fixture hash/revision, Python version, operating system, normalized reproduction command, and every measured sample needed to recompute the summaries. Record provider/model, cold versus warm translation-memory state, token usage, and renderer version whenever those systems participate. Separate deterministic OOXML-core results from provider-dependent translation quality, latency, cost, and visual-render results.
 
 Remove or label claims whose evidence is absent, stale, model-specific, or narrower than the wording. Static “passing” badges are not evidence; badges must resolve to the workflow that runs the relevant gate.
 

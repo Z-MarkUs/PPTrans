@@ -43,6 +43,7 @@ SDIST_REQUIRED_SUFFIXES = {
     "README.zh-CN.md",
     "benchmarks/README.md",
     "benchmarks/results/2026-08-28-windows-python312.json",
+    "benchmarks/results/2026-08-31-auditable-stored-ooxml-windows-python312.json",
     "benchmarks/results/2026-08-31-windows-python312.json",
     "benchmarks/results/2026-08-31-stored-ooxml-windows-python312.json",
     "docs/ARCHITECTURE.md",

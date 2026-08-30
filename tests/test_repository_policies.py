@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
+import statistics
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -161,12 +162,12 @@ def test_demo_source_checkout_attributes_preserve_exact_payloads() -> None:
 
 
 def test_current_benchmark_claim_matches_the_clean_raw_record() -> None:
-    relative = Path("benchmarks/results/2026-08-31-stored-ooxml-windows-python312.json")
+    relative = Path("benchmarks/results/2026-08-31-auditable-stored-ooxml-windows-python312.json")
     record = json.loads((REPO_ROOT / relative).read_bytes())
     fixture = REPO_ROOT / "examples" / "pptrans-demo.en.pptx"
 
-    assert record["schema_version"] == "pptrans.core-benchmark/v1"
-    assert record["git_commit"] == "8b98a986f4d6c68ca9cd582c1b6ca384ff23806c"
+    assert record["schema_version"] == "pptrans.core-benchmark/v2"
+    assert record["git_commit"] == "c45856c0a98cdd00e916a4dd51a16397457ab9a3"
     assert record["git_dirty"] is False
     assert record["input_sha256"] == hashlib.sha256(fixture.read_bytes()).hexdigest()
     assert record["input_bytes"] == fixture.stat().st_size == 87_523
@@ -175,18 +176,21 @@ def test_current_benchmark_claim_matches_the_clean_raw_record() -> None:
         41,
         45,
     )
-    assert (record["warmups"], record["iterations"], record["median_ms"], record["p95_ms"]) == (
-        3,
-        30,
-        58.594,
-        60.652,
-    )
+    assert (record["warmups"], record["iterations"]) == (3, 30)
+    samples = record["samples_ms"]
+    assert isinstance(samples, list) and len(samples) == record["iterations"]
+    ordered = sorted(samples)
+    p95_index = round((len(ordered) - 1) * 0.95)
+    assert record["median_ms"] == round(statistics.median(samples), 3) == 58.163
+    assert record["p95_ms"] == ordered[p95_index] == 59.927
+    assert record["minimum_ms"] == min(samples) == 55.619
+    assert record["maximum_ms"] == max(samples) == 62.73
     for readme_name in ("README.md", "README.zh-CN.md"):
         readme = (REPO_ROOT / readme_name).read_text(encoding="utf-8")
         for claim in (
-            "58.594 ms",
-            "60.652 ms",
-            "`8b98a98`",
+            "58.163 ms",
+            "59.927 ms",
+            "`c45856c`",
             "87,523",
             relative.as_posix(),
         ):
