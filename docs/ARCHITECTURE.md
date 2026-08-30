@@ -80,13 +80,15 @@ Each direct `a:r/a:t` becomes a translatable span when its text is nonblank. Eac
 
 The unit source digest covers its locator, span order, node indexes, kinds, source strings, and translatability. A deterministic unit ID derives from that digest and the plan schema. After inspection, the whole-file hash is checked again so a concurrently changed source cannot produce a valid plan.
 
+Diagnostics for recognized preserved-but-unsupported content carry a code, message, slide number, and nested shape-ID path. They are advisory by default. `--fail-on-warnings` turns those emitted diagnostics into an operational stop, but a warning-free inspection is not an exhaustive statement about the full PowerPoint feature surface.
+
 ## 2. Translate across an exact-ID boundary
 
 `translate_plan` looks up each unit in translation memory, batches only misses, and calls the provider-neutral `Translator` protocol. The request includes languages, optional style and glossary, adjacent text context, and the ordered spans. It excludes the deck path, file hash, package parts, shape locators, media, notes, and raw XML.
 
 Before constructing a paid-provider client, the CLI conservatively validates the complete plan against explicit provider budgets. Defaults allow 2,000 provider units, 100 logical batches, 2,000,000 source/context characters, and 5,000,000 serialized request characters across the run. Each serialized batch also has a fixed 1,000,000-character ceiling. After translation-memory lookup, `translate_plan` repeats the budget check against cache misses; SDK-internal retries are separate from PPTrans logical-call statistics.
 
-Provider output is untrusted. Strict schemas reject unknown fields and wrong types. Application validation then requires:
+Provider output is untrusted. OpenAI must return its one strict-schema document; Anthropic must return exactly one content block, which must be the named schema tool call, with no accompanying text or second tool call. Strict schemas reject unknown fields and wrong types. Application validation then requires:
 
 - exactly the requested unit IDs in request order;
 - exactly the translatable span IDs in source order for each unit;
@@ -134,7 +136,7 @@ Verification reopens both packages and proves:
 4. every untargeted package member is byte-identical when decompressed;
 5. each targeted slide has the same canonical structural fingerprint after masking `a:t` values and their `xml:space` attribute;
 6. the number and kinds of text nodes are unchanged;
-7. every planned span has its expected source or translated value;
+7. every planned span has its expected source or translated value, and each changed text node has the exact required `xml:space` semantics;
 8. every unplanned text node and its whitespace semantics remain unchanged;
 9. no changed part falls outside the patch set.
 
@@ -171,7 +173,7 @@ There is currently no multimodal review-provider adapter, end-to-end review orch
 
 ## CLI output boundary
 
-Human-facing values such as paths, warnings, errors, and optional inspected text pass through a terminal sanitizer that renders every Unicode `Cc` control character as visible `\uXXXX` text; only intentional newlines in inspected text are retained. Machine modes write compact `ensure_ascii=True` JSON directly to standard output, without Rich markup, highlighting, or ANSI color. This keeps machine output parseable and prevents untrusted deck text or paths from becoming terminal-control sequences; it is not a general log-sanitization guarantee for external callers.
+Human-facing values such as paths, warnings, errors, and optional inspected text pass through a terminal sanitizer that renders every Unicode `Cc` control character as visible `\uXXXX` text; only intentional newlines in inspected text are retained. Human inspection lists each warning's code, slide, shape-ID path, and message. Machine inspection includes the same location data and writes compact `ensure_ascii=True` JSON directly to standard output, without Rich markup, highlighting, or ANSI color. With `--fail-on-warnings`, `inspect --json` still emits one complete report before returning status 1; `translate` stops before output preflight, provider construction, translation-memory access, or publication. This keeps machine output parseable and prevents untrusted deck text or paths from becoming terminal-control sequences; it is not a general log-sanitization guarantee for external callers.
 
 ## Extension rules
 

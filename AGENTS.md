@@ -6,10 +6,10 @@ PPTrans v2 is a `src`-layout Python application for translating editable PowerPo
 
 ## Setup and commands
 
-- Use Python 3.10 or newer.
+- Use a supported CPython release from 3.10 through 3.13.
 - Install development dependencies with `python -m pip install -e ".[dev]"`.
 - Run focused tests while iterating, then run the applicable gates in `docs/QUALITY_GATES.md`.
-- Default tests must be offline and deterministic. Never spend provider credits unless the user explicitly requests an external-provider test and the required key is already available.
+- Default tests must be offline and deterministic; pytest blocks in-process Python socket creation by default. That is not OS-level egress control and is not inherited by subprocesses. Never spend provider credits unless the user explicitly requests a separately invoked external-provider test and the required key is already available.
 
 ## Architecture
 

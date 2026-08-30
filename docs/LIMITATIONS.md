@@ -26,7 +26,7 @@ The following content is retained in the package but is outside the current text
 - text inside images or video;
 - regular text in package parts other than the ordered slide parts.
 
-Inspection emits an `unsupported_graphic_frame` warning for a non-table graphic frame encountered on a slide. Other preserved opaque parts may not produce a warning. Always inspect the generated deck manually when complete coverage matters.
+Inspection emits an `unsupported_graphic_frame` warning for a non-table graphic frame encountered on a slide. `pptrans inspect --fail-on-warnings` reports the normal inspection result and exits with status 1 when an emitted warning is present; the same option on `translate` stops before provider construction and publishes no output. Other preserved opaque parts may not produce a warning, so a warning-free result is not an exhaustive support or visual-fit guarantee. Always inspect the generated deck manually when complete coverage matters.
 
 DrawingML field text (`a:fld/a:t`), such as a generated date, is included in source context and integrity checks but is intentionally locked and not returned as a translation target.
 

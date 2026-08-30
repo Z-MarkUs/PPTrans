@@ -33,10 +33,13 @@ pptrans translate deck.pptx \
   --max-provider-calls 100 \
   --max-provider-source-characters 2000000 \
   --max-provider-request-characters 5000000 \
+  --fail-on-warnings \
   --output deck.fr.pptx
 ```
 
 Those four ceilings are the CLI defaults; spelling them out in an operational command makes cost policy reviewable. Raising one is an explicit opt-in. The complete plan is conservatively checked before a paid-provider client is constructed, and cache misses are checked again before provider work.
+
+`--fail-on-warnings` promotes the inspector's emitted unsupported-content diagnostics to a blocking policy. When such a warning is present, translation stops before output preflight, provider construction, translation-memory access, or publication. The absence of an emitted warning is not an exhaustive PowerPoint-support or visual-fit guarantee; see [known limitations](LIMITATIONS.md).
 
 For an offline transaction check:
 
@@ -46,6 +49,7 @@ pptrans translate deck.pptx \
   --target en \
   --provider identity \
   --no-memory \
+  --fail-on-warnings \
   --output deck.identity.pptx
 ```
 

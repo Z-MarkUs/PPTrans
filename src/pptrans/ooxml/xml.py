@@ -151,12 +151,18 @@ def validate_text(text: str) -> None:
         raise PatchValidationError("Translated text contains a character forbidden by XML 1.0.")
 
 
+def requires_xml_space_preserve(text: str) -> bool:
+    """Return whether DrawingML must preserve leading or trailing whitespace."""
+
+    return text[:1].isspace() or text[-1:].isspace()
+
+
 def assign_text(node: etree._Element, text: str) -> None:
     """Change one ``a:t`` value and add whitespace preservation when required."""
 
     validate_text(text)
     node.text = text
-    if text[:1].isspace() or text[-1:].isspace():
+    if requires_xml_space_preserve(text):
         node.set(XML_SPACE, "preserve")
 
 

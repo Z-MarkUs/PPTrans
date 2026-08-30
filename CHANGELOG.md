@@ -15,6 +15,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - OpenAI Responses API and Anthropic Messages API translation adapters that require an explicit model, plus an offline identity adapter for pipeline verification.
 - A local SQLite translation memory keyed by semantic translation inputs and a prompt/schema-derived contract fingerprint rather than deck filename.
 - Strict JSON/YAML glossary loading, CLI `inspect`, `translate`, and `doctor` commands, and machine-readable output modes.
+- An opt-in `--fail-on-warnings` policy for inspection and translation, with actionable warning codes and slide/shape locations; strict translation stops before provider construction and output publication.
 - Post-write verification of package inventory, unrelated member bytes, target-slide structure, planned text values, and unplanned text nodes.
 - An optional LibreOffice-to-PDF-to-PNG rendering adapter with resource ceilings, explicit hidden-slide export, whole-deck page-count checks, staged image publication, and isolated-profile execution.
 - Provider-neutral review schemas, deterministic score evaluation, privacy policy helpers, review budgets, and allowlisted repair-plan schemas.
@@ -43,6 +44,9 @@ This alpha is active development, not a release candidate. Publication is blocke
 - LibreOffice rendering now treats private-workspace cleanup as a commit barrier: validated PNGs move to separate same-filesystem staging, bounded transient-error retries retire the source/PDF/profile/raster workspace before publication, and late publication-stage cleanup failure rolls back owned final links.
 - PyMuPDF discovery and loading now use its canonical `pymupdf` module name instead of the collision-prone legacy `fitz` alias.
 - Engineering guidance now distinguishes focused tests from the full coverage gate, includes strict typing and security checks consistently, and separates disposable package validation from releasable artifacts; CI directly covers every classified Python minor, and the source-distribution gate requires complete mirrored agent-skill bundles.
+- Supported Python is explicitly bounded to CPython 3.10 through 3.13, and the default pytest configuration blocks in-process Python socket creation; subprocess and OS-level egress remain separately controlled boundaries.
+- CI now exercises the provider adapters against the declared minimum OpenAI and Anthropic SDK versions, in addition to the normally resolved dependency set.
+- Package validation accepts a disposable distribution directory, smoke-tests installed-wheel runtime/metadata agreement, checks exact `v{version}` agreement on tag builds, and does not upload blocked distribution artifacts.
 - The identity-demo QA record now pins its padded-canvas harness command, renderer, dimensions, padding, input hash, and rerun timestamp instead of recording only a bare pass result.
 
 ### Security
@@ -58,6 +62,9 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Provider text must be nonblank, stay within a bounded expansion, and preserve high-confidence URLs, emails, placeholders, and digit sequences.
 - XML parts have a dedicated 32 MiB expansion ceiling, while safer archive/member/compression defaults bound opaque payload processing.
 - Human-facing CLI values escape every Unicode `Cc` control character as visible `\uXXXX` text, while machine modes emit compact ASCII-escaped JSON directly without Rich styling or ANSI color.
+- Post-write verification rejects altered `xml:space` semantics on changed text nodes even though whitespace attributes are masked by the structural fingerprint.
+- The Anthropic adapter accepts exactly one named tool-use content block and rejects otherwise-correct output accompanied by text or another tool call; offline adapter tests cover authentication and rate-limit SDK failures without leaking response details.
+- Secret-history CI downloads a fixed Gitleaks archive, verifies its pinned SHA-256 before extraction, proves the scanner detects a runtime-generated control fixture, and scans all fetched history without delegating installation to a dynamically downloading action.
 
 ### Removed from the v2 surface
 

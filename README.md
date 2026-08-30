@@ -4,23 +4,21 @@
 
 [简体中文](README.zh-CN.md)
 
-[![CI](https://github.com/Z-MarkUs/PPTrans/actions/workflows/ci.yml/badge.svg)](https://github.com/Z-MarkUs/PPTrans/actions/workflows/ci.yml)
-[![Security](https://github.com/Z-MarkUs/PPTrans/actions/workflows/security.yml/badge.svg)](https://github.com/Z-MarkUs/PPTrans/actions/workflows/security.yml)
-
 ## 60-second overview
 
 - **Outcome:** translates editable slide text at existing DrawingML `a:t` boundaries while retaining the surrounding package structure and formatting objects.
 - **Integrity:** binds work to the source SHA-256 and stable unit/span addresses, patches a staged copy, verifies planned and untouched content, then publishes atomically.
 - **Untrusted-AI boundary:** OpenAI and Anthropic results must satisfy strict schemas and exact IDs; partial, reordered, duplicated, or invented output fails closed.
+- **Automation gate:** `--fail-on-warnings` can stop a run on recognized unsupported slide content before a provider is constructed or an output is published.
 - **Privacy and security:** defensive ZIP/XML/resource limits; only selected text and context reach the explicitly chosen provider—not the deck binary, media, or raw XML.
-- **Evidence:** 399 passing tests, 91.80% combined branch-aware coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging checks, and security scanning.
+- **Evidence:** 413 passing tests, 91.95% combined branch-aware coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging checks, and security scanning.
 - **Runnable proof:** a synthetic 3-slide / 41-unit / 45-span demo, a real changed-text zh-CN output, and scoped LibreOffice acceptance evidence.
 
 ### Before / after: the text really changes
 
 | English source | Curated Simplified Chinese output |
 | --- | --- |
-| ![English source slide](docs/assets/pptrans-demo-source-slide-01.webp) | ![Curated Simplified Chinese slide](docs/assets/pptrans-demo-zh-CN-slide-01.webp) |
+| ![English demo cover: “Translate PowerPoint. Preserve the PowerPoint.”](docs/assets/pptrans-demo-source-slide-01.webp) | ![Simplified Chinese demo cover: “翻译 PowerPoint。保留 PowerPoint 结构。” with the same layout](docs/assets/pptrans-demo-zh-CN-slide-01.webp) |
 
 Download the [English source deck](examples/pptrans-demo.en.pptx) and the [verified zh-CN output](examples/pptrans-demo.zh-CN.pptx), or inspect the deterministic [fixture generator](scripts/build_curated_demo.py). The target strings are author-reviewed fixture data routed through the real exact-ID patch/verify/publish pipeline; this demonstrates changed OOXML and preservation behavior, not production-provider translation quality. All three before/after slides and their native QA scope are in the [demo notes](docs/DEMO.md).
 
@@ -76,11 +74,11 @@ Structural preservation does not prove visual fit. A valid translation can still
 
 ## Five-minute source quickstart
 
-PPTrans v2 is intentionally not advertised as a PyPI or binary release. Run the current alpha from a checkout:
+PPTrans v2 is unreleased, and the audited v2 tree is not yet public while its provenance gate remains unresolved. These commands assume this v2 source tree is already checked out, a supported CPython 3.10–3.13 is installed, and your shell is at the repository root.
+
+Create a virtual environment:
 
 ```bash
-git clone https://github.com/Z-MarkUs/PPTrans.git
-cd PPTrans
 python -m venv .venv
 ```
 
@@ -94,19 +92,21 @@ source .venv/bin/activate
 .\.venv\Scripts\Activate.ps1
 ```
 
-Install the development environment and inspect the public demo without exposing its text:
+Install the development environment, check runtime readiness, and inspect the committed demo without exposing its text:
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 pptrans doctor
-pptrans inspect examples/pptrans-demo.en.pptx --source en --target en
+pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --fail-on-warnings
 ```
+
+Inspection warnings are non-fatal by default. Here, `--fail-on-warnings` makes `inspect` return status 1 if PPTrans reports unsupported content. The same option on `translate` stops before output preflight, provider construction, translation-memory access, or publication. It does not guarantee that every unsupported PowerPoint feature is detected or prove visual fit.
 
 Then exercise the complete transaction offline:
 
 ```bash
-pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --output pptrans-demo.identity.pptx --json
+pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --fail-on-warnings --output pptrans-demo.identity.pptx --json
 ```
 
 `identity` is a no-op provider for proving the offline transaction; the curated zh-CN fixture proves actual changed text. Both are pinned by integration tests and scoped native records. See the [complete demo and QA notes](docs/DEMO.md).
@@ -116,10 +116,10 @@ pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provid
 Export the provider credential or pass an explicit `--env-file`; PPTrans never searches for dotenv files or chooses a paid model implicitly.
 
 ```bash
-pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <explicit-model-name> --env-file .env --glossary examples/glossary.example.yaml --output pptrans-demo.zh-CN.pptx
+pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <explicit-model-name> --env-file .env --glossary examples/glossary.example.yaml --fail-on-warnings --output pptrans-demo.zh-CN.pptx
 ```
 
-Anthropic uses `--provider anthropic` and `ANTHROPIC_API_KEY`. `--no-memory` disables local retention; `--style`, `--glossary`, and `--json` expose the main controls. Paid work is preflighted against unit, call, source/context, and serialized-request ceilings. See [provider integration](docs/PROVIDERS.md) for the complete CLI, routing, and cost boundaries.
+Anthropic uses `--provider anthropic` and `ANTHROPIC_API_KEY`. `--no-memory` disables local retention; `--style`, `--glossary`, and `--json` expose the main controls. Paid work is preflighted against unit, call, source/context, and serialized-request ceilings. The strict warning option blocks only diagnostics PPTrans actually emits; it is not an exhaustive feature-support check. See [provider integration](docs/PROVIDERS.md) for the complete CLI, routing, and cost boundaries.
 
 ### Provider contract and privacy
 
@@ -141,9 +141,9 @@ The repository's quality claims are scoped to checks that actually run:
 - [Provider contract tests](tests/test_provider_adapters.py) inject SDK clients and exercise strict schemas and safe error mapping without network access.
 - [Review-foundation tests](tests/test_security_review_foundation.py) scan the v2 package for dynamic execution calls and test renderer/image safety boundaries.
 - [Public-demo tests](tests/test_public_demo.py) pin byte-reproducible decks, exact changed members, and the complete contents of both scoped [identity](docs/qa/2026-08-28-windows-libreoffice.json) and [changed-text](docs/qa/2026-08-28-curated-zh-cn.json) native records. The native renders and visual judgments are recorded manual acceptance evidence; the test suite does not recreate those observations.
-- [CI and security workflows](.github/workflows/) configure linting, strict typing, coverage, packaging, multi-OS tests, Bandit, dependency audit, CodeQL, and full-history secret scanning with SHA-pinned actions.
+- [CI and security workflows](.github/workflows/) configure linting, strict typing, coverage, packaging, multi-OS tests, Bandit, dependency audit, CodeQL, and full-history secret scanning with SHA-pinned actions plus a checksum-pinned scanner archive.
 
-The configured combined branch-aware coverage floor is visible in [pyproject.toml](pyproject.toml). A green badge is useful evidence for its workflow and commit only; it is not proof of universal formatting preservation or translation quality.
+The configured combined branch-aware coverage floor is visible in [pyproject.toml](pyproject.toml). A successful workflow is evidence for its exact workflow and commit only; it is not proof of universal formatting preservation or translation quality. Public badges will be restored only after the audited v2 workflows are published and pass on the public repository.
 
 ### Benchmark status
 

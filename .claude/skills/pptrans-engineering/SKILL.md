@@ -23,7 +23,7 @@ Read only the references relevant to the current request. Inspect the current co
 - Never overwrite the input deck. Keep intermediate and failure artifacts scoped to a temporary directory and clean them predictably.
 - Treat model output as untrusted data. Parse it against an explicit schema and never execute model-generated Python or shell code.
 - Keep the default suite offline. Use deterministic providers and self-authored fixtures; run paid or data-exporting tests only with explicit authorization.
-- Fail clearly on unsupported formats, provider capabilities, malformed responses, or partial processing. Do not convert a warning into a successful result.
+- Fail clearly on unsupported formats, provider capabilities, malformed responses, or partial processing. Preserve actionable diagnostics for recognized unsupported content; use and test `--fail-on-warnings` when an automated workflow requires zero emitted warnings, without claiming that warning-free inspection is exhaustive.
 - Do not claim formatting preservation, vision review, model compatibility, speed, quality, or cost without current evidence covering the claim.
 
 ## Complete the change

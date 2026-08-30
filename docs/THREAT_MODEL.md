@@ -40,7 +40,7 @@ The built-in translation adapters do not upload the presentation binary, images,
 
 **Threats:** DTD/entity expansion, network retrieval, extremely large trees, malformed XML, and unexpected structural mutation during serialization.
 
-**Mitigations:** DTDs are rejected; entity resolution, DTD loading, and network access are disabled; lxml's huge-tree mode is off; syntax failures are explicit. A canonical fingerprint masks only `a:t` content and translated whitespace metadata, then rejects any other structural difference.
+**Mitigations:** DTDs are rejected; entity resolution, DTD loading, and network access are disabled; lxml's huge-tree mode is off; syntax failures are explicit. A canonical fingerprint masks only `a:t` content and translated whitespace metadata, then rejects any other structural difference. Independent text-node verification requires the exact `xml:space` semantics produced for every changed value, so a masked whitespace attribute cannot be altered freely.
 
 **Residual risk:** parser and dependency vulnerabilities remain possible. Keep dependencies patched and use the configured dependency and CodeQL scans.
 
@@ -56,7 +56,7 @@ The built-in translation adapters do not upload the presentation binary, images,
 
 **Threats:** source text instructs a model to ignore the task; the model returns prose, executable code, duplicate IDs, reordered spans, locked-field translations, oversized or extra data, or partial success.
 
-**Mitigations:** instructions label deck JSON as untrusted data. OpenAI uses a strict JSON Schema response; Anthropic forces exactly one named schema tool call. Pydantic rejects extra fields and wrong types. Application validation requires exact unit/span identity and order, rejects blank, XML 1.0-invalid, oversized, or implausibly expanded text, and requires high-confidence URLs, emails, placeholders, and digit sequences to survive unchanged before memory writes. A contract fingerprint derived from the exact system instructions and response schema invalidates prior semantic cache keys when either contract component changes. The v2 package contains no `exec`, `eval`, or `compile` call, and a security test scans for them.
+**Mitigations:** instructions label deck JSON as untrusted data. OpenAI uses a strict JSON Schema response; Anthropic accepts exactly one content block and requires it to be the named schema tool call, rejecting accompanying prose or another tool call. Pydantic rejects extra fields and wrong types. Application validation requires exact unit/span identity and order, rejects blank, XML 1.0-invalid, oversized, or implausibly expanded text, and requires high-confidence URLs, emails, placeholders, and digit sequences to survive unchanged before memory writes. A contract fingerprint derived from the exact system instructions and response schema invalidates prior semantic cache keys when either contract component changes. The v2 package contains no `exec`, `eval`, or `compile` call, and a security test scans for them.
 
 ### Unbounded provider work or cost
 
@@ -126,6 +126,6 @@ The built-in translation adapters do not upload the presentation binary, images,
 
 ## Verification evidence
 
-The offline suite exercises malicious archive names and duplicate members, package limits, digital-signature rejection, locked fields, stale source hashes, structural tampering, unrelated-part changes, exact-ID failures, cache corruption, SQL metacharacters, POSIX cache creation modes, SQLite journal policy, dynamic-execution absence, endpoint policy, log redaction, budget ceilings, renderer command construction, missing backends, and invalid images.
+The offline suite exercises malicious archive names and duplicate members, package limits, digital-signature rejection, locked fields, stale source hashes, structural and planned-whitespace tampering, unrelated-part changes, exact-ID failures, ambiguous provider content, authentication/rate-limit error mapping, cache corruption, SQL metacharacters, POSIX cache creation modes, SQLite journal policy, dynamic-execution absence, endpoint policy, log redaction, budget ceilings, renderer command construction, missing backends, and invalid images.
 
 That coverage demonstrates known controls on synthetic inputs. It does not replace fuzzing, dependency review, an OS sandbox for office rendering, or independent security assessment. See [SECURITY.md](../SECURITY.md) for reporting and [QUALITY_GATES.md](QUALITY_GATES.md) for required checks.

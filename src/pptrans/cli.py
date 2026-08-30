@@ -26,7 +26,7 @@ from pptrans.application.translate import (
 from pptrans.config import default_memory_path, load_environment
 from pptrans.doctor import run_doctor
 from pptrans.domain.errors import PPTransError
-from pptrans.domain.models import DeckPlan
+from pptrans.domain.models import DeckPlan, Diagnostic
 from pptrans.glossary import load_glossary
 from pptrans.ooxml.inspect import inspect_deck
 
@@ -106,9 +106,45 @@ def _warning_payload(plan: DeckPlan) -> list[dict[str, object]]:
             "code": warning.code,
             "message": warning.message,
             "slide": warning.slide_index,
+            "shape_id_path": list(warning.shape_id_path),
         }
         for warning in plan.warnings
     ]
+
+
+def _warning_location(warning: Diagnostic) -> str:
+    parts: list[str] = []
+    if warning.slide_index is not None:
+        parts.append(f"slide {warning.slide_index}")
+    if warning.shape_id_path:
+        parts.append("shape " + "/".join(str(shape_id) for shape_id in warning.shape_id_path))
+    return ", ".join(parts)
+
+
+def _print_warnings(plan: DeckPlan) -> None:
+    for warning in plan.warnings:
+        location = _warning_location(warning)
+        label = warning.code if not location else f"{warning.code} ({location})"
+        error_console.print(
+            Text.assemble(
+                ("Warning:", "yellow"),
+                " ",
+                _terminal_string(label),
+                ": ",
+                _terminal_string(warning.message),
+            )
+        )
+
+
+def _abort_for_warnings(plan: DeckPlan) -> NoReturn:
+    _print_warnings(plan)
+    count = len(plan.warnings)
+    noun = "warning" if count == 1 else "warnings"
+    _abort(
+        f"Inspection reported {count} {noun}; refusing to continue because "
+        "--fail-on-warnings is set.",
+        code=1,
+    )
 
 
 def _require_translation_units(plan: DeckPlan) -> None:
@@ -183,11 +219,22 @@ def inspect_command(
     source_lang: Annotated[str, typer.Option("--source", help="Source language code/name.")],
     target_lang: Annotated[str, typer.Option("--target", help="Target language code/name.")],
     as_json: Annotated[
-        bool, typer.Option("--json", help="Emit machine-readable, content-free metadata.")
+        bool,
+        typer.Option(
+            "--json",
+            help="Emit machine-readable metadata; content-free unless --show-text is set.",
+        ),
     ] = False,
     show_text: Annotated[
         bool,
         typer.Option("--show-text", help="Include deck text in output; may expose sensitive data."),
+    ] = False,
+    fail_on_warnings: Annotated[
+        bool,
+        typer.Option(
+            "--fail-on-warnings",
+            help="Exit 1 after inspection when unsupported-content warnings are present.",
+        ),
     ] = False,
 ) -> None:
     """Inspect a deck without calling a model or changing any file."""
@@ -213,6 +260,8 @@ def inspect_command(
         ]
     if as_json:
         _write_json(payload)
+        if fail_on_warnings and plan.warnings:
+            raise typer.Exit(code=1)
         return
 
     table = Table(title="PPTrans deck plan")
@@ -224,6 +273,7 @@ def inspect_command(
     table.add_row("Translation units", Text(str(len(plan.units))))
     table.add_row("Warnings", Text(str(len(plan.warnings))))
     console.print(table)
+    _print_warnings(plan)
     if show_text:
         for unit in plan.units:
             console.print(
@@ -233,6 +283,8 @@ def inspect_command(
                     _terminal_string(unit.source_text, allow_newlines=True),
                 )
             )
+    if fail_on_warnings and plan.warnings:
+        raise typer.Exit(code=1)
 
 
 @app.command("translate")
@@ -309,6 +361,13 @@ def translate_command(
     overwrite: Annotated[
         bool, typer.Option("--overwrite", help="Replace an existing output, never the source.")
     ] = False,
+    fail_on_warnings: Annotated[
+        bool,
+        typer.Option(
+            "--fail-on-warnings",
+            help="Abort before provider construction when inspection warnings are present.",
+        ),
+    ] = False,
     as_json: Annotated[
         bool, typer.Option("--json", help="Emit a machine-readable completion report.")
     ] = False,
@@ -331,6 +390,8 @@ def translate_command(
         load_environment(resolved_dotenv)
         glossary = load_glossary(resolved_glossary) if resolved_glossary is not None else ()
         plan = inspect_deck(source, source_lang=source_lang, target_lang=target_lang)
+        if fail_on_warnings and plan.warnings:
+            _abort_for_warnings(plan)
         _require_translation_units(plan)
         destination = preflight_output(plan, destination, overwrite=overwrite)
         options = TranslationOptions(
@@ -397,15 +458,7 @@ def translate_command(
         f"{result.report.verified_spans} text spans · "
         f"{run.stats.memory_hits} memory hits · {run.stats.provider_calls} provider calls"
     )
-    for warning in plan.warnings:
-        error_console.print(
-            Text.assemble(
-                ("Warning:", "yellow"),
-                " ",
-                f"slide {warning.slide_index}: " if warning.slide_index is not None else "",
-                _terminal_string(warning.message),
-            )
-        )
+    _print_warnings(plan)
 
 
 @app.command("doctor")

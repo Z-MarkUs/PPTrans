@@ -6,7 +6,7 @@ Before contributing, read the [provenance notice](NOTICE.md). The upstream licen
 
 ## Set up a development environment
 
-Use Python 3.10 or newer in a virtual environment:
+Use a supported CPython release from 3.10 through 3.13 in a virtual environment:
 
 ```bash
 python -m venv .venv
@@ -16,7 +16,7 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev,review]"
 ```
 
-The `review` extra installs the PDF rasterizer used by the optional LibreOffice rendering foundation. LibreOffice itself is a separate system dependency. Translation and the default test suite do not require PowerPoint, LibreOffice, network access, or provider credentials.
+The `review` extra installs the PDF rasterizer used by the optional LibreOffice rendering foundation. LibreOffice itself is a separate system dependency. Translation and the default test suite do not require PowerPoint, LibreOffice, network access, or provider credentials. Pytest blocks in-process Python socket creation by default; this is not OS-level egress control and is not inherited by subprocesses, so subprocess tests must remain explicitly offline too.
 
 Run a read-only environment check with:
 

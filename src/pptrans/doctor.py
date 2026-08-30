@@ -42,12 +42,17 @@ def _package_check(distribution: str, *, required: bool = True) -> DoctorCheck:
 def run_doctor(provider: str | None = None) -> tuple[DoctorCheck, ...]:
     """Inspect dependencies, credentials, and optional rendering without network calls."""
 
-    python_ok = sys.version_info >= (3, 10)
+    python_version = sys.version_info[:2]
+    implementation = sys.implementation.name
+    python_ok = implementation == "cpython" and (3, 10) <= python_version < (3, 14)
     checks = [
         DoctorCheck(
             name="python",
             status="pass" if python_ok else "fail",
-            detail=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+            detail=(
+                f"{implementation} "
+                f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+            ),
             required=True,
         ),
         _package_check("lxml"),

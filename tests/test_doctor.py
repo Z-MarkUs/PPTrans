@@ -97,8 +97,14 @@ def test_run_doctor_treats_blank_credentials_as_missing(
     assert credential.detail == f"{environment_name} is not set"
 
 
-def test_run_doctor_marks_missing_required_dependencies_credentials_and_old_python(
+@pytest.mark.parametrize(
+    "python_version",
+    [(3, 9, 19, "final", 0), (3, 14, 0, "final", 0)],
+    ids=["below-supported-range", "above-supported-range"],
+)
+def test_run_doctor_marks_missing_requirements_and_unsupported_python(
     monkeypatch: pytest.MonkeyPatch,
+    python_version: tuple[int, int, int, str, int],
 ) -> None:
     VersionInfo = namedtuple(
         "VersionInfo",
@@ -108,7 +114,7 @@ def test_run_doctor_marks_missing_required_dependencies_credentials_and_old_pyth
     def missing(_distribution: str) -> str:
         raise PackageNotFoundError
 
-    monkeypatch.setattr(doctor.sys, "version_info", VersionInfo(3, 9, 19, "final", 0))
+    monkeypatch.setattr(doctor.sys, "version_info", VersionInfo(*python_version))
     monkeypatch.setattr(doctor, "version", missing)
     monkeypatch.setattr(doctor, "LibreOfficeRenderer", _Renderer)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -143,6 +149,21 @@ def test_run_doctor_reports_available_renderer_as_optional_pass(
     assert renderer.status == "pass"
     assert renderer.required is False
     assert all("credential" not in check.name for check in checks)
+
+
+def test_run_doctor_rejects_an_untested_python_implementation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(doctor.sys, "implementation", SimpleNamespace(name="pypy"))
+    monkeypatch.setattr(doctor, "version", _fixed_version)
+    monkeypatch.setattr(doctor, "LibreOfficeRenderer", _Renderer)
+
+    checks = doctor.run_doctor()
+
+    python = next(check for check in checks if check.name == "python")
+    assert python.status == "fail"
+    assert python.required is True
+    assert python.detail.startswith("pypy ")
 
 
 def test_doctor_json_returns_zero_for_passes_and_warnings(

@@ -4,12 +4,12 @@
 
 The v2 flow is:
 
-1. `pptrans.ooxml.inspect.inspect_deck` defensively opens the OPC/ZIP package, discovers presentation-ordered slide parts, walks nested shapes and table cells, and returns an immutable `DeckPlan` containing stable paragraph locators, source spans, digests, and the input SHA-256.
+1. `pptrans.ooxml.inspect.inspect_deck` defensively opens the OPC/ZIP package, discovers presentation-ordered slide parts, walks nested shapes and table cells, and returns an immutable `DeckPlan` containing stable paragraph locators, source spans, digests, diagnostics, and the input SHA-256. Emitted diagnostics include the slide and nested shape-ID path; `--fail-on-warnings` can promote them to a CLI stop but does not prove exhaustive feature support.
 2. Provider orchestration translates plan units and returns text keyed by translation-unit and span IDs. Provider output does not contain package paths or executable operations.
 3. `pptrans.ooxml.patch.build_patch_set` rejects unknown, missing, duplicate, malformed, or reordered targets and produces an immutable, source-bound `PatchSet`.
 4. `pptrans.application.deck.write_translated_deck` rejects the source as an output, checks the source hash, and creates a neighboring temporary `.pptx`.
 5. `apply_patch_set` resolves every locator against the unchanged source, updates only validated DrawingML text nodes, checks the changed XML's structural fingerprint, and copy-writes the package while preserving member metadata and order.
-6. `pptrans.ooxml.verify.verify_output` checks ZIP integrity, package member names and order, byte identity of unrelated parts, structural fingerprints of target parts, and every expected translated span.
+6. `pptrans.ooxml.verify.verify_output` checks ZIP integrity, package member names and order, byte identity of unrelated parts, structural fingerprints of target parts, every expected translated span, and the exact required `xml:space` semantics for each changed text node.
 7. Only after verification does the application service fsync and publish. Default publication creates an atomic no-clobber hard link; explicit overwrite atomically replaces the destination. Success is returned only after bounded cleanup retires the private stage. If post-publication cleanup is exhausted, PPTrans rolls back only a final path that retains the staged-file identity, preserves foreign replacements, and reports any residual path explicitly. The source remains untouched.
 
 ## Ownership map

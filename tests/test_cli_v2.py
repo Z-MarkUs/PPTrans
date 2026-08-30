@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 from pptx import Presentation
+from pptx.chart.data import CategoryChartData
+from pptx.enum.chart import XL_CHART_TYPE
 from pptx.util import Inches, Pt
 from typer.testing import CliRunner, Result
 
@@ -30,6 +32,23 @@ def _create_private_deck(path: Path, *, text: str = PRIVATE_TEXT) -> bytes:
     paragraph.runs[0].font.name = "Aptos"
     paragraph.runs[0].font.size = Pt(24)
     paragraph.runs[0].font.bold = True
+    presentation.save(path)
+    return path.read_bytes()
+
+
+def _add_unsupported_chart(path: Path) -> bytes:
+    presentation = Presentation(path)
+    data = CategoryChartData()
+    data.categories = ["A", "B"]
+    data.add_series("Series", (1, 2))
+    presentation.slides[0].shapes.add_chart(
+        XL_CHART_TYPE.COLUMN_CLUSTERED,
+        Inches(1),
+        Inches(3),
+        Inches(5),
+        Inches(2),
+        data,
+    )
     presentation.save(path)
     return path.read_bytes()
 
@@ -104,6 +123,12 @@ def test_inspect_json_is_content_private_by_default_and_opt_in_reveals_text(
     assert PRIVATE_TEXT not in private_result.stdout
     assert source.read_bytes() == original
 
+    strict_private_result = runner.invoke(app, [*base_args, "--fail-on-warnings"])
+
+    assert strict_private_result.exit_code == 0, strict_private_result.output
+    assert _json_output(strict_private_result) == private_payload
+    assert source.read_bytes() == original
+
     disclosed_result = runner.invoke(app, [*base_args, "--show-text"])
 
     assert disclosed_result.exit_code == 0, disclosed_result.output
@@ -111,6 +136,84 @@ def test_inspect_json_is_content_private_by_default_and_opt_in_reveals_text(
     assert isinstance(disclosed_payload, dict)
     assert disclosed_payload["units"][0]["text"] == PRIVATE_TEXT
     assert PRIVATE_TEXT in disclosed_result.stdout
+    assert source.read_bytes() == original
+
+
+def test_inspect_can_fail_on_actionable_unsupported_content_warnings(
+    tmp_path: Path,
+    runner: CliRunner,
+) -> None:
+    source = tmp_path / "chart-and-text.pptx"
+    _create_private_deck(source)
+    original = _add_unsupported_chart(source)
+    base_args = [
+        "inspect",
+        str(source),
+        "--source",
+        "en",
+        "--target",
+        "fr",
+        "--json",
+    ]
+
+    permissive = runner.invoke(app, base_args)
+
+    assert permissive.exit_code == 0, permissive.output
+    permissive_payload = _json_output(permissive)
+    assert isinstance(permissive_payload, dict)
+    warning = permissive_payload["warnings"][0]
+    assert warning["code"] == "unsupported_graphic_frame"
+    assert warning["slide"] == 1
+    assert warning["shape_id_path"]
+    assert PRIVATE_TEXT not in permissive.stdout
+
+    strict_json = runner.invoke(app, [*base_args, "--fail-on-warnings"])
+
+    assert strict_json.exit_code == 1
+    assert _json_output(strict_json) == permissive_payload
+    assert strict_json.stderr == ""
+
+    strict_human = runner.invoke(
+        app,
+        [arg for arg in base_args if arg != "--json"] + ["--fail-on-warnings"],
+    )
+
+    assert strict_human.exit_code == 1
+    assert "unsupported_graphic_frame" in strict_human.stderr
+    assert "slide 1" in strict_human.stderr
+    assert "shape " in strict_human.stderr
+    assert PRIVATE_TEXT not in strict_human.stderr
+    assert source.read_bytes() == original
+
+
+def test_strict_translation_stops_before_provider_construction(
+    tmp_path: Path,
+    runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "chart-and-text.pptx"
+    output = tmp_path / "translated.pptx"
+    _create_private_deck(source)
+    original = _add_unsupported_chart(source)
+    provider_constructed = False
+
+    def unexpected_provider(*_args: object, **_kwargs: object) -> object:
+        nonlocal provider_constructed
+        provider_constructed = True
+        raise AssertionError("provider must not be constructed")
+
+    monkeypatch.setattr(cli_module, "create_translator", unexpected_provider)
+
+    result = runner.invoke(
+        app,
+        _translation_args(source, output, "--no-memory", "--fail-on-warnings"),
+    )
+
+    assert result.exit_code == 1
+    assert provider_constructed is False
+    assert "unsupported_graphic_frame" in result.stderr
+    assert "--fail-on-warnings is set" in result.stderr
+    assert not output.exists()
     assert source.read_bytes() == original
 
 

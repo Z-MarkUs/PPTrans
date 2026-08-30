@@ -29,6 +29,7 @@ from pptrans.ports.translator import (
 )
 from pptrans.schemas.translation import TranslationBatchPayload
 from pptrans.translation_contract import (
+    MAX_REQUEST_CHARACTERS,
     SYSTEM_INSTRUCTIONS,
     TRANSLATION_CONTRACT_VERSION,
     translation_contract_version,
@@ -747,6 +748,17 @@ def test_translation_options_reject_nonpositive_provider_budgets(
 ) -> None:
     with pytest.raises(ValueError, match="must be at least 1"):
         TranslationOptions(**changes)
+
+
+def test_provider_policy_defaults_are_pinned_to_documented_limits() -> None:
+    options = TranslationOptions()
+
+    assert options.batch_size == 24
+    assert options.max_provider_units == 2_000
+    assert options.max_provider_calls == 100
+    assert options.max_provider_source_characters == 2_000_000
+    assert options.max_provider_request_characters == 5_000_000
+    assert MAX_REQUEST_CHARACTERS == 1_000_000
 
 
 def test_translation_contract_version_tracks_prompt_and_schema() -> None:

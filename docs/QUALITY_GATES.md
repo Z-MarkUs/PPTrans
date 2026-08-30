@@ -16,9 +16,14 @@ python -m pytest -q
 python -m bandit -q -r src/pptrans
 python scripts/sync_agent_skills.py --check
 python scripts/validate_agent_skills.py
+pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --json --fail-on-warnings
 ```
 
-Default tests must use deterministic fake providers and temporary directories. They must not require network access, provider credentials, Microsoft PowerPoint, or private presentations.
+Default tests must use deterministic fake providers and temporary directories. Pytest blocks in-process Python socket creation by default. This is not OS-level egress control and is not inherited by subprocesses, so subprocess fixtures and commands must be kept explicitly offline too. Tests must not require provider credentials, Microsoft PowerPoint, or private presentations. A live test must be a separate, explicitly authorized invocation that deliberately overrides the in-process socket block and any applicable external egress controls.
+
+The supported CPython range is 3.10 through 3.13. CI exercises both endpoints on Linux, macOS, and Windows, plus Python 3.11 on Linux; do not broaden the compatibility claim beyond that configured range.
+
+The provider-adapter suite also runs in an isolated CI job with the declared minimum OpenAI and Anthropic SDK versions. New adapter code must remain compatible with those lower bounds or deliberately raise and document the dependency floor.
 
 Property tests must disable the persistent Hypothesis example database, use deterministic generation, and remove deadlines that would turn machine speed into a test outcome. Keep example budgets explicit so README evidence can be recomputed from the test source.
 
@@ -50,15 +55,15 @@ When a live test is authorized, use a synthetic deck, record the provider and mo
 
 Package-affecting changes may use disposable local builds before provenance resolution. Create them in a disposable checkout or output directory, inspect and install them locally, then remove them; do not upload, attach, or describe them as release-candidate artifacts. Releasable artifacts remain subject to the release gate.
 
-After provenance passes, build a release candidate from the tagged commit:
+After provenance passes, build a release candidate from the tagged commit. The same commands may target a disposable directory for local package validation before then:
 
 ```bash
-python -m build
-python -m twine check dist/*
-python scripts/check_wheel.py
+python -m build --outdir .tmp-dist
+python -m twine check .tmp-dist/*
+python scripts/check_wheel.py --dist-dir .tmp-dist
 ```
 
-Install the wheel in a fresh temporary virtual environment, run `pptrans --help`, import `pptrans`, and confirm `pptrans.__version__` matches the intended tag. Confirm the wheel discovers packages only from `src` and contains the expected `pptrans` namespace without a legacy top-level package. Confirm the source distribution contains every fixture needed by its included tests, while the wheel contains no presentation fixture or private artifact. The version must have one authoritative source; duplicate declarations must be generated or tested for equality.
+Install the wheel in a fresh temporary virtual environment, run `pptrans --help`, import `pptrans`, and confirm its runtime version matches the installed distribution metadata. On a tag build, also require the exact repository convention `v{installed-version}`; the changelog and eventual release title remain separate release-gate checks. Confirm the wheel discovers packages only from `src` and contains the expected `pptrans` namespace without a legacy top-level package. Confirm the source distribution contains every fixture needed by its included tests, while the wheel contains no presentation fixture or private artifact. The version must have one authoritative source; duplicate declarations must be generated or tested for equality.
 
 Do not advertise standalone binaries unless each advertised platform artifact was built, installed or launched, and smoke-tested on that platform.
 
@@ -67,6 +72,8 @@ Do not advertise standalone binaries unless each advertised platform artifact wa
 Every README benchmark metric must come from a committed raw result that records the commit SHA, fixture hash/revision, Python version, operating system, and complete command. Record provider/model, cold versus warm translation-memory state, token usage, and renderer version whenever those systems participate. Separate deterministic OOXML-core results from provider-dependent translation quality, latency, cost, and visual-render results.
 
 Remove or label claims whose evidence is absent, stale, model-specific, or narrower than the wording. Static “passing” badges are not evidence; badges must resolve to the workflow that runs the relevant gate.
+
+Security-tool updates must pin the bytes that execute, not only a wrapper action. Keep the Gitleaks version and archive SHA-256 together in the workflow, take the hash from the matching official release checksum list, verify it before extraction, and retain a runtime-generated detection control so a broken scanner cannot silently report success.
 
 The public demo has its own source and QA records in [DEMO.md](DEMO.md). A replacement must remain synthetic, be built into a disposable path, have metadata normalized, preserve the asserted slide/unit/span counts, pass the offline identity transaction and independent reopen, and receive visual review of every generated slide plus layout output. The curated changed-text target must also rebuild byte for byte, change only its asserted slide XML members, pass structural/text verification, render every target slide in the recorded office runtime, and run the padded-canvas harness. Record that harness's exact script, renderer, dimensions, padding, and result; a bare `"passed"` field is insufficient. A rendered preview is presentation evidence only; it does not establish PowerPoint pixel identity or translation quality.
 

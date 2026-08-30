@@ -41,6 +41,31 @@ def test_source_distribution_policy_requires_complete_agent_skills() -> None:
     assert EXPECTED_PACKAGED_SKILL_RESOURCES <= checker.SDIST_REQUIRED_SUFFIXES
 
 
+def test_distribution_checker_accepts_a_disposable_output_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    checker = _load_script("check_wheel.py")
+    (tmp_path / "pptrans.whl").write_bytes(b"fixture")
+    (tmp_path / "pptrans.tar.gz").write_bytes(b"fixture")
+    monkeypatch.setattr(checker, "inspect_wheel", lambda _path: ())
+    monkeypatch.setattr(checker, "inspect_sdist", lambda _path: ())
+
+    assert checker.main(["--dist-dir", str(tmp_path)]) == 0
+
+
+def test_installed_version_checker_requires_runtime_metadata_and_exact_tag_agreement() -> None:
+    checker = _load_script("check_installed_version.py")
+
+    assert checker.version_failures("2.0.0a1", "2.0.0a1", "v2.0.0a1") == ()
+    assert checker.version_failures("2.0.0a2", "2.0.0a1") == (
+        "runtime version '2.0.0a2' != installed metadata '2.0.0a1'",
+    )
+    assert checker.version_failures("2.0.0a1", "2.0.0a1", "2.0.0a1") == (
+        "release tag '2.0.0a1' != installed version tag v2.0.0a1",
+    )
+
+
 def test_benchmark_output_guards_source_aliases_and_existing_files(tmp_path: Path) -> None:
     benchmark = _load_script("benchmark_core.py")
     source = tmp_path / "source.pptx"

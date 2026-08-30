@@ -94,19 +94,21 @@ class AnthropicTranslator:
 
         content = getattr(response, "content", ())
         blocks = content if isinstance(content, (list, tuple)) else ()
-        matches = [
-            getattr(block, "input", None)
-            for block in blocks
-            if (
-                getattr(block, "type", None) == "tool_use"
-                and getattr(block, "name", None) == "submit_translations"
-            )
-        ]
-        if len(matches) != 1 or not isinstance(matches[0], dict):
+        if len(blocks) != 1:
             raise ProviderResponseError(
                 "Anthropic did not return exactly one structured translation tool call."
             )
-        parsed = parse_translation_payload(cast(dict[str, Any], matches[0]))
+        block = blocks[0]
+        payload = getattr(block, "input", None)
+        if (
+            getattr(block, "type", None) != "tool_use"
+            or getattr(block, "name", None) != "submit_translations"
+            or not isinstance(payload, dict)
+        ):
+            raise ProviderResponseError(
+                "Anthropic did not return exactly one structured translation tool call."
+            )
+        parsed = parse_translation_payload(cast(dict[str, Any], payload))
         usage = getattr(response, "usage", None)
         return TranslationBatchResult(
             translations=parsed.translations,

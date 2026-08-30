@@ -9,8 +9,9 @@ from test_ooxml_helpers import create_complex_deck, translated_values
 
 from pptrans.domain import InvalidPresentationError, PackageLimits, VerificationError
 from pptrans.ooxml import apply_patch_set, build_patch_set, inspect_deck, verify_output
+from pptrans.ooxml.locate import paragraph_for_locator, paragraph_text_nodes
 from pptrans.ooxml.package import open_package, read_xml_part, rewrite_package
-from pptrans.ooxml.xml import A_T, parse_xml, serialize_xml
+from pptrans.ooxml.xml import A_T, XML_SPACE, parse_xml, serialize_xml
 
 
 def test_rejects_legacy_ppt_extension(tmp_path: Path) -> None:
@@ -175,4 +176,34 @@ def test_verifier_rejects_unplanned_text_change_inside_target_slide(tmp_path: Pa
     rewrite_package(staged, tampered, {slide_part: serialize_xml(root)})
 
     with pytest.raises(VerificationError, match=r"Unexpected text|Unplanned text node changed"):
+        verify_output(source, tampered, patches)
+
+
+def test_verifier_rejects_tampered_planned_whitespace_semantics(tmp_path: Path) -> None:
+    source = tmp_path / "complex.pptx"
+    staged = tmp_path / "staged.pptx"
+    tampered = tmp_path / "tampered.pptx"
+    create_complex_deck(source)
+    plan = inspect_deck(source, source_lang="en", target_lang="fr")
+    patches = build_patch_set(plan, translated_values(plan))
+    apply_patch_set(source, staged, patches)
+    verify_output(source, staged, patches)
+
+    patch = patches.patches[0]
+    translated_span = patch.translations[0]
+    source_span = next(span for span in patch.source_spans if span.id == translated_span.span_id)
+    with zipfile.ZipFile(staged) as archive:
+        slide_data = archive.read(patch.locator.slide_part)
+    root = parse_xml(slide_data, part_name=patch.locator.slide_part)
+    paragraph = paragraph_for_locator(root, patch.locator)
+    node = paragraph_text_nodes(paragraph)[source_span.node_index][1]
+    assert node.text == translated_span.text
+    node.set(XML_SPACE, "definitely-invalid")
+    rewrite_package(
+        staged,
+        tampered,
+        {patch.locator.slide_part: serialize_xml(root, original=slide_data)},
+    )
+
+    with pytest.raises(VerificationError, match="Unexpected whitespace semantics"):
         verify_output(source, tampered, patches)

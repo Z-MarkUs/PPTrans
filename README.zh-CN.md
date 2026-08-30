@@ -4,23 +4,21 @@
 
 [English](README.md) | 简体中文
 
-[![CI](https://github.com/Z-MarkUs/PPTrans/actions/workflows/ci.yml/badge.svg)](https://github.com/Z-MarkUs/PPTrans/actions/workflows/ci.yml)
-[![Security](https://github.com/Z-MarkUs/PPTrans/actions/workflows/security.yml/badge.svg)](https://github.com/Z-MarkUs/PPTrans/actions/workflows/security.yml)
-
 ## 60 秒概览
 
 - **结果：** 在现有 DrawingML `a:t` 边界上翻译可编辑文本，同时保留周边包结构与格式对象。
 - **完整性：** 以源文件 SHA-256 和稳定的单元/片段地址绑定任务，在临时副本中修改，验证计划内与未修改内容，再原子发布。
 - **不可信 AI 边界：** OpenAI 与 Anthropic 结果必须满足严格 schema 与精确 ID；缺失、乱序、重复或伪造输出都会失败关闭。
+- **自动化门禁：** `--fail-on-warnings` 可在发现已识别的不支持内容时停止运行，且不会构造 provider 或发布输出。
 - **隐私与安全：** 对 ZIP、XML 和资源使用量设置防御上限；只向明确选择的服务商发送必要文本与上下文，不发送 deck 二进制、媒体或原始 XML。
-- **证据：** 最近一次本地审计为 399 项测试通过、含分支统计的综合覆盖率 91.80%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包检查与安全扫描。
+- **证据：** 最近一次本地审计为 413 项测试通过、含分支统计的综合覆盖率 91.95%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包检查与安全扫描。
 - **可运行证明：** 3 张幻灯片 / 41 个单元 / 45 个片段的合成 demo、真实改字的简体中文输出，以及有明确边界的 LibreOffice 验收证据。
 
 ### 前后对比：文本确实发生变化
 
 | 英文源文件 | 人工复核的简体中文输出 |
 | --- | --- |
-| ![英文源幻灯片](docs/assets/pptrans-demo-source-slide-01.webp) | ![简体中文输出幻灯片](docs/assets/pptrans-demo-zh-CN-slide-01.webp) |
+| ![英文 demo 封面：“Translate PowerPoint. Preserve the PowerPoint.”](docs/assets/pptrans-demo-source-slide-01.webp) | ![简体中文 demo 封面：“翻译 PowerPoint。保留 PowerPoint 结构。”，版式保持一致](docs/assets/pptrans-demo-zh-CN-slide-01.webp) |
 
 可下载[英文源 deck](examples/pptrans-demo.en.pptx)与[已验证的简体中文输出](examples/pptrans-demo.zh-CN.pptx)，也可查看确定性的 [fixture 生成脚本](scripts/build_curated_demo.py)。目标文本是人工复核的固定测试数据，并通过真实的精确 ID 补丁、验证与发布流水线；这证明 OOXML 确实改字且结构受到保护，不代表生产服务商的翻译质量。三张幻灯片的完整前后对比与原生 QA 边界见 [demo 说明](docs/DEMO.md)。
 
@@ -76,11 +74,11 @@ flowchart LR
 
 ## 五分钟源码快速体验
 
-v2 当前不作为 PyPI 包或独立二进制版本宣传，请从源码运行：
+PPTrans v2 尚未发布；在来源门禁解决前，经过审计的 v2 源码树也尚未公开。以下命令假定你已经签出包含本 README 的 v2 源码树、安装了受支持的 CPython 3.10–3.13，并且终端位于仓库根目录。
+
+创建虚拟环境：
 
 ```bash
-git clone https://github.com/Z-MarkUs/PPTrans.git
-cd PPTrans
 python -m venv .venv
 ```
 
@@ -94,19 +92,21 @@ source .venv/bin/activate
 .\.venv\Scripts\Activate.ps1
 ```
 
-安装开发环境，并在默认不显示文本的情况下检查公开 demo：
+安装开发环境、检查运行条件，并在默认不显示文本的情况下检查仓库内的 demo：
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 pptrans doctor
-pptrans inspect examples/pptrans-demo.en.pptx --source en --target en
+pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --fail-on-warnings
 ```
+
+检查警告默认不会阻止命令继续执行。这里的 `--fail-on-warnings` 会在 PPTrans 报告不支持内容时让 `inspect` 返回状态码 1；同一选项用于 `translate` 时，会在输出预检、构造 provider、访问翻译记忆或发布之前停止。它不能保证识别所有未支持的 PowerPoint 功能，也不能证明视觉版面适配。
 
 随后离线执行完整事务：
 
 ```bash
-pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --output pptrans-demo.identity.pptx --json
+pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --fail-on-warnings --output pptrans-demo.identity.pptx --json
 ```
 
 `identity` 是用于证明离线事务的透传服务商；人工复核的简体中文 fixture 用于证明真实改字。两者都由集成测试和有明确边界的原生记录固定，详见[完整 demo 与 QA 说明](docs/DEMO.md)。
@@ -116,10 +116,10 @@ pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provid
 导出服务商凭证或显式传入 `--env-file`；PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。
 
 ```bash
-pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <明确的模型名称> --env-file .env --glossary examples/glossary.example.yaml --output pptrans-demo.zh-CN.pptx
+pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <明确的模型名称> --env-file .env --glossary examples/glossary.example.yaml --fail-on-warnings --output pptrans-demo.zh-CN.pptx
 ```
 
-Anthropic 使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`。`--no-memory` 关闭本地留存，`--style`、`--glossary` 与 `--json` 提供主要控制项。付费工作会预先检查单元数、调用数、源文本/上下文和序列化请求上限；完整 CLI、路由与成本边界见[服务商文档](docs/PROVIDERS.md)。
+Anthropic 使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`。`--no-memory` 关闭本地留存，`--style`、`--glossary` 与 `--json` 提供主要控制项。付费工作会预先检查单元数、调用数、源文本/上下文和序列化请求上限。严格警告选项只会阻止 PPTrans 实际发出的诊断，并不是完整的功能支持检查；完整 CLI、路由与成本边界见[服务商文档](docs/PROVIDERS.md)。
 
 ### 服务商契约与隐私
 
@@ -139,9 +139,9 @@ Anthropic 使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`。`--no-memory` 
 - [服务商契约测试](tests/test_provider_adapters.py)注入 SDK client，在不联网的情况下检查严格 schema 与安全错误映射。
 - [审查基础安全测试](tests/test_security_review_foundation.py)扫描 v2 包中的动态执行调用，并验证 renderer/图片边界。
 - [公开 demo 测试](tests/test_public_demo.py)固定逐字节可重建 deck、精确变化成员，以及 [identity](docs/qa/2026-08-28-windows-libreoffice.json) 与[改字](docs/qa/2026-08-28-curated-zh-cn.json)两份有边界原生记录的完整内容。原生渲染与视觉判断属于已记录的人工验收证据；测试套件不会重新生成这些观察结果。
-- [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、打包、多系统测试、Bandit、依赖审计、CodeQL 与完整历史 secret scan，Actions 固定到 commit SHA。
+- [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、打包、多系统测试、Bandit、依赖审计、CodeQL 与完整历史 secret scan；Actions 固定到 commit SHA，scanner 压缩包也固定并校验 SHA-256。
 
-[pyproject.toml](pyproject.toml) 中可查看配置的含分支统计综合覆盖率下限。绿色 badge 只代表对应工作流和 commit 的结果，不代表所有 PowerPoint 格式或翻译质量都已被证明。
+[pyproject.toml](pyproject.toml) 中可查看配置的含分支统计综合覆盖率下限。成功的工作流只代表其对应的 workflow 与 commit，不代表所有 PowerPoint 格式或翻译质量都已被证明。只有在经过审计的 v2 工作流公开且通过后，才会恢复公开 badge。
 
 ### Benchmark 状态
 
@@ -161,6 +161,23 @@ Anthropic 使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`。`--no-memory` 
 - [CLAUDE.md](CLAUDE.md)导入仓库规则；确定性的同步与校验脚本防止两份 skill 漂移。
 
 该 skill 会把 OOXML、验证、服务商、benchmark 与 release 工作路由到针对性参考，并禁止无证据宣传或执行模型生成代码。
+
+## 项目结构
+
+```text
+src/pptrans/
+├── domain/              不可变计划、定位信息、文本片段、补丁与报告
+├── ooxml/               OOXML 包的安全检查、定位、补丁与验证
+├── ports/               翻译 provider 与翻译记忆接口
+├── application/         翻译流程与 deck 事务编排
+├── adapters/
+│   ├── providers/       OpenAI、Anthropic 与离线 identity
+│   ├── renderers/       可选 LibreOffice/PDF/PNG 基础
+│   └── sqlite_memory.py 本地语义翻译缓存
+├── schemas/             严格校验不可信的翻译/审查 payload
+├── review/              预算、隐私策略与白名单修复计划
+└── cli.py               inspect、translate、doctor
+```
 
 ## 工程文档
 

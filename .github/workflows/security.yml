@@ -35,7 +35,40 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - name: Scan with Gitleaks
-        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+      - name: Install checksum-verified Gitleaks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: 8.24.3
+          GITLEAKS_ARCHIVE_SHA256: 9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          archive_path="${RUNNER_TEMP}/${archive}"
+          install_dir="${RUNNER_TEMP}/gitleaks-bin"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
+            --output "${archive_path}" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_ARCHIVE_SHA256}  ${archive_path}" | sha256sum --check --strict
+          mkdir -p "${install_dir}"
+          tar -xzf "${archive_path}" -C "${install_dir}" gitleaks
+          chmod 0755 "${install_dir}/gitleaks"
+          echo "${install_dir}" >> "${GITHUB_PATH}"
+      - name: Prove the pinned scanner detects its control fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          report_path="${RUNNER_TEMP}/gitleaks-control-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+          trap 'rm -f -- "${report_path}"' EXIT
+          set +e
+          printf 'token = "ghp_%s%s"\n' \
+            'aB3dE5fG7hJ9kL1m' 'N3pQ5rS7tU9vW1xY3zA5' | \
+            gitleaks --no-banner --redact --report-format json \
+              --report-path "${report_path}" stdin
+          scan_status=$?
+          set -e
+          if [[ "${scan_status}" -ne 1 ]] || ! grep -q '"RuleID": "github-pat"' "${report_path}"; then
+            echo "Gitleaks failed its synthetic github-pat detection control." >&2
+            exit 1
+          fi
+      - name: Scan all Git history with Gitleaks
+        run: gitleaks git --redact --no-banner --verbose --log-opts="--all" .

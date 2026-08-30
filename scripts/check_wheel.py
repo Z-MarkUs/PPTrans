@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import argparse
 import sys
 import tarfile
 import zipfile
+from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
 REQUIRED_SUFFIXES = {
@@ -40,6 +42,7 @@ SDIST_REQUIRED_SUFFIXES = {
     "examples/pptrans-demo.zh-CN.pptx",
     "scripts/build_curated_demo.py",
     "scripts/build_demo.mjs",
+    "scripts/check_installed_version.py",
     "scripts/render_demo_comparison.mjs",
     "tests/test_public_demo.py",
 }
@@ -112,14 +115,22 @@ def inspect_sdist(path: Path) -> tuple[str, ...]:
     return tuple(failures)
 
 
-def main() -> int:
-    wheels = tuple(Path("dist").glob("*.whl"))
-    sdists = tuple(Path("dist").glob("*.tar.gz"))
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--dist-dir",
+        type=Path,
+        default=Path("dist"),
+        help="Directory containing exactly one PPTrans wheel and source distribution.",
+    )
+    args = parser.parse_args(argv)
+    wheels = tuple(args.dist_dir.glob("*.whl"))
+    sdists = tuple(args.dist_dir.glob("*.tar.gz"))
     if len(wheels) != 1:
-        print(f"expected exactly one wheel in dist/, found {len(wheels)}")
+        print(f"expected exactly one wheel in {args.dist_dir}, found {len(wheels)}")
         return 1
     if len(sdists) != 1:
-        print(f"expected exactly one source distribution in dist/, found {len(sdists)}")
+        print(f"expected exactly one source distribution in {args.dist_dir}, found {len(sdists)}")
         return 1
     failures = (*inspect_wheel(wheels[0]), *inspect_sdist(sdists[0]))
     if failures:

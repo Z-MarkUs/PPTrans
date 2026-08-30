@@ -18,7 +18,7 @@ from pptrans.domain.models import (
 from .locate import extract_spans, paragraph_for_locator, paragraph_text_nodes, source_digest
 from .package import file_sha256, open_package, read_xml_part
 from .patch import validate_patch_set
-from .xml import A_T, XML_SPACE, parse_xml, structural_fingerprint
+from .xml import A_T, XML_SPACE, parse_xml, requires_xml_space_preserve, structural_fingerprint
 
 
 def _verify_patch(
@@ -50,9 +50,21 @@ def _verify_patch(
         actual_kind, output_node = output_nodes[span.node_index]
         if source_kind is not span.kind or actual_kind is not span.kind:
             raise VerificationError(f"Text-node kind changed at translation unit {patch.unit_id}.")
-        expected = translations.get(span.id, span.source)
+        translated = translations.get(span.id)
+        expected = translated if translated is not None else span.source
         if (output_node.text or "") != expected:
             raise VerificationError(f"Unexpected text at unit {patch.unit_id}, span {span.id}.")
+        expected_xml_space = source_node.get(XML_SPACE)
+        if (
+            translated is not None
+            and translated != span.source
+            and requires_xml_space_preserve(translated)
+        ):
+            expected_xml_space = "preserve"
+        if output_node.get(XML_SPACE) != expected_xml_space:
+            raise VerificationError(
+                f"Unexpected whitespace semantics at unit {patch.unit_id}, span {span.id}."
+            )
         if span.translatable:
             allowed.add(source_node_indices[source_node])
             verified_spans += 1

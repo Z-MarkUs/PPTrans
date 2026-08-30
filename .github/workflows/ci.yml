@@ -47,6 +47,13 @@ jobs:
         run: |
           python scripts/sync_agent_skills.py --check
           python scripts/validate_agent_skills.py
+      - name: Enforce warning-free public demo inspection
+        run: >-
+          pptrans inspect examples/pptrans-demo.en.pptx
+          --source en
+          --target en
+          --json
+          --fail-on-warnings
       - name: Upload coverage evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -85,10 +92,29 @@ jobs:
           --warmups 0
           --iterations 1
 
+  provider-sdk-minimums:
+    name: Minimum provider SDKs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install declared minimum provider SDKs
+        run: >-
+          python -m pip install -e ".[dev]"
+          "openai==2.0.0"
+          "anthropic==0.40.0"
+      - name: Exercise both provider adapters
+        run: python -m pytest -q --no-cov tests/test_provider_adapters.py
+
   package:
     name: Build and smoke-test distributions
     runs-on: ubuntu-latest
-    needs: [quality, compatibility]
+    needs: [quality, compatibility, provider-sdk-minimums]
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -111,9 +137,10 @@ jobs:
           wheel-smoke/bin/python -m pip install dist/*.whl
           wheel-smoke/bin/pptrans --version
           wheel-smoke/bin/pptrans --help
-      - name: Upload distributions
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: python-distributions
-          path: dist/*
-          if-no-files-found: error
+          wheel-smoke/bin/python scripts/check_installed_version.py
+          wheel-smoke/bin/pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --json --fail-on-warnings
+      - name: Verify release tag version
+        if: github.ref_type == 'tag'
+        env:
+          PPTRANS_RELEASE_TAG: ${{ github.ref_name }}
+        run: wheel-smoke/bin/python scripts/check_installed_version.py

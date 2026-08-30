@@ -9,7 +9,11 @@ from typing import Any
 
 import pytest
 from anthropic import AnthropicError
+from anthropic import AuthenticationError as AnthropicAuthenticationError
+from anthropic import RateLimitError as AnthropicRateLimitError
+from openai import AuthenticationError as OpenAIAuthenticationError
 from openai import OpenAIError
+from openai import RateLimitError as OpenAIRateLimitError
 
 from pptrans.adapters import providers
 from pptrans.adapters.providers import anthropic as anthropic_adapter
@@ -80,6 +84,14 @@ def _payload(text: str = "Bonjour") -> dict[str, object]:
             }
         ]
     }
+
+
+def _sdk_response(status_code: int) -> SimpleNamespace:
+    return SimpleNamespace(
+        status_code=status_code,
+        request=SimpleNamespace(method="POST", url="https://provider.invalid/v1/translate"),
+        headers={},
+    )
 
 
 @dataclass
@@ -186,6 +198,30 @@ def test_openai_adapter_maps_sdk_errors_without_leaking_request_details() -> Non
     assert str(raised.value) == "OpenAI translation request failed."
     assert isinstance(raised.value.__cause__, OpenAIError)
     assert "secret" not in str(raised.value)
+
+
+@pytest.mark.parametrize(
+    ("error_type", "status_code"),
+    [(OpenAIAuthenticationError, 401), (OpenAIRateLimitError, 429)],
+    ids=["authentication", "rate-limit"],
+)
+def test_openai_adapter_fails_closed_on_operational_sdk_errors(
+    error_type: type[OpenAIError],
+    status_code: int,
+) -> None:
+    error = error_type(
+        "sensitive provider response",
+        response=_sdk_response(status_code),
+        body={"error": "sensitive provider response"},
+    )
+    endpoint = _RecordingEndpoint(error=error)
+    translator = OpenAITranslator(model="gpt-test", client=SimpleNamespace(responses=endpoint))
+
+    with pytest.raises(ProviderRequestError, match="OpenAI translation request failed") as raised:
+        translator.translate(_request())
+
+    assert raised.value.__cause__ is error
+    assert "sensitive" not in str(raised.value)
 
 
 def test_openai_adapter_discards_invalid_usage_values() -> None:
@@ -324,8 +360,25 @@ def test_anthropic_adapter_forces_exactly_one_schema_tool_call(
             SimpleNamespace(type="tool_use", name="submit_translations", input=_payload()),
             SimpleNamespace(type="tool_use", name="submit_translations", input=_payload()),
         ],
+        [
+            SimpleNamespace(type="tool_use", name="submit_translations", input=_payload()),
+            SimpleNamespace(type="text", text="extra commentary"),
+        ],
+        [
+            SimpleNamespace(type="tool_use", name="submit_translations", input=_payload()),
+            SimpleNamespace(type="tool_use", name="wrong", input=_payload()),
+        ],
     ],
-    ids=["none", "empty", "text-only", "wrong-tool", "wrong-input", "duplicate"],
+    ids=[
+        "none",
+        "empty",
+        "text-only",
+        "wrong-tool",
+        "wrong-input",
+        "duplicate",
+        "tool-plus-text",
+        "tool-plus-wrong-tool",
+    ],
 )
 def test_anthropic_adapter_rejects_missing_or_ambiguous_tool_output(content: object) -> None:
     endpoint = _RecordingEndpoint(response=SimpleNamespace(content=content, usage=None))
@@ -367,6 +420,35 @@ def test_anthropic_adapter_maps_sdk_errors_without_leaking_request_details() -> 
     assert str(raised.value) == "Anthropic translation request failed."
     assert isinstance(raised.value.__cause__, AnthropicError)
     assert "secret" not in str(raised.value)
+
+
+@pytest.mark.parametrize(
+    ("error_type", "status_code"),
+    [(AnthropicAuthenticationError, 401), (AnthropicRateLimitError, 429)],
+    ids=["authentication", "rate-limit"],
+)
+def test_anthropic_adapter_fails_closed_on_operational_sdk_errors(
+    error_type: type[AnthropicError],
+    status_code: int,
+) -> None:
+    error = error_type(
+        "sensitive provider response",
+        response=_sdk_response(status_code),
+        body={"error": "sensitive provider response"},
+    )
+    endpoint = _RecordingEndpoint(error=error)
+    translator = AnthropicTranslator(
+        model="claude-test",
+        client=SimpleNamespace(messages=endpoint),
+    )
+
+    with pytest.raises(
+        ProviderRequestError, match="Anthropic translation request failed"
+    ) as raised:
+        translator.translate(_request())
+
+    assert raised.value.__cause__ is error
+    assert "sensitive" not in str(raised.value)
 
 
 def test_anthropic_adapter_discards_invalid_usage_values() -> None:

@@ -7,7 +7,7 @@
 
 The curated target is not a production-provider or general translation-quality benchmark. Its value is reproducibility: [`scripts/build_curated_demo.py`](../scripts/build_curated_demo.py) routes every mapped string through the real exact-ID translation orchestration, transactional writer, and post-write verifier.
 
-![Rendered first slide of the synthetic PPTrans public demo](assets/pptrans-demo-preview.webp)
+![PPTrans demo cover: “Translate PowerPoint. Preserve the PowerPoint.”](assets/pptrans-demo-preview.webp)
 
 The preview is the first slide exported by the authoring runtime. It is useful for repository presentation and visual inspection, but it does not prove pixel identity with Microsoft PowerPoint or cover the other two slides.
 
@@ -15,9 +15,9 @@ The preview is the first slide exported by the authoring runtime. It is useful f
 
 | Slide | English source | Curated Simplified Chinese target |
 | --- | --- | --- |
-| 1 | ![English source slide 1](assets/pptrans-demo-source-slide-01.webp) | ![Curated zh-CN slide 1](assets/pptrans-demo-zh-CN-slide-01.webp) |
-| 2 | ![English source slide 2](assets/pptrans-demo-source-slide-02.webp) | ![Curated zh-CN slide 2](assets/pptrans-demo-zh-CN-slide-02.webp) |
-| 3 | ![English source slide 3](assets/pptrans-demo-source-slide-03.webp) | ![Curated zh-CN slide 3](assets/pptrans-demo-zh-CN-slide-03.webp) |
+| 1 | ![English cover: translate PowerPoint while preserving it](assets/pptrans-demo-source-slide-01.webp) | ![Simplified Chinese cover with the same layout](assets/pptrans-demo-zh-CN-slide-01.webp) |
+| 2 | ![English three-step Inspect, Translate, Verify transaction](assets/pptrans-demo-source-slide-02.webp) | ![Simplified Chinese three-step transaction with matching structure](assets/pptrans-demo-zh-CN-slide-02.webp) |
+| 3 | ![English fixture table of source text, expected target, and preservation guards](assets/pptrans-demo-source-slide-03.webp) | ![Simplified Chinese fixture table with translated text and matching guards](assets/pptrans-demo-zh-CN-slide-03.webp) |
 
 These repository previews come from `@oai/artifact-tool` 2.8.52 importing the committed PPTX files. The separate LibreOffice evidence below is the native-application acceptance result.
 
@@ -78,9 +78,9 @@ In a compatible Codex workspace, after making the bundled module resolvable acco
 ```bash
 node scripts/build_demo.mjs .tmp-demo/pptrans-demo.raw.pptx .tmp-demo/qa
 python scripts/sanitize_demo_metadata.py .tmp-demo/pptrans-demo.raw.pptx .tmp-demo/pptrans-demo.en.pptx
-pptrans inspect .tmp-demo/pptrans-demo.en.pptx --source en --target en
+pptrans inspect .tmp-demo/pptrans-demo.en.pptx --source en --target en --fail-on-warnings
 python scripts/build_curated_demo.py .tmp-demo/pptrans-demo.en.pptx .tmp-demo/pptrans-demo.zh-CN.pptx
-python -m pytest -q tests/test_public_demo.py tests/test_repository_scripts.py
+python -m pytest -q --no-cov tests/test_public_demo.py tests/test_repository_scripts.py
 ```
 
 Review every generated PNG and its corresponding layout JSON for clipping, overlap, or off-slide content before replacing a committed artifact. Then rerun the full applicable gates in [QUALITY_GATES.md](QUALITY_GATES.md). Generated QA directories are review evidence, not runtime inputs, and should not be committed unless the repository explicitly chooses to retain a particular artifact such as the preview.
