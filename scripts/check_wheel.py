@@ -44,6 +44,7 @@ SDIST_REQUIRED_SUFFIXES = {
     "benchmarks/README.md",
     "benchmarks/results/2026-08-28-windows-python312.json",
     "benchmarks/results/2026-08-31-windows-python312.json",
+    "benchmarks/results/2026-08-31-stored-ooxml-windows-python312.json",
     "docs/ARCHITECTURE.md",
     "docs/DEMO.md",
     "docs/assets/pptrans-demo-libreoffice-en-slide-01.png",

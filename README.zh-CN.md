@@ -11,7 +11,7 @@
 - **不可信 AI 边界：** OpenAI 与 Anthropic 结果必须满足严格 schema 与精确 ID；缺失、乱序、重复或伪造输出都会失败关闭。
 - **自动化门禁：** `--fail-on-warnings` 可在发现已识别的不支持内容时停止运行，且不会构造 provider 或发布输出。
 - **隐私与安全：** 对 ZIP、XML 和资源使用量设置防御上限；只向明确选择的服务商发送必要文本与上下文，不发送 deck 二进制、媒体或原始 XML。
-- **证据：** 最近一次本地审计为 516 项测试通过、含分支统计的综合覆盖率 92.00%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
+- **证据：** 最近一次本地审计为 517 项测试通过、含分支统计的综合覆盖率 92.00%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
 - **可运行证明：** 3 张幻灯片 / 41 个单元 / 45 个片段的合成 demo、真实改字的简体中文输出，以及有明确边界的 LibreOffice 验收证据。
 
 ### 前后对比：文本确实发生变化
@@ -149,7 +149,7 @@ Anthropic 通过 `.[anthropic]` 安装，并使用 `--provider anthropic` 与 `A
 
 ### Benchmark 状态
 
-在 Windows 11 与 Python 3.12.13 上，仓库中的合成 deck 完成确定性的 `inspect → identity 编排 → patch → verify` 核心流程时，3 次预热后 30 次计时的**中位数为 57.369 ms**、**p95 为 65.65 ms**。该结果来自干净 commit `4fb51de`，fixture 大小为 18,687 bytes，包含 3 张幻灯片、41 个单元和 45 个片段；完整 SHA、环境、命令与计时见[原始 benchmark 结果](benchmarks/results/2026-08-31-windows-python312.json)。
+在 Windows 11 与 Python 3.12.13 上，仓库中的合成 deck 完成确定性的 `inspect → identity 编排 → patch → verify` 核心流程时，3 次预热后 30 次计时的**中位数为 58.594 ms**、**p95 为 60.652 ms**。该结果来自干净 commit `8b98a98`，使用精确重建的 87,523-byte fixture，包含 3 张幻灯片、41 个单元和 45 个片段；完整 SHA、环境、命令与计时见[原始 benchmark 结果](benchmarks/results/2026-08-31-stored-ooxml-windows-python312.json)。
 
 这是范围很窄的本机核心 benchmark，不包含服务商、网络、翻译记忆、LibreOffice、渲染、成本或翻译质量，也不能证明最大实用 deck 大小或其他机器上的性能。详见 [benchmark 方法](benchmarks/README.md)与[质量门禁](docs/QUALITY_GATES.md)。
 

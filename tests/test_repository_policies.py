@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -156,6 +158,39 @@ def test_demo_source_checkout_attributes_preserve_exact_payloads() -> None:
         check=False,
     )
     assert ignore_check.returncode == 1
+
+
+def test_current_benchmark_claim_matches_the_clean_raw_record() -> None:
+    relative = Path("benchmarks/results/2026-08-31-stored-ooxml-windows-python312.json")
+    record = json.loads((REPO_ROOT / relative).read_bytes())
+    fixture = REPO_ROOT / "examples" / "pptrans-demo.en.pptx"
+
+    assert record["schema_version"] == "pptrans.core-benchmark/v1"
+    assert record["git_commit"] == "8b98a986f4d6c68ca9cd582c1b6ca384ff23806c"
+    assert record["git_dirty"] is False
+    assert record["input_sha256"] == hashlib.sha256(fixture.read_bytes()).hexdigest()
+    assert record["input_bytes"] == fixture.stat().st_size == 87_523
+    assert (record["slides"], record["translation_units"], record["translated_spans"]) == (
+        3,
+        41,
+        45,
+    )
+    assert (record["warmups"], record["iterations"], record["median_ms"], record["p95_ms"]) == (
+        3,
+        30,
+        58.594,
+        60.652,
+    )
+    for readme_name in ("README.md", "README.zh-CN.md"):
+        readme = (REPO_ROOT / readme_name).read_text(encoding="utf-8")
+        for claim in (
+            "58.594 ms",
+            "60.652 ms",
+            "`8b98a98`",
+            "87,523",
+            relative.as_posix(),
+        ):
+            assert claim in readme
 
 
 def test_reviewed_tree_has_no_release_trigger_or_publication_workflow() -> None:
