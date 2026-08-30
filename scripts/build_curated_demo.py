@@ -30,7 +30,7 @@ CURATED_TRANSLATIONS: Final[Mapping[str, str]] = {
     "Preserve the PowerPoint.": "保留 PowerPoint 结构。",
     "PPTrans patches only planned text nodes, verifies the package, and never overwrites "
     "the source deck.": "PPTrans 只改目标文本，验证 OOXML，绝不覆盖源文稿。",
-    "github.com/Z-MarkUs/PPTrans": "github.com/Z-MarkUs/PPTrans",
+    "PPTrans v2 • unreleased local showcase": "PPTrans v2 • 未发布的本地展示版",
     "01": "01",
     "A translation becomes a verified transaction": "让翻译成为可验证事务",
     "Three boundaries keep presentation content, formatting, and failures explicit.": (

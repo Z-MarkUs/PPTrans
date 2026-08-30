@@ -11,11 +11,7 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SKILL_NAME = "pptrans-engineering"
-SKILL_ROOTS = (
-    REPO_ROOT / ".agents" / "skills" / SKILL_NAME,
-    REPO_ROOT / ".claude" / "skills" / SKILL_NAME,
-)
+SKILL_NAMES = ("pptrans-engineering", "pptrans-operator")
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 LINK_PATTERN = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
@@ -31,6 +27,28 @@ MAX_SHORT_DESCRIPTION = 64
 MAX_SKILL_NAME = 63
 MAX_SKILL_DESCRIPTION = 1_024
 MAX_SKILL_LINES = 200
+DISCOVERY_REQUIREMENTS = {
+    "AGENTS.md": (
+        ".agents/skills/pptrans-engineering/",
+        ".agents/skills/pptrans-operator/",
+        "$pptrans-engineering",
+        "$pptrans-operator",
+        "scripts/sync_agent_skills.py",
+        "scripts/validate_agent_skills.py",
+    ),
+    "CLAUDE.md": (
+        "@AGENTS.md",
+        "/pptrans-engineering",
+        "/pptrans-operator",
+    ),
+}
+
+
+def _skill_roots(skill_name: str) -> tuple[Path, Path]:
+    return (
+        REPO_ROOT / ".agents" / "skills" / skill_name,
+        REPO_ROOT / ".claude" / "skills" / skill_name,
+    )
 
 
 def _relative(path: Path) -> str:
@@ -147,7 +165,7 @@ def _validate_links(root: Path, errors: list[str]) -> None:
                 errors.append(f"{_relative(markdown)}: broken relative link: {raw_target}")
 
 
-def _validate_openai_yaml(root: Path, errors: list[str]) -> None:
+def _validate_openai_yaml(root: Path, skill_name: str, errors: list[str]) -> None:
     path = root / "agents" / "openai.yaml"
     if not path.is_file():
         errors.append(f"{_relative(path)}: required UI metadata file is missing")
@@ -186,20 +204,20 @@ def _validate_openai_yaml(root: Path, errors: list[str]) -> None:
     if isinstance(brand_color, str) and not HEX_COLOR_PATTERN.fullmatch(brand_color):
         errors.append(f"{_relative(path)}: brand_color must be a six-digit hex color")
     default_prompt = interface.get("default_prompt", "")
-    if isinstance(default_prompt, str) and f"${SKILL_NAME}" not in default_prompt:
-        errors.append(f"{_relative(path)}: default_prompt must mention ${SKILL_NAME}")
+    if isinstance(default_prompt, str) and f"${skill_name}" not in default_prompt:
+        errors.append(f"{_relative(path)}: default_prompt must mention ${skill_name}")
     if policy.get("allow_implicit_invocation") is not True:
         errors.append(f"{_relative(path)}: implicit invocation must remain enabled")
 
 
-def _validate_skill(root: Path, errors: list[str]) -> None:
+def _validate_skill(root: Path, skill_name: str, errors: list[str]) -> None:
     if not root.is_dir():
         errors.append(f"{_relative(root)}: skill directory is missing")
         return
     if root.is_symlink():
         errors.append(f"{_relative(root)}: skill directory must not be a symlink")
     if (
-        root.name != SKILL_NAME
+        root.name != skill_name
         or not NAME_PATTERN.fullmatch(root.name)
         or len(root.name) > MAX_SKILL_NAME
     ):
@@ -210,8 +228,8 @@ def _validate_skill(root: Path, errors: list[str]) -> None:
         errors.append(f"{_relative(skill_path)}: required entrypoint is missing")
         return
     metadata, text = _frontmatter(skill_path, errors)
-    if metadata.get("name") != SKILL_NAME:
-        errors.append(f"{_relative(skill_path)}: frontmatter name must be {SKILL_NAME}")
+    if metadata.get("name") != skill_name:
+        errors.append(f"{_relative(skill_path)}: frontmatter name must be {skill_name}")
     description = metadata.get("description")
     if not isinstance(description, str) or not description.strip():
         errors.append(f"{_relative(skill_path)}: description must be a non-empty string")
@@ -236,7 +254,7 @@ def _validate_skill(root: Path, errors: list[str]) -> None:
         if expected not in linked_targets:
             errors.append(f"{_relative(skill_path)}: reference is not routed: {expected}")
     _validate_links(root, errors)
-    _validate_openai_yaml(root, errors)
+    _validate_openai_yaml(root, skill_name, errors)
 
 
 def _tree(root: Path) -> dict[Path, str]:
@@ -249,31 +267,48 @@ def _tree(root: Path) -> dict[Path, str]:
     return result
 
 
-def _validate_mirror(errors: list[str]) -> None:
-    if not all(root.is_dir() for root in SKILL_ROOTS):
+def _validate_mirror(skill_name: str, errors: list[str]) -> None:
+    canonical_root, mirror_root = _skill_roots(skill_name)
+    if not canonical_root.is_dir() or not mirror_root.is_dir():
         return
-    canonical = _tree(SKILL_ROOTS[0])
-    mirror = _tree(SKILL_ROOTS[1])
+    canonical = _tree(canonical_root)
+    mirror = _tree(mirror_root)
     errors.extend(
-        f"Claude mirror is missing {relative.as_posix()}"
+        f"{skill_name}: Claude mirror is missing {relative.as_posix()}"
         for relative in sorted(canonical.keys() - mirror.keys())
     )
     errors.extend(
-        f"Claude mirror has extra file {relative.as_posix()}"
+        f"{skill_name}: Claude mirror has extra file {relative.as_posix()}"
         for relative in sorted(mirror.keys() - canonical.keys())
     )
     errors.extend(
-        f"Claude mirror differs at {relative.as_posix()}"
+        f"{skill_name}: Claude mirror differs at {relative.as_posix()}"
         for relative in sorted(canonical.keys() & mirror.keys())
         if canonical[relative] != mirror[relative]
     )
 
 
+def _validate_discovery(errors: list[str]) -> None:
+    for relative_path, required_fragments in DISCOVERY_REQUIREMENTS.items():
+        path = REPO_ROOT / relative_path
+        if not path.is_file():
+            errors.append(f"{_relative(path)}: required agent discovery file is missing")
+            continue
+        text = path.read_text(encoding="utf-8")
+        errors.extend(
+            f"{_relative(path)}: missing agent discovery reference {fragment!r}"
+            for fragment in required_fragments
+            if fragment not in text
+        )
+
+
 def main() -> int:
     errors: list[str] = []
-    for root in SKILL_ROOTS:
-        _validate_skill(root, errors)
-    _validate_mirror(errors)
+    for skill_name in SKILL_NAMES:
+        for root in _skill_roots(skill_name):
+            _validate_skill(root, skill_name, errors)
+        _validate_mirror(skill_name, errors)
+    _validate_discovery(errors)
 
     if errors:
         print("Agent Skill validation failed:", file=sys.stderr)
@@ -281,7 +316,8 @@ def main() -> int:
             print(f"- {error}", file=sys.stderr)
         return 1
 
-    print("Validated pptrans-engineering in .agents and .claude; mirrors are byte-identical.")
+    names = ", ".join(SKILL_NAMES)
+    print(f"Validated {names} in .agents and .claude; mirrors are byte-identical.")
     return 0
 
 

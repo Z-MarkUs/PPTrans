@@ -15,9 +15,9 @@ python scripts/rebuild_demo.py .tmp-demo/pptrans-demo.en.pptx
 python scripts/rebuild_demo.py --check
 ```
 
-The committed source deck is 87,523 bytes with SHA-256 `07cd8af375046b7d22a5cd53723324b4a2a219097922d8f1854b742cb9af956d`. `--check` rebuilds into a disposable directory and requires byte identity. Local Windows checks produced that exact package on Python 3.10.11, 3.12.13, and 3.13.15; the CI configuration repeats the check in every configured Python and operating-system compatibility job.
+The committed source deck is 87,226 bytes with SHA-256 `371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee`. `--check` rebuilds into a disposable directory and requires byte identity. Local Windows checks produced that exact package on Python 3.10.11, 3.12.13, and 3.13.15; the CI configuration repeats the check in every configured Python and operating-system compatibility job.
 
-The canonical tree is exact package source, not a high-level slide-design language. It makes the shipped fixture independently rebuildable and reviewable without claiming that direct OOXML editing is convenient or that the repository-wide provenance gate is cleared. The tree contains no media or embedded fonts. Its package payloads are identical to the earlier synthetic fixture; only deterministic ZIP storage changed.
+The canonical tree is exact package source, not a high-level slide-design language. It makes the shipped fixture independently rebuildable and reviewable without claiming that direct OOXML editing is convenient or that the repository-wide provenance gate is cleared. The tree contains no media or embedded fonts. Relative to the earlier synthetic fixture, two current payloads intentionally differ: `slide1.xml` labels v2 as an unreleased local showcase, and its relationship part removes the hyperlink that otherwise sent recruiters to the legacy public `main` branch. All other package-member payloads retain their prior lineage; deterministic ZIP storage remains separately pinned.
 
 ## Real changed-text rebuild
 
@@ -29,7 +29,7 @@ python scripts/build_curated_demo.py \
   .tmp-demo/pptrans-demo.zh-CN.pptx
 ```
 
-The committed target is 86,874 bytes with SHA-256 `d64338c9883927dbb32851f48a6e91e833d8ac719fb347cb27ea522107ffa88c`. Tests require a byte-identical rebuild, exactly three changed slide XML members, and byte identity for every other package member.
+The committed target is 86,580 bytes with SHA-256 `d39dde859ca4231e9cfddbe9477bf345149bf7dac2fbc0c5774eb8c6682c4f46`. Tests require a byte-identical rebuild, exactly three changed slide XML members, and byte identity for every other package member.
 
 ## Inspectable native LibreOffice evidence
 
@@ -39,7 +39,7 @@ The committed target is 86,874 bytes with SHA-256 `d64338c9883927dbb32851f48a6e9
 | 2 | ![LibreOffice render of the English Inspect Translate Verify slide](assets/pptrans-demo-libreoffice-en-slide-02.png) | ![LibreOffice render of the Simplified Chinese Inspect Translate Verify slide](assets/pptrans-demo-libreoffice-zh-CN-slide-02.png) |
 | 3 | ![LibreOffice render of the English preservation fixture table](assets/pptrans-demo-libreoffice-en-slide-03.png) | ![LibreOffice render of the Simplified Chinese preservation fixture table](assets/pptrans-demo-libreoffice-zh-CN-slide-03.png) |
 
-These are the six exact 1921 × 1080 native renders from the current exact-rebuild acceptance record—not browser or authoring-tool previews. Every source/target image was inspected at original resolution after repackaging. No clipping, unintended overlap, broken wrapping, or off-slide content was found. The three identity renders are not duplicated because each is pixel- and file-identical to its source render.
+These are the six exact 1921 × 1080 native renders from the current exact-rebuild acceptance record—not browser or authoring-tool previews. Every source/target image was inspected at original resolution after repackaging. The English and Chinese covers visibly identify v2 as an unreleased local showcase and contain no external repository hyperlink. No clipping, unintended overlap, broken wrapping, or off-slide content was found. The three identity renders are not duplicated because each is pixel- and file-identical to its source render.
 
 [`scripts/reproduce_native_demo.py`](../scripts/reproduce_native_demo.py) validates both package hashes, rebuilds the identity transaction, requires the recorded LibreOffice and PyMuPDF versions, renders all three decks, verifies all nine PNGs, checks the six committed assets, and writes a deterministic evidence manifest. It refuses an existing output directory and makes no provider/API request. LibreOffice itself is not placed under an OS-level network sandbox; use an isolated disposable VM when hard egress prevention is required.
 
@@ -65,9 +65,12 @@ The fixture remains:
 - 41 translation units;
 - 45 translatable spans;
 - no inspection warnings;
+- a default provider-work preview of 41 units in 2 logical calls, 2,799 source/context characters, 8,867 serialized request characters, and a 5,903-character largest request;
 - 41 verified patches and 45 verified spans;
 - exactly `slide1.xml`, `slide2.xml`, and `slide3.xml` changed in the curated output; and
 - author-written synthetic slide content and reviewed mapping with no customer presentation data.
+
+Those preview character counts are a deterministic zero-memory-hit workload upper bound. They are not tokens, provider cost, latency, model readiness, or translation-quality measurements, and preview mode emits neither slide text nor a source path.
 
 Canonical document properties remain:
 

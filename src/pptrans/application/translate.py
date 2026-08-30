@@ -74,6 +74,18 @@ class TranslationOptions:
 
 
 @dataclass(frozen=True, slots=True)
+class ProviderWorkEstimate:
+    """Deck-text-free upper-bound totals for one provider workload."""
+
+    provider_units: int
+    provider_calls: int
+    source_context_characters: int
+    request_characters: int
+    largest_request_characters: int
+    request_characters_per_call: tuple[int, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class TranslationStats:
     """Observable execution totals without retaining deck content."""
 
@@ -102,14 +114,14 @@ def _provider_source_characters(units: Sequence[TranslationUnit]) -> int:
     )
 
 
-def validate_provider_budget(
+def estimate_provider_work(
     units: Sequence[TranslationUnit],
     options: TranslationOptions,
     *,
     source_lang: str,
     target_lang: str,
-) -> None:
-    """Fail before provider work when a run exceeds its explicit cost ceiling."""
+) -> ProviderWorkEstimate:
+    """Return deterministic, deck-text-free totals within configured safety ceilings."""
 
     unit_count = len(units)
     if any(len(unit.translatable_span_ids) > MAX_TRANSLATABLE_SPANS_PER_UNIT for unit in units):
@@ -143,6 +155,7 @@ def validate_provider_budget(
             f"limit is {options.max_provider_source_characters}."
         )
 
+    request_characters_per_call: list[int] = []
     total_request_characters = 0
     for offset in range(0, unit_count, options.batch_size):
         request = TranslationBatchRequest(
@@ -158,12 +171,41 @@ def validate_provider_budget(
             raise TranslationValidationError(
                 "A provider batch exceeds the per-request character safety limit."
             ) from exc
-        total_request_characters += len(serialized)
+        request_characters = len(serialized)
+        request_characters_per_call.append(request_characters)
+        total_request_characters += request_characters
         if total_request_characters > options.max_provider_request_characters:
             raise TranslationValidationError(
                 f"Provider work would serialize {total_request_characters} request characters; "
                 f"limit is {options.max_provider_request_characters}."
             )
+
+    per_call = tuple(request_characters_per_call)
+    return ProviderWorkEstimate(
+        provider_units=unit_count,
+        provider_calls=call_count,
+        source_context_characters=source_characters,
+        request_characters=total_request_characters,
+        largest_request_characters=max(per_call, default=0),
+        request_characters_per_call=per_call,
+    )
+
+
+def validate_provider_budget(
+    units: Sequence[TranslationUnit],
+    options: TranslationOptions,
+    *,
+    source_lang: str,
+    target_lang: str,
+) -> None:
+    """Fail before provider work when a run exceeds its explicit cost ceiling."""
+
+    estimate_provider_work(
+        units,
+        options,
+        source_lang=source_lang,
+        target_lang=target_lang,
+    )
 
 
 def _memory_key(
@@ -337,9 +379,11 @@ def translate_plan(
 
 
 __all__ = [
+    "ProviderWorkEstimate",
     "TranslationOptions",
     "TranslationRun",
     "TranslationStats",
+    "estimate_provider_work",
     "translate_plan",
     "validate_provider_budget",
 ]

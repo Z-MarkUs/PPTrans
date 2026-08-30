@@ -15,11 +15,12 @@ This alpha is active development, not a release candidate. Publication is blocke
 - OpenAI Responses API and Anthropic Messages API translation adapters that require an explicit model, plus an offline identity adapter for pipeline verification.
 - A local SQLite translation memory keyed by semantic translation inputs and a prompt/schema-derived contract fingerprint rather than deck filename.
 - Strict JSON/YAML glossary loading, CLI `inspect`, `translate`, and `doctor` commands, and machine-readable output modes.
+- A side-effect-free `translate --dry-run` mode and immutable public `ProviderWorkEstimate` that expose deck-text-free, zero-memory-hit provider units, logical calls, source/context characters, and serialized request sizes before credentials, SDKs, memory, output handling, or network access.
 - An opt-in `--fail-on-warnings` policy for inspection and translation, with actionable warning codes and slide/shape locations; strict translation stops before provider construction and output publication.
 - Post-write verification of package inventory, unrelated member bytes, target-slide structure, planned text values, and unplanned text nodes.
 - An optional LibreOffice-to-PDF-to-PNG rendering adapter with resource ceilings, explicit hidden-slide export, whole-deck page-count checks, staged image publication, and isolated-profile execution.
 - Provider-neutral review schemas, deterministic score evaluation, privacy policy helpers, review budgets, and allowlisted repair-plan schemas.
-- Cross-platform CI configuration, package smoke checks, dependency/security scanning, repository guidance, and Codex/Claude Code engineering skills.
+- Cross-platform CI configuration, package smoke checks, dependency/security scanning, repository guidance, and separate Codex/Claude Code engineering and safe deck-operation skills.
 - Author-written synthetic slide content and a reviewed translation mapping for a three-slide showcase deck, plus inspectable canonical OOXML package source, a standard-library-only exact rebuild, source-distribution fixture checks, a deterministic core benchmark harness, and English/Chinese recruiter-facing documentation.
 - Clean-tree raw deterministic-core benchmark results with commit, fixture, environment, normalized reproduction command, and distribution timings, including per-iteration samples for the current exact-rebuild `ZIP_STORED` fixture.
 - A machine-readable Windows/LibreOffice native acceptance record for the synthetic source and byte-identical identity output, including exact tool versions, hashes, per-slide pixel comparison, visual/overflow review, and cleanup checks.
@@ -60,6 +61,8 @@ This alpha is active development, not a release candidate. Publication is blocke
 - The checksum-pinned Gitleaks binary was refreshed to v8.30.0 after its detection control and full-history scan passed; maintenance guidance now records a manual scanner-review cadence because Dependabot cannot update a downloaded binary pin.
 - The identity-demo QA record now pins its padded-canvas harness command, renderer, dimensions, padding, input hash, and rerun timestamp instead of recording only a bare pass result.
 - The showcase packages now use fixed `ZIP_STORED` members so byte identity does not depend on a zlib implementation; CI rebuilds the English fixture across the supported operating-system/Python matrix, and the curated target remains byte-reproducible through PPTrans itself.
+- The showcase cover now identifies v2 as an unreleased local build and removes the hyperlink to the legacy public `main` branch, with exact native renders and deterministic package hashes refreshed to match.
+- Agent-skill synchronization, validation, discovery checks, tests, and source-distribution inventory now cover both the engineering and operator skills as one fail-closed inventory.
 
 ### Security
 

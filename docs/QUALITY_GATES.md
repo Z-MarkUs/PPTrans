@@ -19,6 +19,7 @@ python scripts/rebuild_demo.py --check
 python scripts/sync_agent_skills.py --check
 python scripts/validate_agent_skills.py
 pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --json --fail-on-warnings
+pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider identity --dry-run --json --fail-on-warnings
 ```
 
 Default tests must use deterministic provider doubles or real SDK clients backed by in-memory transports, plus temporary directories. Pytest blocks in-process Python socket creation by default. This is not OS-level egress control and is not inherited by subprocesses, so subprocess fixtures and commands must be kept explicitly offline too. Tests must not require provider credentials, Microsoft PowerPoint, or private presentations. A live test must be a separate, explicitly authorized invocation that deliberately overrides the in-process socket block and any applicable external egress controls.
@@ -52,6 +53,10 @@ A visual golden-image comparison detects regression against a known output; it d
 Provider adapters require direct injected-client tests for success, authentication failure, rate limiting, malformed responses, and retry boundaries. They also require zero-network wire-contract tests that pass through the real SDK client, an in-memory HTTP transport, request serialization, representative HTTP response parsing, and PPTrans's provider-neutral result. Assert endpoint, method, schema controls, retention controls when available, exactly one logical request, and normalized usage without capturing credentials or authorization headers. Run those tests with current and declared-minimum SDK versions. A live smoke test is optional during ordinary development and requires explicit authorization because it sends content externally and may incur cost.
 
 Budget tests must cover the 2,000-unit, 100-logical-call, 2,000,000-source/context-character, 5,000,000-total-serialized-character defaults and the fixed 1,000,000-character per-request ceiling. Routing tests must prove that built-in clients pin official endpoints, reject ambient SDK endpoint/header variables, and set `trust_env=False`; deliberately injected clients are a separate caller-owned boundary.
+
+Provider-work estimate tests must independently recompute exact unit, call, source/context-character, total-request-character, largest-request, and ordered per-call request sizes, including the empty workload. They must prove the immutable estimate and validator accept every configured limit at equality, reject with the same messages and order when each limit is set one below the exact estimate, and preserve the fixed per-request ceiling.
+
+CLI dry-run tests must prove the report is deck-text-free and the complete plan is explicitly labeled as a zero-memory-hit upper bound. Replace credential/environment loading, paid-provider construction, translation-memory opening, output-path preflight, output writing, and other side-effect boundaries with failing doubles; a successful dry run must touch none of them, open no socket, leave the source unchanged, and create no output or memory artifact. Separately assert rejection of `--output`, `--overwrite`, `--env-file`, and `--memory`, plus warning and budget failures before any provider boundary. Documentation and machine output must not describe the result as a token, cost, latency, model-availability/readiness, translation-quality, or visual-fit estimate.
 
 When a live test is authorized, use a synthetic deck, record the provider and model identifier, avoid printing credentials or request bodies, and report the test separately from the offline suite.
 

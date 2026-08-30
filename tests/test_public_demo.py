@@ -15,7 +15,11 @@ from pptx import Presentation
 
 from pptrans.adapters.providers.identity import IdentityTranslator
 from pptrans.application.deck import write_translated_deck
-from pptrans.application.translate import translate_plan
+from pptrans.application.translate import (
+    TranslationOptions,
+    estimate_provider_work,
+    translate_plan,
+)
 from pptrans.ooxml import inspect_deck
 
 REPO_ROOT = Path(__file__).parents[1]
@@ -25,7 +29,10 @@ SOURCE_MANIFEST_PATH = REPO_ROOT / "examples" / "pptrans-demo.source" / "manifes
 QA_PATH = REPO_ROOT / "docs" / "qa" / "2026-08-31-exact-rebuild.json"
 HISTORICAL_NATIVE_QA_PATH = REPO_ROOT / "docs" / "qa" / "2026-08-28-windows-libreoffice.json"
 HISTORICAL_CURATED_QA_PATH = REPO_ROOT / "docs" / "qa" / "2026-08-28-curated-zh-cn.json"
-QA_CANONICAL_SHA256 = "cfbc19be0c3d7beaddbdf63574db21a9e79314702183b9a9b227131ca1162462"
+QA_CANONICAL_SHA256 = "462eef3c18c1cd00dfbf4e7a6521791564c4962fb7fc88bdb84eeff7a436270b"
+PUBLIC_REPOSITORY_URL = "https://github.com/Z-MarkUs/PPTrans"
+SOURCE_SHOWCASE_STATUS = "PPTrans v2 • unreleased local showcase"
+TARGET_SHOWCASE_STATUS = "PPTrans v2 • 未发布的本地展示版"
 
 
 def _canonical_record_sha256(record: object) -> str:
@@ -69,6 +76,45 @@ def test_public_demo_runs_end_to_end_without_network(tmp_path: Path) -> None:
     assert reopened.core_properties.last_modified_by == "Hehan Zhao"
     assert reopened.core_properties.title == "PPTrans v2 - verifiable OOXML translation demo"
     assert reopened.core_properties.subject.startswith("Synthetic fixture")
+
+
+def test_unreleased_demo_does_not_link_recruiters_to_legacy_public_main() -> None:
+    """Keep the recruiter-facing v2 visual aligned with its local-only status."""
+
+    for deck_path, expected_status in (
+        (DEMO_PATH, SOURCE_SHOWCASE_STATUS),
+        (CURATED_DEMO_PATH, TARGET_SHOWCASE_STATUS),
+    ):
+        with ZipFile(deck_path) as archive:
+            slide = archive.read("ppt/slides/slide1.xml").decode("utf-8-sig")
+            relationships = archive.read("ppt/slides/_rels/slide1.xml.rels").decode("utf-8-sig")
+        assert expected_status in slide
+        assert PUBLIC_REPOSITORY_URL not in slide
+        assert PUBLIC_REPOSITORY_URL not in relationships
+        assert "relationships/hyperlink" not in relationships
+
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "audited v2 tree is not yet public" in readme
+
+
+def test_public_demo_provider_preview_is_exact_and_deck_text_free() -> None:
+    plan = inspect_deck(DEMO_PATH, source_lang="en", target_lang="zh-CN")
+
+    estimate = estimate_provider_work(
+        plan.units,
+        TranslationOptions(),
+        source_lang=plan.source_lang,
+        target_lang=plan.target_lang,
+    )
+
+    assert (
+        estimate.provider_units,
+        estimate.provider_calls,
+        estimate.source_context_characters,
+        estimate.request_characters,
+        estimate.largest_request_characters,
+        estimate.request_characters_per_call,
+    ) == (41, 2, 2_799, 8_867, 5_903, (5_903, 2_964))
 
 
 def test_current_qa_record_is_pinned_to_the_exact_rebuild_and_native_assets() -> None:

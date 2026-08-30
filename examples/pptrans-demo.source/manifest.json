@@ -24,8 +24,8 @@
   },
   "expected_package": {
     "path": "examples/pptrans-demo.en.pptx",
-    "bytes": 87523,
-    "sha256": "07cd8af375046b7d22a5cd53723324b4a2a219097922d8f1854b742cb9af956d"
+    "bytes": 87226,
+    "sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee"
   },
   "entries": [
     {
@@ -85,8 +85,8 @@
     },
     {
       "path": "ppt/slides/slide1.xml",
-      "bytes": 9222,
-      "sha256": "c41bcbf0e16133c52a8ee37077344d5eb2ccd766c6c8c49942c01a71781918f1"
+      "bytes": 9116,
+      "sha256": "1028a333c252242dd03b48b227a34286c47654756e005fdb00341bdfd1ea19ee"
     },
     {
       "path": "ppt/notesSlides/notesSlide1.xml",
@@ -155,8 +155,8 @@
     },
     {
       "path": "ppt/slides/_rels/slide1.xml.rels",
-      "bytes": 669,
-      "sha256": "be7bf9ee740ca62963df1e5974a2e1a8a0d1d7a6271152a5e0c9094796c93a1f"
+      "bytes": 478,
+      "sha256": "470137bfd736e5eee859d697c7a4e2979a08d7c3c0c4e42f123ef15f34dba97c"
     },
     {
       "path": "ppt/slides/_rels/slide2.xml.rels",

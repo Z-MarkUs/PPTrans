@@ -10,6 +10,7 @@
 - **完整性：** 以源文件 SHA-256 和稳定的单元/片段地址绑定任务，在临时副本中修改，验证计划内与未修改内容，再原子发布。
 - **不可信 AI 边界：** OpenAI 与 Anthropic 结果必须满足严格 schema 与精确 ID；缺失、乱序、重复或伪造输出都会失败关闭。
 - **自动化门禁：** `--fail-on-warnings` 可在发现已识别的不支持内容时停止运行，且不会构造 provider 或发布输出。
+- **零支出预览：** `translate --dry-run` 在不加载凭证、付费 SDK、翻译记忆、输出路径或网络的前提下，给出不含 deck 文本的零记忆命中服务商工作量。
 - **隐私与安全：** 对 ZIP、XML 和资源使用量设置防御上限；只向明确选择的服务商发送必要文本与上下文，不发送 deck 二进制、媒体或原始 XML。
 - **证据：** 最近一次本地审计为 518 项测试通过、含分支统计的综合覆盖率 92.00%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
 - **可运行证明：** 3 张幻灯片 / 41 个单元 / 45 个片段的合成 demo、真实改字的简体中文输出，以及有明确边界的 LibreOffice 验收证据。
@@ -20,7 +21,7 @@
 | --- | --- |
 | ![LibreOffice 原生渲染的英文 demo 封面：“Translate PowerPoint. Preserve the PowerPoint.”](docs/assets/pptrans-demo-libreoffice-en-slide-01.png) | ![LibreOffice 原生渲染的简体中文 demo 封面：“翻译 PowerPoint。保留 PowerPoint 结构。”，版式保持一致](docs/assets/pptrans-demo-libreoffice-zh-CN-slide-01.png) |
 
-可下载[英文源 deck](examples/pptrans-demo.en.pptx)与[已验证的简体中文输出](examples/pptrans-demo.zh-CN.pptx)，检查英文 deck 的[规范 OOXML 源文件](examples/pptrans-demo.source/manifest.json)，或运行只依赖 Python 标准库的[精确重建脚本](scripts/rebuild_demo.py)。上图是 LibreOffice 26.8.0.3 的精确原生渲染，不是制作工具预览。目标文本是人工复核的固定测试数据，并通过真实的精确 ID 补丁、验证与发布流水线；这证明 OOXML 确实改字且结构受到保护，不代表生产服务商的翻译质量。六张原生前后对比图、固定哈希、适用边界与[本地重放脚本](scripts/reproduce_native_demo.py)见 [demo 说明](docs/DEMO.md)。
+可下载[英文源 deck](examples/pptrans-demo.en.pptx)与[已验证的简体中文输出](examples/pptrans-demo.zh-CN.pptx)，检查英文 deck 的[规范 OOXML 源文件](examples/pptrans-demo.source/manifest.json)，或运行只依赖 Python 标准库的[精确重建脚本](scripts/rebuild_demo.py)。演示文稿封面特意标明 `PPTrans v2 • 未发布的本地展示版`，且不包含指向旧版公开 `main` 分支的链接；本页证据只对应这棵本地 v2 源码树。上图是 LibreOffice 26.8.0.3 的精确原生渲染，不是制作工具预览。目标文本是人工复核的固定测试数据，并通过真实的精确 ID 补丁、验证与发布流水线；这证明 OOXML 确实改字且结构受到保护，不代表生产服务商的翻译质量。六张原生前后对比图、固定哈希、适用边界与[本地重放脚本](scripts/reproduce_native_demo.py)见 [demo 说明](docs/DEMO.md)。
 
 ## 我的角色与贡献
 
@@ -105,25 +106,36 @@ pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --fail-on-
 
 检查警告默认不会阻止命令继续执行。这里的 `--fail-on-warnings` 会在 PPTrans 报告不支持内容时让 `inspect` 返回状态码 1；同一选项用于 `translate` 时，会在输出预检、构造 provider、访问翻译记忆或发布之前停止。它不能保证识别所有未支持的 PowerPoint 功能，也不能证明视觉版面适配。
 
-随后离线执行完整事务：
+在执行 `identity` 事务之前，先预览服务商工作量：
 
 ```bash
+pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <明确的模型名称> --dry-run --fail-on-warnings --json
 pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --fail-on-warnings --output pptrans-demo.identity.pptx --json
 python scripts/build_curated_demo.py examples/pptrans-demo.en.pptx pptrans-demo.curated.zh-CN.pptx
 ```
 
-`identity` 是用于证明离线事务的透传服务商；其 `provider_calls` 数值统计本地适配器批次，而非网络调用。第二条命令把完整、人工复核的映射送入同一编排与写入流程，用 JSON 列出改动的幻灯片部件和验证过的文本跨度，从而证明真实改字。重复运行时请改用新输出名，或显式加入 `--overwrite`。两条路径都由集成测试和有明确边界的原生记录固定，详见[完整 demo 与 QA 说明](docs/DEMO.md)。
+第一条 `--dry-run` 是不显示幻灯片文本的零记忆命中预览。对当前 demo，它精确报告 41 个服务商单元、2 个逻辑调用、2,799 个源文本/上下文字符、8,867 个序列化请求字符，零命中批次中的最大单次请求为 5,903 个字符。总单元数、调用数和总字符工作量是保守上限；单次分组只描述零命中计划，实际缓存命中后会重新分组并再次校验。这些字符统计不是 token、费用、延迟、模型可用性或翻译质量估算。预览不会读取凭证、导入服务商 SDK、访问翻译记忆、要求输出路径或创建 `.pptx` 输出，也不会访问网络；JSON 仍会报告源文件 SHA-256、幻灯片/单元/片段计数、工作量计数与警告，但不输出幻灯片文本或源路径。
+
+第二条命令中的 `identity` 是用于证明离线事务的透传服务商；其 `provider_calls` 数值统计本地适配器批次，而非网络调用。第三条命令把完整、人工复核的映射送入同一编排与写入流程，用 JSON 列出改动的幻灯片部件和验证过的文本跨度，从而证明真实改字。重复运行时请改用新输出名，或显式加入 `--overwrite`。两条执行路径都由集成测试和有明确边界的原生记录固定，详见[完整 demo 与 QA 说明](docs/DEMO.md)。
 
 ## 使用真实服务商翻译
 
-只安装准备使用的适配器，再导出服务商凭证或显式传入 `--env-file`。PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。
+先不要安装付费适配器或导出凭证。用基础安装完成严格检查，并在任何付费调用之前运行无副作用的服务商预览：
+
+```bash
+pptrans inspect examples/pptrans-demo.en.pptx --source en --target zh-CN --fail-on-warnings
+pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <明确的模型名称> --dry-run --fail-on-warnings --json
+```
+
+确认计数、警告、数据导出权限与限额后，再只安装准备使用的适配器，随后导出服务商凭证或显式传入 `--env-file`；先做本地就绪检查，再发起付费调用：
 
 ```bash
 python -m pip install -e ".[openai]"
+pptrans doctor --provider openai --env-file .env
 pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <明确的模型名称> --env-file .env --glossary examples/glossary.example.yaml --fail-on-warnings --output pptrans-demo.zh-CN.pptx
 ```
 
-Anthropic 通过 `.[anthropic]` 安装，并使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`；离线核心和 identity 适配器都不会导入任何付费 SDK。`--no-memory` 关闭本地留存，`--style`、`--glossary` 与 `--json` 提供主要控制项。付费工作会预先检查单元数、调用数、源文本/上下文和序列化请求上限。严格警告选项只会阻止 PPTrans 实际发出的诊断，并不是完整的功能支持检查；完整 CLI、路由与成本边界见[服务商文档](docs/PROVIDERS.md)。
+PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。Anthropic 通过 `.[anthropic]` 安装，并使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`；离线核心和 identity 适配器都不会导入任何付费 SDK。`--no-memory` 关闭本地留存，`--style`、`--glossary` 与 `--json` 提供主要控制项。实际付费工作还会预先检查单元数、调用数、源文本/上下文和序列化请求上限。严格警告选项只会阻止 PPTrans 实际发出的诊断，并不是完整的功能支持检查；完整 CLI、路由与成本边界见[服务商文档](docs/PROVIDERS.md)。
 
 ### 服务商契约与隐私
 
@@ -141,6 +153,7 @@ Anthropic 通过 `.[anthropic]` 安装，并使用 `--provider anthropic` 与 `A
 
 - [核心、安全与属性测试](tests/)覆盖丰富 OOXML fixture、恶意包、过期源、计划外变化，以及 9,346 个 Unicode/顺序/路径/变异生成样例。
 - [服务商适配器测试](tests/test_provider_adapters.py)通过注入 client 检查严格 schema、安全错误映射、配置与失败边界；独立的[SDK HTTP 契约测试](tests/test_provider_sdk_wire_contracts.py)使用内存 transport，穿过真实 OpenAI/Anthropic SDK 的序列化器和响应模型，在当前版本与声明的最低版本上运行，不开启 socket，也不调用服务商。
+- [CLI 无副作用预览测试](tests/test_cli_v2.py)把凭证加载、服务商构造、翻译记忆、输出预检与写入设为触发即失败的边界，并验证 `--dry-run` 不显示源路径或幻灯片文本、拒绝与输出、`--env-file` 或持久化记忆相关的选项、保持源文件不变且不生成目标文件；[demo 工作量测试](tests/test_public_demo.py)固定上述精确预览值。
 - [审查基础安全测试](tests/test_security_review_foundation.py)扫描 v2 包中的动态执行调用，并验证 renderer/图片边界。
 - [展示 demo 与仓库工具测试](tests/)从 29 个固定哈希的 OOXML 成员重建英文 deck，逐字节重建中文目标，固定两个构建脚本与原生重放脚本、精确变化成员与 ZIP 字段，并把每张原生 PNG 绑定到当前的[精确重建验收记录](docs/qa/2026-08-31-exact-rebuild.json)。[原生重放脚本](scripts/reproduce_native_demo.py)可用精确 LibreOffice build 重建 identity 输出和全部九张渲染；普通 CI 无需安装 LibreOffice，只验证已提交证据。
 - [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、文档完整性、打包、有超时边界的多系统测试、隔离运行且覆盖全部依赖集合的每周审计、CodeQL 与完整历史 secret scan；Actions 固定到 commit SHA，scanner 压缩包也固定并校验 SHA-256。来源问题未解决时，版本 tag 的打包 gate 会失败关闭；线上仓库仍必须用 tag rules 限制版本 tag 的创建。
@@ -159,12 +172,15 @@ Anthropic 通过 `.[anthropic]` 安装，并使用 `--provider anthropic` 与 `A
 
 ## Codex 与 Claude Code 支持
 
-- [AGENTS.md](AGENTS.md)规定架构、安全、测试与 Git 规则。
-- [.agents/skills/pptrans-engineering/](.agents/skills/pptrans-engineering/) 是 Codex 的标准 skill，可用 `$pptrans-engineering` 调用。
-- [.claude/skills/pptrans-engineering/](.claude/skills/pptrans-engineering/) 是字节一致的 Claude Code 生成镜像，可用 `/pptrans-engineering` 调用。
-- [CLAUDE.md](CLAUDE.md)导入仓库规则；确定性的同步与校验脚本防止两份 skill 漂移。
+PPTrans 为修改代码和安全操作提供彼此独立的仓库内 skill：
 
-该 skill 会把 OOXML、验证、服务商、benchmark 与 release 工作路由到针对性参考，并禁止无证据宣传或执行模型生成代码。
+- [AGENTS.md](AGENTS.md)规定架构、安全、测试与 Git 规则。
+- [.agents/skills/pptrans-engineering/](.agents/skills/pptrans-engineering/) 是 Codex 的工程 skill，用 `$pptrans-engineering` 调用，面向 OOXML、验证、服务商实现、benchmark 与 release 变更。
+- [.agents/skills/pptrans-operator/](.agents/skills/pptrans-operator/) 是独立的 Codex 操作 skill，用 `$pptrans-operator` 调用，面向检查 deck、离线验证以及先预览再付费的翻译流程。
+- [.claude/skills/pptrans-engineering/](.claude/skills/pptrans-engineering/) 与 [.claude/skills/pptrans-operator/](.claude/skills/pptrans-operator/) 是字节一致的 Claude Code 生成镜像，分别用 `/pptrans-engineering` 与 `/pptrans-operator` 调用。
+- [CLAUDE.md](CLAUDE.md)导入仓库规则；确定性的同步与校验脚本防止 Codex 与 Claude Code 的 skill 副本漂移。
+
+工程 skill 会把代码修改路由到针对性参考，并禁止无证据宣传或执行模型生成代码；操作 skill 则固定只读检查、离线 `identity` 与真实服务商的安全顺序，不把 deck 操作混入工程修改流程。
 
 ## 项目结构
 
@@ -180,7 +196,7 @@ src/pptrans/
 │   └── sqlite_memory.py 本地语义翻译缓存
 ├── schemas/             严格校验不可信的翻译/审查 payload
 ├── review/              预算、隐私策略与白名单修复计划
-└── cli.py               inspect、translate、doctor
+└── cli.py               inspect、服务商工作量预览、translate、doctor
 ```
 
 ## 工程文档

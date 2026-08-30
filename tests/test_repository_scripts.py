@@ -18,16 +18,26 @@ import pytest
 from test_ooxml_helpers import create_complex_deck
 
 REPO_ROOT = Path(__file__).parents[1]
-EXPECTED_PACKAGED_SKILL_RESOURCES = {
-    f"{root}/skills/pptrans-engineering/{resource}"
-    for root in (".agents", ".claude")
-    for resource in (
+EXPECTED_SKILL_RESOURCES = {
+    "pptrans-engineering": (
         "SKILL.md",
         "agents/openai.yaml",
         "references/architecture.md",
         "references/release.md",
         "references/verification.md",
-    )
+    ),
+    "pptrans-operator": (
+        "SKILL.md",
+        "agents/openai.yaml",
+        "references/offline-operation.md",
+        "references/provider-operation.md",
+    ),
+}
+EXPECTED_PACKAGED_SKILL_RESOURCES = {
+    f"{root}/skills/{skill_name}/{resource}"
+    for root in (".agents", ".claude")
+    for skill_name, resources in EXPECTED_SKILL_RESOURCES.items()
+    for resource in resources
 }
 
 
@@ -177,6 +187,56 @@ def test_source_distribution_policy_requires_complete_agent_skills() -> None:
     checker = _load_script("check_wheel.py")
 
     assert EXPECTED_PACKAGED_SKILL_RESOURCES <= checker.SDIST_REQUIRED_SUFFIXES
+    assert {
+        "AGENTS.md",
+        "CLAUDE.md",
+        "scripts/sync_agent_skills.py",
+        "scripts/validate_agent_skills.py",
+    } <= checker.SDIST_REQUIRED_SUFFIXES
+
+
+def test_agent_skill_validator_covers_the_complete_inventory() -> None:
+    validator = _load_script("validate_agent_skills.py")
+
+    assert tuple(EXPECTED_SKILL_RESOURCES) == validator.SKILL_NAMES
+    errors: list[str] = []
+    for skill_name in validator.SKILL_NAMES:
+        for root in validator._skill_roots(skill_name):
+            validator._validate_skill(root, skill_name, errors)
+        validator._validate_mirror(skill_name, errors)
+    validator._validate_discovery(errors)
+
+    assert errors == []
+
+
+def test_agent_skill_validator_rejects_missing_operator_discovery(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    validator = _load_script("validate_agent_skills.py")
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    (repository / "AGENTS.md").write_text(
+        ".agents/skills/pptrans-engineering/\n"
+        "$pptrans-engineering\n"
+        "scripts/sync_agent_skills.py\n"
+        "scripts/validate_agent_skills.py\n",
+        encoding="utf-8",
+    )
+    (repository / "CLAUDE.md").write_text(
+        "@AGENTS.md\n/pptrans-engineering\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(validator, "REPO_ROOT", repository)
+    errors: list[str] = []
+
+    validator._validate_discovery(errors)
+
+    assert errors == [
+        "AGENTS.md: missing agent discovery reference '.agents/skills/pptrans-operator/'",
+        "AGENTS.md: missing agent discovery reference '$pptrans-operator'",
+        "CLAUDE.md: missing agent discovery reference '/pptrans-operator'",
+    ]
 
 
 def test_source_distribution_policy_requires_the_public_demo_rebuild() -> None:
@@ -557,6 +617,72 @@ def test_benchmark_output_rejects_symlink_target(tmp_path: Path) -> None:
     assert sentinel.read_text(encoding="utf-8") == "preserve"
 
 
+def test_skill_sync_updates_every_declared_skill_and_prunes_stale_files(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sync = _load_script("sync_agent_skills.py")
+    repository = tmp_path / "repository"
+    canonical_root = repository / ".agents" / "skills"
+    mirror_root = repository / ".claude" / "skills"
+    skill_names = tuple(EXPECTED_SKILL_RESOURCES)
+    for skill_name in skill_names:
+        canonical = canonical_root / skill_name
+        mirror = mirror_root / skill_name
+        (canonical / "references").mkdir(parents=True)
+        mirror.mkdir(parents=True)
+        (canonical / "SKILL.md").write_text(f"canonical {skill_name}\n", encoding="utf-8")
+        (canonical / "references" / "workflow.md").write_text(
+            f"workflow {skill_name}\n", encoding="utf-8"
+        )
+        (mirror / "SKILL.md").write_text("stale\n", encoding="utf-8")
+        (mirror / "remove-me.txt").write_text("stale\n", encoding="utf-8")
+
+    monkeypatch.setattr(sync, "REPO_ROOT", repository)
+    monkeypatch.setattr(sync, "SKILL_NAMES", skill_names)
+    monkeypatch.setattr(sync, "CANONICAL_ROOT", canonical_root)
+    monkeypatch.setattr(sync, "MIRROR_ROOT", mirror_root)
+
+    sync.synchronize()
+
+    assert sync.differences() == []
+    for skill_name in skill_names:
+        canonical = canonical_root / skill_name
+        mirror = mirror_root / skill_name
+        assert (mirror / "SKILL.md").read_bytes() == (canonical / "SKILL.md").read_bytes()
+        assert (mirror / "references" / "workflow.md").read_bytes() == (
+            canonical / "references" / "workflow.md"
+        ).read_bytes()
+        assert not (mirror / "remove-me.txt").exists()
+
+
+def test_skill_sync_preflights_the_complete_inventory_before_writing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sync = _load_script("sync_agent_skills.py")
+    repository = tmp_path / "repository"
+    canonical_root = repository / ".agents" / "skills"
+    mirror_root = repository / ".claude" / "skills"
+    engineering = canonical_root / "pptrans-engineering"
+    engineering_mirror = mirror_root / "pptrans-engineering"
+    engineering.mkdir(parents=True)
+    engineering_mirror.mkdir(parents=True)
+    (engineering / "SKILL.md").write_text("new canonical\n", encoding="utf-8")
+    mirrored_skill = engineering_mirror / "SKILL.md"
+    mirrored_skill.write_text("preserve until preflight passes\n", encoding="utf-8")
+
+    monkeypatch.setattr(sync, "REPO_ROOT", repository)
+    monkeypatch.setattr(sync, "SKILL_NAMES", tuple(EXPECTED_SKILL_RESOURCES))
+    monkeypatch.setattr(sync, "CANONICAL_ROOT", canonical_root)
+    monkeypatch.setattr(sync, "MIRROR_ROOT", mirror_root)
+
+    with pytest.raises(ValueError, match="pptrans-operator"):
+        sync.synchronize()
+
+    assert mirrored_skill.read_text(encoding="utf-8") == "preserve until preflight passes\n"
+
+
 def test_skill_sync_rejects_symlinked_ancestor_without_touching_external_tree(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -576,12 +702,9 @@ def test_skill_sync_rejects_symlinked_ancestor_without_touching_external_tree(
         pytest.skip(f"symbolic links unavailable on this filesystem: {exc}")
 
     monkeypatch.setattr(sync, "REPO_ROOT", repository)
-    monkeypatch.setattr(sync, "CANONICAL", canonical)
-    monkeypatch.setattr(
-        sync,
-        "MIRROR",
-        repository / ".claude" / "skills" / "pptrans-engineering",
-    )
+    monkeypatch.setattr(sync, "SKILL_NAMES", ("pptrans-engineering",))
+    monkeypatch.setattr(sync, "CANONICAL_ROOT", repository / ".agents" / "skills")
+    monkeypatch.setattr(sync, "MIRROR_ROOT", repository / ".claude" / "skills")
 
     with pytest.raises(ValueError, match="must not be symlinks"):
         sync.synchronize()

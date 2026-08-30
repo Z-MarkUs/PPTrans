@@ -78,6 +78,24 @@ def _translation_args(
     ]
 
 
+def _dry_run_args(source: Path, *extra: str) -> list[str]:
+    return [
+        "translate",
+        str(source),
+        "--source",
+        "en",
+        "--target",
+        "fr",
+        "--provider",
+        "openai",
+        "--model",
+        "explicit-preview-model",
+        "--dry-run",
+        "--json",
+        *extra,
+    ]
+
+
 @pytest.fixture
 def runner() -> CliRunner:
     return CliRunner()
@@ -89,6 +107,10 @@ def test_help_and_version(runner: CliRunner) -> None:
     assert help_result.exit_code == 0, help_result.output
     assert "Translate editable PPTX files" in help_result.stdout
     assert all(command in help_result.stdout for command in ("inspect", "translate", "doctor"))
+
+    translate_help = runner.invoke(app, ["translate", "--help"])
+    assert translate_help.exit_code == 0, translate_help.output
+    assert "--dry-run" in translate_help.stdout
 
     version_result = runner.invoke(app, ["--version"])
     assert version_result.exit_code == 0, version_result.output
@@ -214,6 +236,135 @@ def test_strict_translation_stops_before_provider_construction(
     assert "unsupported_graphic_frame" in result.stderr
     assert "--fail-on-warnings is set" in result.stderr
     assert not output.exists()
+    assert source.read_bytes() == original
+
+
+def test_dry_run_reports_a_deck_text_free_upper_bound_without_side_effects(
+    tmp_path: Path,
+    runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "private.pptx"
+    original = _create_private_deck(source)
+
+    def unexpected_side_effect(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("dry run touched a side-effecting translation boundary")
+
+    for name in (
+        "create_translator",
+        "default_memory_path",
+        "load_environment",
+        "preflight_output",
+        "SQLiteTranslationMemory",
+        "write_translated_deck",
+    ):
+        monkeypatch.setattr(cli_module, name, unexpected_side_effect)
+
+    result = runner.invoke(app, _dry_run_args(source))
+
+    assert result.exit_code == 0, result.output
+    payload = _json_output(result)
+    assert isinstance(payload, dict)
+    assert payload["mode"] == "dry-run"
+    assert payload["provider"] == "openai"
+    assert payload["model"] == "explicit-preview-model"
+    assert payload["slides"] == 1
+    assert payload["translation_units"] == payload["provider_units"] == 1
+    assert payload["translatable_spans"] == 1
+    assert payload["provider_calls"] == 1
+    assert payload["source_context_characters"] == len(PRIVATE_TEXT)
+    assert payload["request_characters"] == payload["largest_request_characters"]
+    assert payload["request_characters_per_call"] == [payload["request_characters"]]
+    assert payload["assumes_zero_memory_hits"] is True
+    assert payload["measurement_scope"] == "characters-not-tokens-cost-or-latency"
+    assert payload["warnings"] == []
+    assert PRIVATE_TEXT not in result.stdout
+    assert str(source) not in result.stdout
+    assert source.read_bytes() == original
+    assert not source.with_name("private.fr.pptx").exists()
+
+
+def test_dry_run_human_output_states_its_upper_bound_and_side_effect_boundary(
+    tmp_path: Path,
+    runner: CliRunner,
+) -> None:
+    source = tmp_path / "preview.pptx"
+    _create_private_deck(source)
+
+    result = runner.invoke(
+        app,
+        [
+            "translate",
+            str(source),
+            "--source",
+            "en",
+            "--target",
+            "fr",
+            "--provider",
+            "identity",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "PPTrans provider work preview" in result.stdout
+    assert "identity-v1" in result.stdout
+    normalized_output = " ".join(result.stdout.split())
+    assert "Plan assumes zero translation-memory hits" in normalized_output
+    assert "total workload is an upper bound" in normalized_output
+    assert "per-call grouping describes this zero-hit plan" in normalized_output
+    assert "No credential, provider, memory, output, or network was used" in normalized_output
+    assert PRIVATE_TEXT not in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        (("--output", "preview.pptx"), "--output or --overwrite"),
+        (("--overwrite",), "--output or --overwrite"),
+        (("--env-file", "credentials.env"), "--env-file"),
+        (("--memory", "memory.sqlite"), "--memory"),
+    ],
+    ids=["output", "overwrite", "environment", "memory"],
+)
+def test_dry_run_rejects_options_that_imply_side_effects(
+    tmp_path: Path,
+    runner: CliRunner,
+    arguments: tuple[str, ...],
+    message: str,
+) -> None:
+    source = tmp_path / "preview.pptx"
+    _create_private_deck(source)
+
+    result = runner.invoke(app, _dry_run_args(source, *arguments))
+
+    assert result.exit_code == 2
+    assert message in result.stderr
+    assert source.read_bytes()
+    assert not (tmp_path / "preview.fr.pptx").exists()
+    assert not (tmp_path / "memory.sqlite").exists()
+
+
+def test_strict_dry_run_stops_on_inspection_warnings_before_estimation(
+    tmp_path: Path,
+    runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "chart-and-text.pptx"
+    _create_private_deck(source)
+    original = _add_unsupported_chart(source)
+
+    def unexpected_estimate(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("strict warning gate must stop before estimation")
+
+    monkeypatch.setattr(cli_module, "estimate_provider_work", unexpected_estimate)
+
+    result = runner.invoke(app, _dry_run_args(source, "--fail-on-warnings"))
+
+    assert result.exit_code == 1
+    assert "unsupported_graphic_frame" in result.stderr
+    assert "--fail-on-warnings is set" in result.stderr
+    assert PRIVATE_TEXT not in result.stderr
     assert source.read_bytes() == original
 
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at_utc": "2026-08-30T18:40:59.4400538Z",
+  "observed_at_utc": "2026-08-30T19:58:34.1177156Z",
   "local_test_date": "2026-08-31",
   "platform": {
     "os": "Microsoft Windows NT 10.0.26200.0",
@@ -15,7 +15,7 @@
     "source_directory": "examples/pptrans-demo.source",
     "manifest_path": "examples/pptrans-demo.source/manifest.json",
     "manifest_bytes": 5366,
-    "manifest_sha256": "7422f59639cca749911c22660e931d273e21751d9d6fc51ea661007c322e0c60",
+    "manifest_sha256": "57e663d26b0229a605ac40f0e87c04e462cdf2b67fdabce69fe96b2ef66cce2b",
     "entry_count": 29,
     "archive_compression": "ZIP_STORED",
     "fixed_timestamp": "2026-08-28T00:34:00",
@@ -27,15 +27,15 @@
         "distribution": "python-3.10.11-embed-amd64.zip",
         "distribution_url": "https://www.python.org/ftp/python/3.10.11/python-3.10.11-embed-amd64.zip",
         "distribution_sha256": "608619f8619075629c9c69f361352a0da6ed7e62f83a0e19c63e0ea32eb7629d",
-        "result_bytes": 87523,
-        "result_sha256": "07cd8af375046b7d22a5cd53723324b4a2a219097922d8f1854b742cb9af956d",
+        "result_bytes": 87226,
+        "result_sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee",
         "byte_identical": true
       },
       {
         "python": "3.12.13",
         "distribution": "workspace interpreter",
-        "result_bytes": 87523,
-        "result_sha256": "07cd8af375046b7d22a5cd53723324b4a2a219097922d8f1854b742cb9af956d",
+        "result_bytes": 87226,
+        "result_sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee",
         "byte_identical": true
       },
       {
@@ -43,15 +43,19 @@
         "distribution": "python-3.13.15-embed-amd64.zip",
         "distribution_url": "https://www.python.org/ftp/python/3.13.15/python-3.13.15-embed-amd64.zip",
         "distribution_sha256": "d1f04d990aee1253d8569e8e5104e30fa9f5fa830899f14843448872d936a2cf",
-        "result_bytes": 87523,
-        "result_sha256": "07cd8af375046b7d22a5cd53723324b4a2a219097922d8f1854b742cb9af956d",
+        "result_bytes": 87226,
+        "result_sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee",
         "byte_identical": true
       }
     ]
   },
   "lineage": {
     "uncompressed_member_order_equal_to_prior_packages": true,
-    "uncompressed_member_payloads_equal_to_prior_packages": true,
+    "uncompressed_member_payloads_equal_to_prior_packages": false,
+    "intentional_current_member_changes": [
+      "ppt/slides/slide1.xml",
+      "ppt/slides/_rels/slide1.xml.rels"
+    ],
     "prior_source": {
       "path": "examples/pptrans-demo.en.pptx",
       "bytes": 18687,
@@ -63,7 +67,7 @@
       "byte_identical_to_source": false,
       "sha256": "bef11b42cddc9c8bfc4e9137995d592e0d910b3b88bbd556e48a9593ae14bb1f"
     },
-    "scope": "This proves exact standard-library package reconstruction; it is not a claim of independent semantic reauthoring, public branch availability, or licensing clearance."
+    "scope": "This proves exact standard-library package reconstruction. The current source intentionally replaces the legacy public-repository hyperlink with an unreleased-local-showcase label; it is not a claim of independent semantic reauthoring, public branch availability, or licensing clearance."
   },
   "pipeline": {
     "identity": {
@@ -85,8 +89,8 @@
       "target_language": "zh-CN",
       "command": "python scripts/build_curated_demo.py examples/pptrans-demo.en.pptx examples/pptrans-demo.zh-CN.pptx --overwrite",
       "builder_path": "scripts/build_curated_demo.py",
-      "builder_bytes": 6494,
-      "builder_sha256": "8f3ef3037fed1c63090443aa4829f6156a003a30aa75780b4e9f1c7ae26cdfc6",
+      "builder_bytes": 6522,
+      "builder_sha256": "1d4819ce97ad006f06edb6a5f5e88d3c2a5c533fa7eabbad442232df38207000",
       "provider_calls": 2,
       "verified_patches": 41,
       "verified_spans": 45,
@@ -124,18 +128,18 @@
   "presentations": {
     "source": {
       "path": "examples/pptrans-demo.en.pptx",
-      "bytes": 87523,
-      "sha256": "07cd8af375046b7d22a5cd53723324b4a2a219097922d8f1854b742cb9af956d"
+      "bytes": 87226,
+      "sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee"
     },
     "identity_output": {
-      "bytes": 87523,
-      "sha256": "07cd8af375046b7d22a5cd53723324b4a2a219097922d8f1854b742cb9af956d",
+      "bytes": 87226,
+      "sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee",
       "byte_identical_to_source": true
     },
     "curated_target": {
       "path": "examples/pptrans-demo.zh-CN.pptx",
-      "bytes": 86874,
-      "sha256": "d64338c9883927dbb32851f48a6e91e833d8ac719fb347cb27ea522107ffa88c",
+      "bytes": 86580,
+      "sha256": "d39dde859ca4231e9cfddbe9477bf345149bf7dac2fbc0c5774eb8c6682c4f46",
       "byte_identical_to_source": false
     }
   },
@@ -144,12 +148,12 @@
       "slide_number": 1,
       "width": 1921,
       "height": 1080,
-      "source_png_bytes": 68092,
-      "source_png_sha256": "c5442ade6848d1eb07edf89d41080a452349850a6e6af5653e048d83bacf2c30",
-      "identity_png_bytes": 68092,
-      "identity_png_sha256": "c5442ade6848d1eb07edf89d41080a452349850a6e6af5653e048d83bacf2c30",
-      "target_png_bytes": 70829,
-      "target_png_sha256": "9802d3c54e70fadaff476fe89e1af5de75eca8687945481f21a35d770d93b3de",
+      "source_png_bytes": 67545,
+      "source_png_sha256": "6ed37590f53ade82115238d7ae73e8fb36c4364b1f0095a82601c3f671d97ee4",
+      "identity_png_bytes": 67545,
+      "identity_png_sha256": "6ed37590f53ade82115238d7ae73e8fb36c4364b1f0095a82601c3f671d97ee4",
+      "target_png_bytes": 71543,
+      "target_png_sha256": "a18d913d42595f8d7b14a90df09beb221618ea3a8f17133fc4b606f627b70ac1",
       "identity_pixel_equal": true,
       "target_dimensions_equal": true
     },
@@ -192,7 +196,7 @@
     "clipping_detected": false,
     "overlap_detected": false,
     "off_slide_content_detected": false,
-    "notes": "Every source and curated-target PNG was inspected at 1921 x 1080 after the exact package rebuild; identity renders were pixel-equal to source."
+    "notes": "Every source and curated-target PNG was inspected at 1921 x 1080 after the exact package rebuild; identity renders were pixel-equal to source. The revised slide-1 local-showcase labels are fully visible, and slides 2-3 remain byte-identical to the previously reviewed native PNGs."
   },
   "scope": [
     "The target strings are a fixed, author-reviewed fixture mapping, not output from a paid or production translation provider.",

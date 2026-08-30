@@ -11,8 +11,9 @@ from contextlib import suppress
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CANONICAL = REPO_ROOT / ".agents" / "skills" / "pptrans-engineering"
-MIRROR = REPO_ROOT / ".claude" / "skills" / "pptrans-engineering"
+SKILL_NAMES = ("pptrans-engineering", "pptrans-operator")
+CANONICAL_ROOT = REPO_ROOT / ".agents" / "skills"
+MIRROR_ROOT = REPO_ROOT / ".claude" / "skills"
 
 
 def _validate_root_path(root: Path, *, require_existing: bool) -> None:
@@ -57,45 +58,67 @@ def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _skill_paths(skill_name: str) -> tuple[Path, Path]:
+    return CANONICAL_ROOT / skill_name, MIRROR_ROOT / skill_name
+
+
 def differences() -> list[str]:
-    canonical = _files(CANONICAL)
-    mirror = _files(MIRROR)
-    messages = [
-        f"missing from Claude mirror: {relative.as_posix()}"
-        for relative in sorted(canonical.keys() - mirror.keys())
-    ]
-    messages.extend(
-        f"extra in Claude mirror: {relative.as_posix()}"
-        for relative in sorted(mirror.keys() - canonical.keys())
-    )
-    messages.extend(
-        f"content differs: {relative.as_posix()}"
-        for relative in sorted(canonical.keys() & mirror.keys())
-        if _digest(canonical[relative]) != _digest(mirror[relative])
-    )
+    messages: list[str] = []
+    for skill_name in SKILL_NAMES:
+        canonical_root, mirror_root = _skill_paths(skill_name)
+        canonical = _files(canonical_root)
+        mirror = _files(mirror_root)
+        messages.extend(
+            f"{skill_name}: missing from Claude mirror: {relative.as_posix()}"
+            for relative in sorted(canonical.keys() - mirror.keys())
+        )
+        messages.extend(
+            f"{skill_name}: extra in Claude mirror: {relative.as_posix()}"
+            for relative in sorted(mirror.keys() - canonical.keys())
+        )
+        messages.extend(
+            f"{skill_name}: content differs: {relative.as_posix()}"
+            for relative in sorted(canonical.keys() & mirror.keys())
+            if _digest(canonical[relative]) != _digest(mirror[relative])
+        )
     return messages
 
 
-def synchronize() -> None:
-    canonical = _files(CANONICAL)
-    _validate_root_path(MIRROR, require_existing=False)
-    if MIRROR.exists():
-        _files(MIRROR)
-    MIRROR.mkdir(parents=True, exist_ok=True)
+def _preflight_skill(canonical_root: Path, mirror_root: Path) -> None:
+    _files(canonical_root)
+    _validate_root_path(mirror_root, require_existing=False)
+    if mirror_root.exists():
+        _files(mirror_root)
+
+
+def _synchronize_skill(canonical_root: Path, mirror_root: Path) -> None:
+    canonical = _files(canonical_root)
+    _validate_root_path(mirror_root, require_existing=False)
+    if mirror_root.exists():
+        _files(mirror_root)
+    mirror_root.mkdir(parents=True, exist_ok=True)
 
     for relative, source in canonical.items():
-        destination = MIRROR / relative
+        destination = mirror_root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination)
 
     canonical_paths = set(canonical)
-    for path in sorted(MIRROR.rglob("*"), reverse=True):
-        relative = path.relative_to(MIRROR)
+    for path in sorted(mirror_root.rglob("*"), reverse=True):
+        relative = path.relative_to(mirror_root)
         if path.is_symlink() or (path.is_file() and relative not in canonical_paths):
             path.unlink()
         elif path.is_dir():
             with suppress(OSError):
                 path.rmdir()
+
+
+def synchronize() -> None:
+    skill_paths = tuple(_skill_paths(skill_name) for skill_name in SKILL_NAMES)
+    for canonical_root, mirror_root in skill_paths:
+        _preflight_skill(canonical_root, mirror_root)
+    for canonical_root, mirror_root in skill_paths:
+        _synchronize_skill(canonical_root, mirror_root)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -123,8 +146,8 @@ def main(argv: list[str] | None = None) -> int:
             print("Run: python scripts/sync_agent_skills.py", file=sys.stderr)
         return 1
 
-    action = "matches" if args.check else "synchronized with"
-    print(f"Claude Agent Skill {action} the canonical .agents copy.")
+    action = "match" if args.check else "were synchronized with"
+    print(f"Claude Agent Skills {action} the canonical .agents copies.")
     return 0
 
 

@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import FrozenInstanceError, replace
 from pathlib import Path
 
 import pytest
 
 from pptrans.adapters.providers.identity import IdentityTranslator
 from pptrans.application.errors import TranslationValidationError
-from pptrans.application.translate import TranslationOptions, translate_plan
+from pptrans.application.translate import (
+    ProviderWorkEstimate,
+    TranslationOptions,
+    estimate_provider_work,
+    translate_plan,
+    validate_provider_budget,
+)
 from pptrans.domain.models import (
     DeckPlan,
     ParagraphLocator,
@@ -32,6 +38,7 @@ from pptrans.translation_contract import (
     MAX_REQUEST_CHARACTERS,
     SYSTEM_INSTRUCTIONS,
     TRANSLATION_CONTRACT_VERSION,
+    serialize_request_document,
     translation_contract_version,
 )
 
@@ -625,6 +632,201 @@ def test_empty_plan_never_calls_the_provider() -> None:
     assert run.stats.provider_calls == 0
     assert run.stats.input_tokens == 0
     assert run.stats.output_tokens == 0
+
+
+def test_provider_work_estimate_reports_exact_deck_text_free_batch_totals() -> None:
+    units = (
+        _unit(
+            0,
+            sources=("one", "2"),
+            translatable=(True, False),
+            context_before="before",
+        ),
+        _unit(
+            1,
+            sources=("three",),
+            context_before="middle",
+            context_after="after",
+        ),
+    )
+    options = TranslationOptions(
+        batch_size=1,
+        glossary=(GlossaryTerm(source="one", target="un", note="counting"),),
+        style="formal",
+    )
+    request_sizes = tuple(
+        len(
+            serialize_request_document(
+                TranslationBatchRequest(
+                    units=(unit,),
+                    source_lang="en",
+                    target_lang="fr",
+                    glossary=options.glossary,
+                    style=options.style,
+                )
+            )
+        )
+        for unit in units
+    )
+
+    estimate = estimate_provider_work(
+        units,
+        options,
+        source_lang="en",
+        target_lang="fr",
+    )
+
+    assert estimate == ProviderWorkEstimate(
+        provider_units=2,
+        provider_calls=2,
+        source_context_characters=26,
+        request_characters=sum(request_sizes),
+        largest_request_characters=max(request_sizes),
+        request_characters_per_call=request_sizes,
+    )
+    assert all(
+        isinstance(value, int)
+        for value in (
+            estimate.provider_units,
+            estimate.provider_calls,
+            estimate.source_context_characters,
+            estimate.request_characters,
+            estimate.largest_request_characters,
+            *estimate.request_characters_per_call,
+        )
+    )
+    with pytest.raises(FrozenInstanceError):
+        estimate.provider_units = 3  # type: ignore[misc]
+
+
+def test_provider_work_estimate_is_zero_for_an_empty_workload() -> None:
+    estimate = estimate_provider_work(
+        (),
+        TranslationOptions(),
+        source_lang="en",
+        target_lang="fr",
+    )
+
+    assert estimate == ProviderWorkEstimate(
+        provider_units=0,
+        provider_calls=0,
+        source_context_characters=0,
+        request_characters=0,
+        largest_request_characters=0,
+        request_characters_per_call=(),
+    )
+
+
+def test_provider_work_estimate_accepts_every_configured_limit_exactly() -> None:
+    units = (
+        _unit(0, sources=("one",), context_before="before"),
+        _unit(1, sources=("two",), context_after="after"),
+    )
+    unbounded = TranslationOptions(batch_size=1)
+    baseline = estimate_provider_work(
+        units,
+        unbounded,
+        source_lang="en",
+        target_lang="fr",
+    )
+    exact = replace(
+        unbounded,
+        max_provider_units=baseline.provider_units,
+        max_provider_calls=baseline.provider_calls,
+        max_provider_source_characters=baseline.source_context_characters,
+        max_provider_request_characters=baseline.request_characters,
+    )
+
+    assert (
+        estimate_provider_work(
+            units,
+            exact,
+            source_lang="en",
+            target_lang="fr",
+        )
+        == baseline
+    )
+    validate_provider_budget(
+        units,
+        exact,
+        source_lang="en",
+        target_lang="fr",
+    )
+
+
+@pytest.mark.parametrize(
+    ("option_name", "estimate_field", "message"),
+    [
+        ("max_provider_units", "provider_units", "2 units"),
+        ("max_provider_calls", "provider_calls", "2 logical calls"),
+        (
+            "max_provider_source_characters",
+            "source_context_characters",
+            "source/context characters",
+        ),
+        (
+            "max_provider_request_characters",
+            "request_characters",
+            "request characters",
+        ),
+    ],
+    ids=["units", "calls", "source-characters", "request-characters"],
+)
+def test_provider_work_estimate_rejects_one_below_each_configured_limit(
+    option_name: str,
+    estimate_field: str,
+    message: str,
+) -> None:
+    units = (
+        _unit(0, sources=("one",), context_before="before"),
+        _unit(1, sources=("two",), context_after="after"),
+    )
+    options = TranslationOptions(batch_size=1)
+    baseline = estimate_provider_work(
+        units,
+        options,
+        source_lang="en",
+        target_lang="fr",
+    )
+    constrained = replace(
+        options,
+        **{option_name: getattr(baseline, estimate_field) - 1},
+    )
+
+    with pytest.raises(TranslationValidationError, match=message):
+        estimate_provider_work(
+            units,
+            constrained,
+            source_lang="en",
+            target_lang="fr",
+        )
+    with pytest.raises(TranslationValidationError, match=message):
+        validate_provider_budget(
+            units,
+            constrained,
+            source_lang="en",
+            target_lang="fr",
+        )
+
+
+def test_provider_work_estimate_preserves_the_per_request_hard_ceiling() -> None:
+    units = (_unit(0, sources=tuple("x" * 100_000 for _ in range(11))),)
+    options = TranslationOptions()
+
+    with pytest.raises(TranslationValidationError, match="per-request character safety limit"):
+        estimate_provider_work(
+            units,
+            options,
+            source_lang="en",
+            target_lang="fr",
+        )
+    with pytest.raises(TranslationValidationError, match="per-request character safety limit"):
+        validate_provider_budget(
+            units,
+            options,
+            source_lang="en",
+            target_lang="fr",
+        )
 
 
 @pytest.mark.parametrize(

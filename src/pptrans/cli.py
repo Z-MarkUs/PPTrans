@@ -19,7 +19,9 @@ from pptrans.adapters.providers import create_translator
 from pptrans.adapters.sqlite_memory import SQLiteTranslationMemory
 from pptrans.application.deck import preflight_output, write_translated_deck
 from pptrans.application.translate import (
+    ProviderWorkEstimate,
     TranslationOptions,
+    estimate_provider_work,
     translate_plan,
     validate_provider_budget,
 )
@@ -155,6 +157,129 @@ def _require_translation_units(plan: DeckPlan) -> None:
         )
 
 
+def _validate_preview_provider_model(provider: ProviderChoice, model: str | None) -> str:
+    """Validate provider/model selection without importing an SDK or reading credentials."""
+
+    if provider is ProviderChoice.IDENTITY:
+        if model not in (None, "", "identity-v1"):
+            raise ValueError("The identity provider only supports identity-v1.")
+        return "identity-v1"
+    if model is None or not model.strip():
+        raise ValueError(f"--model is required for provider {provider.value!r}.")
+    return model.strip()
+
+
+def _provider_preview_payload(
+    plan: DeckPlan,
+    estimate: ProviderWorkEstimate,
+    *,
+    provider: ProviderChoice,
+    model: str,
+) -> dict[str, object]:
+    """Build a deck-text-free provider-work preview."""
+
+    return {
+        "mode": "dry-run",
+        "provider": provider.value,
+        "model": model,
+        "source_sha256": plan.input_sha256,
+        "slides": len(plan.slide_parts),
+        "translation_units": len(plan.units),
+        "translatable_spans": sum(len(unit.translatable_span_ids) for unit in plan.units),
+        "provider_units": estimate.provider_units,
+        "provider_calls": estimate.provider_calls,
+        "source_context_characters": estimate.source_context_characters,
+        "request_characters": estimate.request_characters,
+        "largest_request_characters": estimate.largest_request_characters,
+        "request_characters_per_call": list(estimate.request_characters_per_call),
+        "assumes_zero_memory_hits": True,
+        "measurement_scope": "characters-not-tokens-cost-or-latency",
+        "warnings": _warning_payload(plan),
+    }
+
+
+def _print_provider_preview(payload: dict[str, object]) -> None:
+    table = Table(title="PPTrans provider work preview")
+    table.add_column("Property")
+    table.add_column("Value")
+    rows = (
+        ("Provider", payload["provider"]),
+        ("Model", payload["model"]),
+        ("Source SHA-256", payload["source_sha256"]),
+        ("Slides", payload["slides"]),
+        ("Translation units", payload["translation_units"]),
+        ("Translatable spans", payload["translatable_spans"]),
+        ("Provider units", payload["provider_units"]),
+        ("Provider calls", payload["provider_calls"]),
+        ("Source/context characters", payload["source_context_characters"]),
+        ("Serialized request characters", payload["request_characters"]),
+        ("Largest request characters", payload["largest_request_characters"]),
+    )
+    for label, value in rows:
+        table.add_row(label, Text(_terminal_string(value)))
+    console.print(table)
+    console.print(
+        "Plan assumes zero translation-memory hits; total workload is an upper bound, while "
+        "per-call grouping describes this zero-hit plan. Character counts are not token, "
+        "currency, or latency estimates. No credential, provider, memory, output, or network "
+        "was used."
+    )
+
+
+def _build_provider_preview(
+    *,
+    input_path: Path,
+    source_lang: str,
+    target_lang: str,
+    provider: ProviderChoice,
+    model: str | None,
+    output_path: Path | None,
+    glossary_path: Path | None,
+    style: str | None,
+    batch_size: int,
+    max_provider_units: int,
+    max_provider_calls: int,
+    max_provider_source_characters: int,
+    max_provider_request_characters: int,
+    memory_path: Path | None,
+    dotenv_path: Path | None,
+    overwrite: bool,
+    fail_on_warnings: bool,
+) -> tuple[DeckPlan, ProviderWorkEstimate, str]:
+    """Inspect and estimate without crossing a credential, memory, output, or SDK boundary."""
+
+    if output_path is not None or overwrite:
+        raise ValueError("--dry-run cannot be combined with --output or --overwrite.")
+    if dotenv_path is not None:
+        raise ValueError("--dry-run cannot be combined with --env-file.")
+    if memory_path is not None:
+        raise ValueError("--dry-run cannot be combined with --memory.")
+    selected_model = _validate_preview_provider_model(provider, model)
+    source = input_path.expanduser().resolve()
+    resolved_glossary = glossary_path.expanduser().resolve() if glossary_path is not None else None
+    glossary = load_glossary(resolved_glossary) if resolved_glossary is not None else ()
+    plan = inspect_deck(source, source_lang=source_lang, target_lang=target_lang)
+    if fail_on_warnings and plan.warnings:
+        _abort_for_warnings(plan)
+    _require_translation_units(plan)
+    options = TranslationOptions(
+        glossary=glossary,
+        style=style,
+        batch_size=batch_size,
+        max_provider_units=max_provider_units,
+        max_provider_calls=max_provider_calls,
+        max_provider_source_characters=max_provider_source_characters,
+        max_provider_request_characters=max_provider_request_characters,
+    )
+    estimate = estimate_provider_work(
+        plan.units,
+        options,
+        source_lang=plan.source_lang,
+        target_lang=plan.target_lang,
+    )
+    return plan, estimate, selected_model
+
+
 def _resolve_translation_paths(
     *,
     input_path: Path,
@@ -222,7 +347,7 @@ def inspect_command(
         bool,
         typer.Option(
             "--json",
-            help="Emit machine-readable metadata; content-free unless --show-text is set.",
+            help="Emit machine-readable metadata; deck-text-free unless --show-text is set.",
         ),
     ] = False,
     show_text: Annotated[
@@ -361,6 +486,16 @@ def translate_command(
     overwrite: Annotated[
         bool, typer.Option("--overwrite", help="Replace an existing output, never the source.")
     ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run",
+            help=(
+                "Preview a zero-memory-hit provider workload without credentials, memory, "
+                "output, or network access."
+            ),
+        ),
+    ] = False,
     fail_on_warnings: Annotated[
         bool,
         typer.Option(
@@ -373,6 +508,43 @@ def translate_command(
     ] = False,
 ) -> None:
     """Translate a PPTX through a validated provider and atomic OOXML patch."""
+
+    if dry_run:
+        try:
+            plan, estimate, selected_model = _build_provider_preview(
+                input_path=input_path,
+                source_lang=source_lang,
+                target_lang=target_lang,
+                provider=provider,
+                model=model,
+                output_path=output_path,
+                glossary_path=glossary_path,
+                style=style,
+                batch_size=batch_size,
+                max_provider_units=max_provider_units,
+                max_provider_calls=max_provider_calls,
+                max_provider_source_characters=max_provider_source_characters,
+                max_provider_request_characters=max_provider_request_characters,
+                memory_path=memory_path,
+                dotenv_path=dotenv_path,
+                overwrite=overwrite,
+                fail_on_warnings=fail_on_warnings,
+            )
+        except (PPTransError, OSError, ValueError) as exc:
+            _abort(str(exc))
+
+        payload = _provider_preview_payload(
+            plan,
+            estimate,
+            provider=provider,
+            model=selected_model,
+        )
+        if as_json:
+            _write_json(payload)
+        else:
+            _print_provider_preview(payload)
+            _print_warnings(plan)
+        return
 
     try:
         source, destination, resolved_dotenv, resolved_glossary, resolved_memory = (

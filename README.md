@@ -10,6 +10,7 @@
 - **Integrity:** binds work to the source SHA-256 and stable unit/span addresses, patches a staged copy, verifies planned and untouched content, then publishes atomically.
 - **Untrusted-AI boundary:** OpenAI and Anthropic results must satisfy strict schemas and exact IDs; partial, reordered, duplicated, or invented output fails closed.
 - **Automation gate:** `--fail-on-warnings` can stop a run on recognized unsupported slide content before a provider is constructed or an output is published.
+- **No-spend preview:** `translate --dry-run` reports a deck-text-free, zero-memory-hit provider-work upper bound without loading credentials, an SDK, translation memory, an output path, or the network.
 - **Privacy and security:** defensive ZIP/XML/resource limits; only selected text and context reach the explicitly chosen provider—not the deck binary, media, or raw XML.
 - **Evidence:** 518 passing tests, 92.00% combined branch-aware coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging and documentation-integrity gates, and security scanning.
 - **Runnable proof:** a synthetic 3-slide / 41-unit / 45-span demo, a real changed-text zh-CN output, and scoped LibreOffice acceptance evidence.
@@ -20,7 +21,7 @@
 | --- | --- |
 | ![Native LibreOffice render of the English demo cover: “Translate PowerPoint. Preserve the PowerPoint.”](docs/assets/pptrans-demo-libreoffice-en-slide-01.png) | ![Native LibreOffice render of the Simplified Chinese demo cover: “翻译 PowerPoint。保留 PowerPoint 结构。” with the same layout](docs/assets/pptrans-demo-libreoffice-zh-CN-slide-01.png) |
 
-Download the [English source deck](examples/pptrans-demo.en.pptx) and [verified zh-CN output](examples/pptrans-demo.zh-CN.pptx), inspect the English deck's [canonical OOXML source](examples/pptrans-demo.source/manifest.json), or run its standard-library-only [exact rebuild](scripts/rebuild_demo.py). The images above are exact native LibreOffice 26.8.0.3 renders, not authoring previews. The target strings are author-reviewed fixture data routed through the real exact-ID patch/verify/publish pipeline; this demonstrates changed OOXML and preservation behavior, not production-provider translation quality. All six native before/after images, their pinned hashes, scope, and the [local replay command](scripts/reproduce_native_demo.py) are in the [demo notes](docs/DEMO.md).
+Download the [English source deck](examples/pptrans-demo.en.pptx) and [verified zh-CN output](examples/pptrans-demo.zh-CN.pptx), inspect the English deck's [canonical OOXML source](examples/pptrans-demo.source/manifest.json), or run its standard-library-only [exact rebuild](scripts/rebuild_demo.py). The images above are exact native LibreOffice 26.8.0.3 renders, not authoring previews. The cover deliberately labels v2 as an unreleased local showcase and contains no repository hyperlink, so a recruiter cannot mistake the public legacy `main` branch for this audited tree. The target strings are author-reviewed fixture data routed through the real exact-ID patch/verify/publish pipeline; this demonstrates changed OOXML and preservation behavior, not production-provider translation quality. All six native before/after images, their pinned hashes, scope, and the [local replay command](scripts/reproduce_native_demo.py) are in the [demo notes](docs/DEMO.md).
 
 ## My role and contributions
 
@@ -105,6 +106,14 @@ On the base install, missing `python-pptx` and LibreOffice appear as optional (`
 
 Inspection warnings are non-fatal by default. Here, `--fail-on-warnings` makes `inspect` return status 1 if PPTrans reports unsupported content. The same option on `translate` stops before output preflight, provider construction, translation-memory access, or publication. It does not guarantee that every unsupported PowerPoint feature is detected or prove visual fit.
 
+Preview the complete provider workload before creating an output or loading any paid-provider dependency:
+
+```bash
+pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model "MODEL_NAME" --dry-run --fail-on-warnings --json
+```
+
+For this fixture, the preview is exactly 41 provider units in 2 logical calls, 2,799 source/context characters, 8,867 serialized request characters, and 5,903 characters in the largest zero-hit request. With zero translation-memory hits, total units, calls, and character work are conservative upper bounds; the per-call grouping describes that zero-hit plan and is recomputed and revalidated after cache lookup. These are not token, price, latency, model-availability, or translation-quality estimates. The preview emits the source hash and structural/workload counts but no source path or slide text, and it uses no credential, provider SDK, translation memory, output path, or network.
+
 Then exercise the complete transaction offline:
 
 ```bash
@@ -116,7 +125,7 @@ python scripts/build_curated_demo.py examples/pptrans-demo.en.pptx pptrans-demo.
 
 ## Translate with a provider
 
-Install only the adapter you intend to use, then export its credential or pass an explicit `--env-file`. PPTrans never searches for dotenv files or chooses a paid model implicitly.
+Run the deck-text-free `--dry-run` shown above first and review its warnings and ceilings. Only then install the adapter you intend to use, export its credential or pass an explicit `--env-file`, and choose a distinct output. PPTrans never searches for dotenv files or chooses a paid model implicitly. Dry-run rejects `--output`, `--overwrite`, `--env-file`, and `--memory` so the preview cannot silently cross into output, credential, or persistent-cache handling.
 
 ```bash
 python -m pip install -e ".[openai]"
@@ -143,6 +152,7 @@ The repository's quality claims are scoped to checks that actually run:
 
 - [Core, safety, and property tests](tests/) cover rich OOXML fixtures, malicious packages, stale sources, unplanned changes, and 9,346 generated Unicode/order/path/mutation examples.
 - [Provider adapter tests](tests/test_provider_adapters.py) exercise strict schemas, safe error mapping, configuration, and failure boundaries with injected clients. Separate [wire-contract tests](tests/test_provider_sdk_wire_contracts.py) pass through the real OpenAI and Anthropic SDK serializers and response models using in-memory HTTP transports—at current and declared-minimum SDK versions, with no socket or provider call.
+- [CLI and application tests](tests/test_cli_v2.py) bind provider-budget validation to the same deterministic estimator used by `--dry-run`, assert exact per-call arithmetic, and replace every credential/provider/memory/output boundary with failing sentinels to prove that preview mode does not cross it.
 - [Review-foundation tests](tests/test_security_review_foundation.py) scan the v2 package for dynamic execution calls and test renderer/image safety boundaries.
 - [Demo and repository-tool tests](tests/) reconstruct the English deck from 29 hash-pinned OOXML members, rebuild the curated target byte for byte, pin both builders and the native replay script, enforce exact changed members and ZIP fields, and bind every native PNG to the current [exact-rebuild acceptance record](docs/qa/2026-08-31-exact-rebuild.json). The [native replay script](scripts/reproduce_native_demo.py) rebuilds the identity output and all nine recorded renders with the exact LibreOffice build; ordinary CI verifies committed evidence without requiring LibreOffice.
 - [CI and security workflows](.github/workflows/) configure linting, strict typing, coverage, documentation integrity, packaging, bounded multi-OS tests, an isolated weekly audit of all dependency sets, CodeQL, and full-history secret scanning with SHA-pinned actions plus a checksum-pinned scanner archive. Version-tag package gates fail closed while provenance is unresolved; repository tag rules remain a required live-host control.
@@ -164,11 +174,11 @@ Installing `.[review]` adds a bounded LibreOffice → PDF → PNG renderer plus 
 PPTrans includes repository-native guidance so coding agents inherit the same invariants as human contributors:
 
 - [AGENTS.md](AGENTS.md) defines architecture, safety, testing, and Git rules.
-- [.agents/skills/pptrans-engineering/](.agents/skills/pptrans-engineering/) is the canonical Codex Agent Skill. Invoke it as `$pptrans-engineering`.
-- [.claude/skills/pptrans-engineering/](.claude/skills/pptrans-engineering/) is a generated byte-identical Claude Code mirror. Invoke it as `/pptrans-engineering`.
-- [CLAUDE.md](CLAUDE.md) imports the repository guidance, while deterministic sync and validation scripts prevent the two skill copies from drifting.
+- [.agents/skills/pptrans-operator/](.agents/skills/pptrans-operator/) is the canonical deck-operation skill for private inspection, no-side-effect preview, identity verification, and carefully authorized provider runs. Invoke it in Codex as `$pptrans-operator`; its byte-identical Claude Code mirror is invoked as `/pptrans-operator`.
+- [.agents/skills/pptrans-engineering/](.agents/skills/pptrans-engineering/) is the separate implementation, debugging, benchmark, documentation-claim, and release skill. Invoke it in Codex as `$pptrans-engineering`; its byte-identical Claude Code mirror is invoked as `/pptrans-engineering`.
+- [CLAUDE.md](CLAUDE.md) imports the repository guidance, while inventory-aware sync and validation scripts prevent either pair of skill copies from drifting or disappearing from the source distribution.
 
-The skill routes OOXML, verification, provider, benchmark, and release tasks to focused references and explicitly forbids unsupported claims or model-generated code execution.
+The operator skill treats inspection as read-only, requires a dry run before paid work, and makes credential, confidentiality, persistence, overwrite, and retry boundaries explicit. The engineering skill routes OOXML, verification, provider, benchmark, and release work to focused references and explicitly forbids unsupported claims or model-generated code execution.
 
 ## Project map
 
@@ -184,7 +194,7 @@ src/pptrans/
 │   └── sqlite_memory.py local semantic translation cache
 ├── schemas/             strict untrusted translation/review payloads
 ├── review/              budgets, privacy policy, allowlisted repair plans
-└── cli.py               inspect, translate, doctor
+└── cli.py               inspect, provider preview, translate, doctor
 ```
 
 ## Engineering documentation

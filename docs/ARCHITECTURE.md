@@ -46,14 +46,14 @@ The source presentation never becomes the output path. Cloud providers see a tex
 | `ooxml/inspect.py` | Slide-order traversal and immutable translation-plan construction |
 | `ooxml/locate.py` | Nested shape-ID paths, table/paragraph resolution, and span extraction |
 | `ports/` | Provider-neutral translator and translation-memory protocols |
-| `application/translate.py` | Memory lookup, batching, exact provider-result validation, and statistics |
+| `application/translate.py` | Provider-work estimation, budget validation, memory lookup, batching, exact provider-result validation, and statistics |
 | `adapters/providers/` | OpenAI, Anthropic, and offline identity adapters |
 | `adapters/sqlite_memory.py` | Strict local translation-cache persistence |
 | `ooxml/patch.py` | Patch-set construction and planned `a:t` replacement |
 | `ooxml/verify.py` | Package, structure, planned-value, and unchanged-text verification |
 | `application/deck.py` | Staging, verification, fsync, cleanup, and atomic destination publication |
 | `schemas/`, `review/`, `adapters/renderers/` | Strict review data, privacy/budget policy, allowlisted repair plans, and optional rendering |
-| `cli.py` | `inspect`, `translate`, and `doctor` user workflows |
+| `cli.py` | `inspect`, deck-text-free provider preview, `translate`, and `doctor` user workflows |
 
 Dependencies point from the CLI and adapters toward application/domain contracts. Provider SDK response types do not enter the OOXML core.
 
@@ -87,6 +87,10 @@ Diagnostics for recognized preserved-but-unsupported content carry a code, messa
 `translate_plan` looks up each unit in translation memory, batches only misses, and calls the provider-neutral `Translator` protocol. The request includes languages, optional style and glossary, adjacent text context, and the ordered spans. It excludes the deck path, file hash, package parts, shape locators, media, notes, and raw XML.
 
 Before constructing a paid-provider client, the CLI conservatively validates the complete plan against explicit provider budgets. Defaults allow 2,000 provider units, 100 logical batches, 2,000,000 source/context characters, and 5,000,000 serialized request characters across the run. Each serialized batch also has a fixed 1,000,000-character ceiling. After translation-memory lookup, `translate_plan` repeats the budget check against cache misses; SDK-internal retries are separate from PPTrans logical-call statistics.
+
+The immutable `ProviderWorkEstimate` is a deck-text-free view of that calculation. `estimate_provider_work` uses the shared request serializer to record exact units, logical calls, source/context characters, total serialized request characters, the largest request, and the ordered per-call request sizes. It applies the same schema and character ceilings as execution, and `validate_provider_budget` delegates to it so their acceptance and failure boundaries remain identical.
+
+`translate --dry-run` exposes this estimate for the complete inspected plan before memory lookup. Its zero-hit unit, call, source/context-character, and total serialized-request-character counts are conservative upper bounds. The largest request and ordered per-call sizes describe the zero-hit batching; cache hits can regroup remaining misses, so `translate_plan` recomputes and revalidates actual miss batches. Preview emits neither deck text nor glossary values. The dry-run path validates only the local provider/model rule, reads the deck and any explicit glossary, then stops: it does not load credentials or a dotenv environment, import or construct a paid-provider SDK/client, open default or custom translation memory, select or preflight an output path, write a deck, or access the network. It rejects `--output`, `--overwrite`, `--env-file`, and `--memory` rather than implying those boundaries were checked. The estimate says nothing about tokens, currency cost, latency, model availability or readiness, credential or provider readiness, translation quality, or visual fit.
 
 Provider output is untrusted. OpenAI must return its one strict-schema document; Anthropic must return exactly one content block, which must be the named schema tool call, with no accompanying text or second tool call. Strict schemas reject unknown fields and wrong types. Application validation then requires:
 

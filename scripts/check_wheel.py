@@ -26,7 +26,7 @@ DEMO_SOURCE_DECK_SUFFIX = "examples/pptrans-demo.en.pptx"
 SHA256_HEX_LENGTH = 64
 DEMO_FIXED_TIMESTAMP = [2026, 8, 28, 0, 34, 0]
 CURRENT_QA_SUFFIX = "docs/qa/2026-08-31-exact-rebuild.json"
-CURRENT_QA_CANONICAL_SHA256 = "cfbc19be0c3d7beaddbdf63574db21a9e79314702183b9a9b227131ca1162462"
+CURRENT_QA_CANONICAL_SHA256 = "462eef3c18c1cd00dfbf4e7a6521791564c4962fb7fc88bdb84eeff7a436270b"
 PNG_HEADER_BYTES = 24
 SDIST_REQUIRED_SUFFIXES = {
     ".agents/skills/pptrans-engineering/agents/openai.yaml",
@@ -39,6 +39,16 @@ SDIST_REQUIRED_SUFFIXES = {
     ".claude/skills/pptrans-engineering/references/release.md",
     ".claude/skills/pptrans-engineering/references/verification.md",
     ".claude/skills/pptrans-engineering/SKILL.md",
+    ".agents/skills/pptrans-operator/agents/openai.yaml",
+    ".agents/skills/pptrans-operator/references/offline-operation.md",
+    ".agents/skills/pptrans-operator/references/provider-operation.md",
+    ".agents/skills/pptrans-operator/SKILL.md",
+    ".claude/skills/pptrans-operator/agents/openai.yaml",
+    ".claude/skills/pptrans-operator/references/offline-operation.md",
+    ".claude/skills/pptrans-operator/references/provider-operation.md",
+    ".claude/skills/pptrans-operator/SKILL.md",
+    "AGENTS.md",
+    "CLAUDE.md",
     "README.md",
     "README.zh-CN.md",
     "benchmarks/README.md",
@@ -67,6 +77,8 @@ SDIST_REQUIRED_SUFFIXES = {
     "scripts/check_release_policy.py",
     "scripts/rebuild_demo.py",
     "scripts/reproduce_native_demo.py",
+    "scripts/sync_agent_skills.py",
+    "scripts/validate_agent_skills.py",
     "tests/test_demo_rebuild.py",
     "tests/test_provider_sdk_wire_contracts.py",
     "tests/test_public_demo.py",

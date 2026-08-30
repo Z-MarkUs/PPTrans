@@ -57,6 +57,26 @@ pptrans translate deck.pptx \
 
 Those four ceilings are the CLI defaults; spelling them out in an operational command makes cost policy reviewable. Raising one is an explicit opt-in. The complete plan is conservatively checked before a paid-provider client is constructed, and cache misses are checked again before provider work.
 
+### Deck-text-free provider-work preview
+
+Use `--dry-run` to inspect the same conservative provider workload before authorizing a translation:
+
+```bash
+pptrans translate deck.pptx \
+  --source en \
+  --target fr \
+  --provider openai \
+  --model <explicit-model-name> \
+  --dry-run \
+  --json
+```
+
+The preview assumes **zero translation-memory hits**. For a later run with the same source, language, glossary, style, batch, and budget options, its total units, calls, source/context characters, and serialized request characters are conservative upper bounds. Its human and JSON reports are deck-text-free: they do not emit source spans, neighboring context, or glossary strings. They report the exact provider-unit count, logical-call count, source/context-character count, total serialized-request-character count, and largest serialized request for that zero-hit plan; JSON also includes the ordered per-call request-character counts. Cache hits can regroup the remaining misses, so the largest and ordered per-call sizes describe the zero-hit plan rather than an all-cache-pattern bound; translation recomputes and revalidates the actual miss batches. The same request serializer and ceiling checks used by translation produce these figures.
+
+Dry-run provider/model validation checks only the local selection rules. The command does not load a credential or dotenv environment, import or construct a paid-provider SDK/client, open translation memory, select or preflight an output path, write an output, or use the network. To keep that boundary unambiguous, `--dry-run` rejects `--output`, `--overwrite`, `--env-file`, and `--memory`; the default memory is not opened either. It may read an explicitly selected glossary because glossary and style change serialized-request size.
+
+This preview is not a token, currency-cost, latency, model-availability, model-readiness, credential-readiness, provider-readiness, translation-quality, or visual-fit estimate. Model identifiers can become unavailable independently of PPTrans, and cache hits can reduce the actual provider workload.
+
 `--fail-on-warnings` promotes the inspector's emitted unsupported-content diagnostics to a blocking policy. When such a warning is present, translation stops before output preflight, provider construction, translation-memory access, or publication. The absence of an emitted warning is not an exhaustive PowerPoint-support or visual-fit guarantee; see [known limitations](LIMITATIONS.md).
 
 For an offline transaction check:
@@ -104,6 +124,8 @@ The default batch is 24 paragraph units. The accepted application range is 1–2
 | Total serialized request characters | `--max-provider-request-characters` | 5,000,000 | Complete JSON documents across logical batches, including repeated style/glossary fields |
 
 Every individual serialized request also has a fixed 1,000,000-character safety ceiling. Both paid adapters default to a 16,000 output-token ceiling and reject a configured ceiling below 256. These are cost and resource guards, not token estimates or promises that a provider will accept or complete a maximum-size request.
+
+`ProviderWorkEstimate` is an immutable, deck-text-free application value containing the zero-hit counts above. `estimate_provider_work` computes it and enforces the same schema, configured-run, and fixed per-request ceilings as `validate_provider_budget`; the validator delegates to the estimator so accepted and rejected boundaries cannot drift.
 
 Provider token usage is normalized when the SDK returns valid nonnegative integers. If any batch lacks complete input or output usage, the run-level totals are reported as unknown instead of presenting a partial number as complete.
 
