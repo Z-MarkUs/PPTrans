@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, cast
+from collections.abc import Callable
+from typing import Protocol, cast
 
 from openai import DefaultHttpxClient as OpenAIDefaultHttpxClient
 from openai import OpenAI, OpenAIError
@@ -24,7 +25,8 @@ _ROUTING_ENVIRONMENT = ("OPENAI_BASE_URL", "OPENAI_CUSTOM_HEADERS")
 
 
 class _ResponsesClient(Protocol):
-    def create(self, **kwargs: Any) -> object: ...
+    @property
+    def create(self) -> Callable[..., object]: ...
 
 
 class _OpenAIClient(Protocol):

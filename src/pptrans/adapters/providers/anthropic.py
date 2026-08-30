@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, Protocol, cast
 
 from anthropic import Anthropic, AnthropicError
@@ -24,7 +25,8 @@ _ROUTING_ENVIRONMENT = ("ANTHROPIC_BASE_URL", "ANTHROPIC_CUSTOM_HEADERS")
 
 
 class _MessagesClient(Protocol):
-    def create(self, **kwargs: Any) -> object: ...
+    @property
+    def create(self) -> Callable[..., object]: ...
 
 
 class _AnthropicClient(Protocol):

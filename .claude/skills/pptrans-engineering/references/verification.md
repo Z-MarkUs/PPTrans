@@ -19,7 +19,7 @@ Run:
 ```bash
 python -m ruff check .
 python -m ruff format --check .
-python -m mypy src/pptrans tests/typecheck_provider_exports.py
+python -m mypy src/pptrans tests/typecheck_provider_exports.py tests/test_provider_sdk_wire_contracts.py scripts/reproduce_native_demo.py
 python -m pytest -q
 python -m bandit -q -r src/pptrans
 python scripts/check_doc_links.py

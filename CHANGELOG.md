@@ -24,6 +24,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - A clean-tree raw deterministic-core benchmark result with commit, fixture, environment, command, and distribution timings.
 - A machine-readable Windows/LibreOffice native acceptance record for the synthetic source and byte-identical identity output, including exact tool versions, hashes, per-slide pixel comparison, visual/overflow review, and cleanup checks.
 - A deterministic, author-reviewed EN → zh-CN showcase output that exercises real changed-text patching through the exact-ID pipeline, with six before/after previews and a second machine-readable LibreOffice acceptance record.
+- Six exact, hash-pinned native LibreOffice source/target PNGs plus a local replay command that rebuilds the identity transaction, rerenders all nine pages with the recorded build, and emits a deterministic evidence manifest.
 - Deterministic property-based stress tests covering XML character handling, Unicode round trips, exact provider result ordering, relationship target containment, and byte-mutated presentation input.
 
 ### Changed
@@ -47,6 +48,8 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Engineering guidance now distinguishes focused tests from the full coverage gate, includes strict typing and security checks consistently, and separates disposable package validation from releasable artifacts; CI directly covers every classified Python minor, and the source-distribution gate requires complete mirrored agent-skill bundles.
 - Supported Python is explicitly bounded to CPython 3.10 through 3.13, and the default pytest configuration blocks in-process Python socket creation; subprocess and OS-level egress remain separately controlled boundaries.
 - CI now exercises the provider adapters against the declared minimum OpenAI and Anthropic SDK versions, in addition to the normally resolved dependency set.
+- Provider wire-contract tests now pass through the real OpenAI and Anthropic SDK serializers and response models using in-memory HTTP transports, with exact endpoint/schema/retention assertions and no captured credentials or network calls.
+- Paid-provider injected-client protocols now type-check both the real SDK clients and narrow deterministic doubles without weakening the runtime adapter boundary.
 - Package validation accepts a disposable distribution directory, smoke-tests installed-wheel runtime/metadata agreement, checks exact `v{version}` agreement on tag builds, and does not upload blocked distribution artifacts.
 - Deterministic core benchmark evidence was refreshed from a clean post-hardening commit while retaining the earlier raw result as immutable history.
 - A repository-owned offline documentation gate now verifies every tracked Markdown destination, fragment, exact-cased path, and local image; CI and pre-commit run it automatically.

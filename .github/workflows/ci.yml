@@ -48,7 +48,11 @@ jobs:
       - name: Check formatting
         run: python -m ruff format --check .
       - name: Type-check
-        run: python -m mypy src/pptrans tests/typecheck_provider_exports.py
+        run: >-
+          python -m mypy src/pptrans
+          tests/typecheck_provider_exports.py
+          tests/test_provider_sdk_wire_contracts.py
+          scripts/reproduce_native_demo.py
       - name: Test with branch coverage
         run: python -m pytest -q --cov-report=xml
       - name: Audit Python source
@@ -132,7 +136,10 @@ jobs:
           "openai==2.0.0"
           "anthropic==0.40.0"
       - name: Exercise both provider adapters
-        run: python -m pytest -q --no-cov tests/test_provider_adapters.py
+        run: >-
+          python -m pytest -q --no-cov
+          tests/test_provider_adapters.py
+          tests/test_provider_sdk_wire_contracts.py
 
   package:
     name: Build and smoke-test distributions

@@ -19,11 +19,35 @@ The preview is the first slide exported by the authoring runtime. It is useful f
 | 2 | ![English three-step Inspect, Translate, Verify transaction](assets/pptrans-demo-source-slide-02.webp) | ![Simplified Chinese three-step transaction with matching structure](assets/pptrans-demo-zh-CN-slide-02.webp) |
 | 3 | ![English fixture table of source text, expected target, and preservation guards](assets/pptrans-demo-source-slide-03.webp) | ![Simplified Chinese fixture table with translated text and matching guards](assets/pptrans-demo-zh-CN-slide-03.webp) |
 
-These repository previews come from `@oai/artifact-tool` 2.8.52 importing the committed PPTX files. The separate LibreOffice evidence below is the native-application acceptance result.
+These repository previews come from `@oai/artifact-tool` 2.8.52 importing the committed PPTX files. The separately committed LibreOffice images below are the native-application acceptance result.
+
+## Inspectable native LibreOffice evidence
+
+| Slide | English source | Curated Simplified Chinese target |
+| --- | --- | --- |
+| 1 | ![LibreOffice render of the English PPTrans demo cover](assets/pptrans-demo-libreoffice-en-slide-01.png) | ![LibreOffice render of the Simplified Chinese PPTrans demo cover](assets/pptrans-demo-libreoffice-zh-CN-slide-01.png) |
+| 2 | ![LibreOffice render of the English Inspect Translate Verify slide](assets/pptrans-demo-libreoffice-en-slide-02.png) | ![LibreOffice render of the Simplified Chinese Inspect Translate Verify slide](assets/pptrans-demo-libreoffice-zh-CN-slide-02.png) |
+| 3 | ![LibreOffice render of the English preservation fixture table](assets/pptrans-demo-libreoffice-en-slide-03.png) | ![LibreOffice render of the Simplified Chinese preservation fixture table](assets/pptrans-demo-libreoffice-zh-CN-slide-03.png) |
+
+These six 1921 × 1080 PNGs are the exact LibreOffice outputs pinned by the two QA records below, not conversions of the WebP previews. The normal test suite decodes every image and checks its dimensions and SHA-256 against those records. Identity images are not duplicated in the repository because each one is byte-identical to its English source image.
+
+[`scripts/reproduce_native_demo.py`](../scripts/reproduce_native_demo.py) provides the independent replay path. It validates the English and curated deck hashes, rebuilds the identity output through the real offline transaction, requires the exact LibreOffice and PyMuPDF versions, renders all three decks, checks all nine native outputs, checks the six committed PNGs, and writes a deterministic manifest. It refuses an existing output directory and makes no provider/API request. The invoked LibreOffice process is not placed under an OS-level network sandbox; use a network-isolated disposable VM for untrusted decks or when hard egress prevention is required.
+
+The recorded Windows build can be obtained from the [official LibreOffice 26.8.0.3 archive](https://downloadarchive.documentfoundation.org/libreoffice/old/26.8.0.3/win/x86_64/LibreOffice_26.8.0.3_Win_x86-64.msi). Verify the 374,906,880-byte MSI before extraction: its SHA-256 must be `4aa6c6e1895f4055104effcb556bd3362d20c6ad707c149543304f395ef9db95`. One disposable Windows replay is:
+
+```powershell
+python -m pip install -e ".[review]" "PyMuPDF==1.28.2"
+msiexec.exe /a LibreOffice_26.8.0.3_Win_x86-64.msi /qn TARGETDIR=C:\pptrans-lo-audit
+python scripts/reproduce_native_demo.py `
+  --libreoffice C:\pptrans-lo-audit\program\soffice.exe `
+  --output-dir .tmp-native-evidence
+```
+
+Exact PNG hashes are intentionally scoped to that recorded Windows, LibreOffice, PyMuPDF, and DPI combination. A different platform or renderer version should receive its own evidence record rather than replacing this one silently.
 
 ## Committed evidence
 
-[`tests/test_public_demo.py`](../tests/test_public_demo.py) runs the committed deck through inspection, identity translation, source-guarded patch construction, staged writing, verification, and an independent `python-pptx` reopen. Its current fixture contract is:
+[`tests/test_public_demo.py`](../tests/test_public_demo.py) runs the committed deck through inspection, identity translation, source-guarded patch construction, staged writing, verification, and an independent `python-pptx` reopen. [`tests/test_repository_scripts.py`](../tests/test_repository_scripts.py) additionally binds the six committed native PNGs to the two recorded QA manifests. The current fixture contract is:
 
 - 3 slides;
 - 41 translation units;
@@ -51,7 +75,7 @@ This removes tool-default metadata; it is not a general metadata scrubber for ar
 
 The demo received a separate native acceptance run on Windows at commit `37733faf71e660737177ff991be2a8437c9a6858`. The source deck first completed the offline `identity` transaction with translation memory disabled. The 18,687-byte output had the same SHA-256 as its source (`dd36b4f92edf915942d4300aeebd1854a049acc521dfc29e78b286c774d8e9d8`), so the no-op transaction was package-byte-identical.
 
-Both packages were then opened through PPTrans's renderer using an administratively extracted, disposable copy of LibreOffice 26.8.0.3 (`bce0998afefdbc355585ca324285661a2170ba77`) and PyMuPDF 1.28.2 at 144 DPI. The result was three 1921 × 1080 PNGs per deck. Every source/identity pair had the same file SHA-256 and an empty pixel difference. All three source renders were inspected at original resolution with no visible clipping, overlap, or off-slide content, and the padded-canvas overflow check also passed.
+Both packages were then opened through PPTrans's renderer using an administratively extracted, disposable copy of LibreOffice 26.8.0.3 (`bce0998afefdbc355585ca324285661a2170ba77`) and PyMuPDF 1.28.2 at 144 DPI. The result was three 1921 × 1080 PNGs per deck. Every source/identity pair had the same file SHA-256 and an empty pixel difference. All three source renders were inspected at original resolution with no visible clipping, overlap, or off-slide content, and the padded-canvas overflow check also passed. The three unique source renders are now committed above and can be recreated with the replay script.
 
 The run additionally verified that neither the private render workspace nor publication staging remained and that no LibreOffice helper process survived success. The complete environment, distribution digest, package hashes, per-slide dimensions and hashes, comparison flags, and scope are in the [machine-readable record](qa/2026-08-28-windows-libreoffice.json).
 
@@ -61,7 +85,7 @@ This result is intentionally narrow. It proves that one synthetic fixture and it
 
 The curated zh-CN output received a second acceptance run at commit `9589fb0fb6ce9ad767c6f1b9e05915d8dd96774f`. Its deterministic offline generator made 41 verified patches / 45 verified spans across exactly `slide1.xml`, `slide2.xml`, and `slide3.xml`. ZIP member order remained equal, every other package member remained byte-identical, and PPTrans reverified changed-slide structure plus planned and unplanned text nodes.
 
-The English and zh-CN decks were then rendered with the same LibreOffice 26.8.0.3 build, PyMuPDF 1.28.2, Windows environment, and 144 DPI settings used for the identity record. Each produced three 1921 × 1080 PNGs. Every target render was inspected at original resolution with no visible clipping, overlap, or off-slide content. The Presentations skill's padded-canvas harness also passed all three target slides using its documented 100 px margin check. No private renderer workspace, publication staging directory, or LibreOffice helper process remained after the clean run.
+The English and zh-CN decks were then rendered with the same LibreOffice 26.8.0.3 build, PyMuPDF 1.28.2, Windows environment, and 144 DPI settings used for the identity record. Each produced three 1921 × 1080 PNGs. Every target render was inspected at original resolution with no visible clipping, overlap, or off-slide content. The Presentations skill's padded-canvas harness also passed all three target slides using its documented 100 px margin check. No private renderer workspace, publication staging directory, or LibreOffice helper process remained after the clean run. All six unique source/target PNGs are committed above and their exact hashes are enforced in tests.
 
 The [changed-text machine-readable record](qa/2026-08-28-curated-zh-cn.json) pins the generator, tested commit, package and preview hashes, exact changed members, native render hashes, overflow method, visual review, and evidence scope. This proves one reviewed fixture in one environment. It does not establish arbitrary translation quality, fit for longer target text, or Microsoft PowerPoint pixel equivalence.
 

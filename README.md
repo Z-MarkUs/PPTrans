@@ -11,16 +11,16 @@
 - **Untrusted-AI boundary:** OpenAI and Anthropic results must satisfy strict schemas and exact IDs; partial, reordered, duplicated, or invented output fails closed.
 - **Automation gate:** `--fail-on-warnings` can stop a run on recognized unsupported slide content before a provider is constructed or an output is published.
 - **Privacy and security:** defensive ZIP/XML/resource limits; only selected text and context reach the explicitly chosen provider—not the deck binary, media, or raw XML.
-- **Evidence:** 463 passing tests, 91.99% combined branch-aware coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging and documentation-integrity gates, and security scanning.
+- **Evidence:** 466 passing tests, 92.00% combined branch-aware coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging and documentation-integrity gates, and security scanning.
 - **Runnable proof:** a synthetic 3-slide / 41-unit / 45-span demo, a real changed-text zh-CN output, and scoped LibreOffice acceptance evidence.
 
 ### Before / after: the text really changes
 
 | English source | Curated Simplified Chinese output |
 | --- | --- |
-| ![English demo cover: “Translate PowerPoint. Preserve the PowerPoint.”](docs/assets/pptrans-demo-source-slide-01.webp) | ![Simplified Chinese demo cover: “翻译 PowerPoint。保留 PowerPoint 结构。” with the same layout](docs/assets/pptrans-demo-zh-CN-slide-01.webp) |
+| ![Native LibreOffice render of the English demo cover: “Translate PowerPoint. Preserve the PowerPoint.”](docs/assets/pptrans-demo-libreoffice-en-slide-01.png) | ![Native LibreOffice render of the Simplified Chinese demo cover: “翻译 PowerPoint。保留 PowerPoint 结构。” with the same layout](docs/assets/pptrans-demo-libreoffice-zh-CN-slide-01.png) |
 
-Download the [English source deck](examples/pptrans-demo.en.pptx) and the [verified zh-CN output](examples/pptrans-demo.zh-CN.pptx), or inspect the deterministic [fixture generator](scripts/build_curated_demo.py). The target strings are author-reviewed fixture data routed through the real exact-ID patch/verify/publish pipeline; this demonstrates changed OOXML and preservation behavior, not production-provider translation quality. All three before/after slides and their native QA scope are in the [demo notes](docs/DEMO.md).
+Download the [English source deck](examples/pptrans-demo.en.pptx) and the [verified zh-CN output](examples/pptrans-demo.zh-CN.pptx), or inspect the deterministic [fixture generator](scripts/build_curated_demo.py). The images above are exact native LibreOffice 26.8.0.3 renders, not authoring previews. The target strings are author-reviewed fixture data routed through the real exact-ID patch/verify/publish pipeline; this demonstrates changed OOXML and preservation behavior, not production-provider translation quality. All six native before/after images, their pinned hashes, scope, and the [local replay command](scripts/reproduce_native_demo.py) are in the [demo notes](docs/DEMO.md).
 
 ## My role and contributions
 
@@ -142,9 +142,9 @@ The default translation memory is local, persistent, and **unencrypted** SQLite.
 The repository's quality claims are scoped to checks that actually run:
 
 - [Core, safety, and property tests](tests/) cover rich OOXML fixtures, malicious packages, stale sources, unplanned changes, and 9,346 generated Unicode/order/path/mutation examples.
-- [Provider contract tests](tests/test_provider_adapters.py) inject SDK clients and exercise strict schemas and safe error mapping without network access.
+- [Provider adapter tests](tests/test_provider_adapters.py) exercise strict schemas, safe error mapping, configuration, and failure boundaries with injected clients. Separate [wire-contract tests](tests/test_provider_sdk_wire_contracts.py) pass through the real OpenAI and Anthropic SDK serializers and response models using in-memory HTTP transports—at current and declared-minimum SDK versions, with no socket or provider call.
 - [Review-foundation tests](tests/test_security_review_foundation.py) scan the v2 package for dynamic execution calls and test renderer/image safety boundaries.
-- [Public-demo tests](tests/test_public_demo.py) pin byte-reproducible decks, exact changed members, and the complete contents of both scoped [identity](docs/qa/2026-08-28-windows-libreoffice.json) and [changed-text](docs/qa/2026-08-28-curated-zh-cn.json) native records. The native renders and visual judgments are recorded manual acceptance evidence; the test suite does not recreate those observations.
+- [Public-demo and repository-tool tests](tests/) pin byte-reproducible decks, exact changed members, both scoped [identity](docs/qa/2026-08-28-windows-libreoffice.json) and [changed-text](docs/qa/2026-08-28-curated-zh-cn.json) native records, plus every committed native PNG hash and dimension. The [native replay script](scripts/reproduce_native_demo.py) rebuilds the identity output and all nine recorded renders with the exact LibreOffice build; ordinary CI verifies the committed evidence without requiring LibreOffice.
 - [CI and security workflows](.github/workflows/) configure linting, strict typing, coverage, documentation integrity, packaging, bounded multi-OS tests, an isolated weekly audit of all dependency sets, CodeQL, and full-history secret scanning with SHA-pinned actions plus a checksum-pinned scanner archive. Version-tag package gates fail closed while provenance is unresolved; repository tag rules remain a required live-host control.
 
 The configured combined branch-aware coverage floor is visible in [pyproject.toml](pyproject.toml). A successful workflow is evidence for its exact workflow and commit only; it is not proof of universal formatting preservation or translation quality. Public badges will be restored only after the audited v2 workflows are published and pass on the public repository.

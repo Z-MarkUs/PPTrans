@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
+from typing import TYPE_CHECKING, Literal, Protocol, cast
 
 from pptrans.application.errors import ProviderConfigurationError
 from pptrans.ports.translator import Translator
@@ -28,14 +29,16 @@ if TYPE_CHECKING:
     from pptrans.ports.translator import TranslationBatchRequest, TranslationBatchResult
 
     class _OpenAIResponsesClient(Protocol):
-        def create(self, **kwargs: Any) -> object: ...
+        @property
+        def create(self) -> Callable[..., object]: ...
 
     class _OpenAIClient(Protocol):
         @property
         def responses(self) -> _OpenAIResponsesClient: ...
 
     class _AnthropicMessagesClient(Protocol):
-        def create(self, **kwargs: Any) -> object: ...
+        @property
+        def create(self) -> Callable[..., object]: ...
 
     class _AnthropicClient(Protocol):
         @property

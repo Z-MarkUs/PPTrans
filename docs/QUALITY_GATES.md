@@ -11,7 +11,7 @@ Run for every code or test change:
 ```bash
 python -m ruff check .
 python -m ruff format --check .
-python -m mypy src/pptrans tests/typecheck_provider_exports.py
+python -m mypy src/pptrans tests/typecheck_provider_exports.py tests/test_provider_sdk_wire_contracts.py scripts/reproduce_native_demo.py
 python -m pytest -q
 python -m bandit -q -r src/pptrans
 python scripts/check_doc_links.py
@@ -20,13 +20,13 @@ python scripts/validate_agent_skills.py
 pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --json --fail-on-warnings
 ```
 
-Default tests must use deterministic fake providers and temporary directories. Pytest blocks in-process Python socket creation by default. This is not OS-level egress control and is not inherited by subprocesses, so subprocess fixtures and commands must be kept explicitly offline too. Tests must not require provider credentials, Microsoft PowerPoint, or private presentations. A live test must be a separate, explicitly authorized invocation that deliberately overrides the in-process socket block and any applicable external egress controls.
+Default tests must use deterministic provider doubles or real SDK clients backed by in-memory transports, plus temporary directories. Pytest blocks in-process Python socket creation by default. This is not OS-level egress control and is not inherited by subprocesses, so subprocess fixtures and commands must be kept explicitly offline too. Tests must not require provider credentials, Microsoft PowerPoint, or private presentations. A live test must be a separate, explicitly authorized invocation that deliberately overrides the in-process socket block and any applicable external egress controls.
 
 The documentation gate parses every tracked Markdown file without network access. It validates Git-index membership and exact casing, repository boundaries, heading and code-line fragments, informative image alt text, and local raster/SVG decodability. HTTP, HTTPS, mail, and telephone destinations are counted but deliberately not requested; external availability is a separate, non-blocking observation.
 
 The supported CPython range is 3.10 through 3.13. CI exercises both endpoints on Linux, macOS, and Windows, plus Python 3.11 on Linux; do not broaden the compatibility claim beyond that configured range.
 
-The provider-adapter suite also runs in an isolated CI job with the declared minimum OpenAI and Anthropic SDK versions. New adapter code must remain compatible with those lower bounds or deliberately raise and document the dependency floor.
+The provider-adapter suite also runs in an isolated CI job with the declared minimum OpenAI and Anthropic SDK versions. Its in-memory HTTP transports must exercise the real SDK serializers and response models without opening a socket, in addition to direct injected-client error cases. New adapter code must remain compatible with those lower bounds or deliberately raise and document the dependency floor.
 
 Property tests must disable the persistent Hypothesis example database, use deterministic generation, and remove deadlines that would turn machine speed into a test outcome. Keep example budgets explicit so README evidence can be recomputed from the test source.
 
@@ -42,13 +42,13 @@ Changes to OOXML inspection, locator resolution, text patching, preservation ver
 - the output reopens with `python-pptx` and can be rendered by the supported office renderer;
 - partial failures do not overwrite the source or leave a false-success output.
 
-Renderer changes must additionally prove that the private source/PDF/profile/raster workspace is absent before the first final image is published, transient cleanup races are retried within a fixed bound, persistent cleanup failure publishes nothing, publication failure rolls back only owned links, and every successful or recoverable-failure path leaves no renderer staging directory. When a compatible office runtime is available, open and rasterize every slide from a synthetic source and its offline identity output, compare every render pair, inspect every slide, run the padded-canvas overflow check, and commit a scoped environment-and-hash record rather than generated working images.
+Renderer changes must additionally prove that the private source/PDF/profile/raster workspace is absent before the first final image is published, transient cleanup races are retried within a fixed bound, persistent cleanup failure publishes nothing, publication failure rolls back only owned links, and every successful or recoverable-failure path leaves no renderer staging directory. When a compatible office runtime is available, open and rasterize every slide from a synthetic source and its offline identity output, compare every render pair, inspect every slide, run the padded-canvas overflow check, and commit a scoped environment-and-hash record. Retain generated images only when they are intentionally reviewer-facing, hash-pinned evidence; never commit disposable renderer workspaces.
 
 A visual golden-image comparison detects regression against a known output; it does not by itself prove translation accuracy or universal formatting preservation.
 
 ## 3. Provider gate
 
-Provider adapters require contract tests with mocked SDK responses for success, authentication failure, rate limiting, malformed responses, and retry boundaries. A live smoke test is optional during ordinary development and requires explicit authorization because it sends content externally and may incur cost.
+Provider adapters require direct injected-client tests for success, authentication failure, rate limiting, malformed responses, and retry boundaries. They also require zero-network wire-contract tests that pass through the real SDK client, an in-memory HTTP transport, request serialization, representative HTTP response parsing, and PPTrans's provider-neutral result. Assert endpoint, method, schema controls, retention controls when available, exactly one logical request, and normalized usage without capturing credentials or authorization headers. Run those tests with current and declared-minimum SDK versions. A live smoke test is optional during ordinary development and requires explicit authorization because it sends content externally and may incur cost.
 
 Budget tests must cover the 2,000-unit, 100-logical-call, 2,000,000-source/context-character, 5,000,000-total-serialized-character defaults and the fixed 1,000,000-character per-request ceiling. Routing tests must prove that built-in clients pin official endpoints, reject ambient SDK endpoint/header variables, and set `trust_env=False`; deliberately injected clients are a separate caller-owned boundary.
 

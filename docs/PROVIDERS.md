@@ -145,7 +145,7 @@ A new adapter must:
 4. force or strongly constrain structured output;
 5. parse with the strict shared schema and return provider-neutral immutable values;
 6. avoid logging credentials or request bodies in user-facing errors;
-7. include offline tests for correct schema use, malformed/partial/ambiguous output, SDK failures, usage normalization, and configuration;
+7. include offline tests for correct schema use, malformed/partial/ambiguous output, SDK failures, usage normalization, configuration, and real-SDK HTTP serialization/response parsing through an in-memory transport at current and declared-minimum versions;
 8. document retention controls and any custom endpoint behavior.
 
 Do not add a provider based only on an OpenAI-compatible base URL. Compatibility must be demonstrated at the exact request, schema, error, and usage boundaries. Follow [CONTRIBUTING.md](../CONTRIBUTING.md) and the provider gate in [QUALITY_GATES.md](QUALITY_GATES.md).

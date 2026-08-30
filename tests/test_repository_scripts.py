@@ -63,6 +63,20 @@ def test_minimal_install_checker_detects_optional_provider_sdks() -> None:
     ) == ("base install unexpectedly exposes optional provider SDK: openai",)
 
 
+def test_native_demo_reproducer_pins_the_committed_libreoffice_assets() -> None:
+    reproducer = _load_script("reproduce_native_demo.py")
+
+    contract = reproducer.load_contract()
+    assert (contract.libreoffice_version, contract.pymupdf_version, contract.dpi) == (
+        "26.8.0.3",
+        "1.28.2",
+        144,
+    )
+    assert len(contract.slides) == 3
+    assert all((slide.width, slide.height) == (1921, 1080) for slide in contract.slides)
+    reproducer.verify_committed_assets(contract, REPO_ROOT / "docs" / "assets")
+
+
 def test_installed_version_checker_requires_runtime_metadata_and_exact_tag_agreement() -> None:
     checker = _load_script("check_installed_version.py")
 
