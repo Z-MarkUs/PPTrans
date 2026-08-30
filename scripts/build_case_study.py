@@ -49,7 +49,7 @@ BENCHMARK_ITERATIONS = 30
 MAX_LEDGER_DISPLAY_CHARACTERS = 80
 PDF_POINT_TOLERANCE = 0.01
 PDF_ID_COMPONENT_COUNT = 2
-EXPECTED_PDF_SHA256 = "387f53a76eaf18e063bba8cbd5d9740abaa886632177be19884589820f276182"
+EXPECTED_PDF_SHA256 = "d1655b56fcffbe2c9c15673ff39a2bb4ead8d55ea4bdee6f6d10a558a30af641"
 EXPECTED_PDF_ID_BYTES = bytes.fromhex("ec9437ccae69cc9984c7b2483e4a70e0")
 EXPECTED_SETUP_PYTHON_ACTION = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
 EXPECTED_CI_WORKFLOW_SHA256 = "798255206cc27354b06767f0f59db3a24223326ca81c30ce5f09a72da0f1c8ad"
@@ -723,7 +723,7 @@ def _draw_image_card(
     )
 
     canvas.setFillColor(NAVY)
-    canvas.roundRect(x + 8, y + height - 20, 79, 13, 4, fill=1, stroke=0)
+    canvas.roundRect(x + 8, y + height - 20, 112, 13, 4, fill=1, stroke=0)
     canvas.setFillColor(WHITE)
     canvas.setFont("Helvetica-Bold", 6.3)
     canvas.drawString(x + 13, y + height - 16.2, label)
@@ -807,10 +807,23 @@ def _draw_document(canvas: Canvas) -> None:  # noqa: PLR0915 - explicit one-page
     )
 
     canvas.setFillColor(PALE_AMBER)
-    canvas.roundRect(PAGE_WIDTH - margin - 137, 797, 137, 24, 12, fill=1, stroke=0)
+    status_badge_width = 170
+    canvas.roundRect(
+        PAGE_WIDTH - margin - status_badge_width,
+        797,
+        status_badge_width,
+        24,
+        12,
+        fill=1,
+        stroke=0,
+    )
     canvas.setFillColor(AMBER)
-    canvas.setFont("Helvetica-Bold", 7.3)
-    canvas.drawCentredString(PAGE_WIDTH - margin - 68.5, 806.2, "V2 LOCAL / UNRELEASED")
+    canvas.setFont("Helvetica-Bold", 7.0)
+    canvas.drawCentredString(
+        PAGE_WIDTH - margin - status_badge_width / 2,
+        806.2,
+        "V2 LOCAL / NON-PUBLIC / UNRELEASED",
+    )
 
     canvas.setFillColor(HexColor("#B9C9D8"))
     canvas.setFont("Helvetica-Bold", 7.3)
@@ -1031,6 +1044,13 @@ def _draw_document(canvas: Canvas) -> None:  # noqa: PLR0915 - explicit one-page
     )
 
     canvas.setFillColor(MUTED)
+    canvas.setFont("Helvetica", 6.3)
+    canvas.drawString(
+        margin,
+        29,
+        "Demo: examples/pptrans-demo.en.pptx -> examples/pptrans-demo.zh-CN.pptx | "
+        "Private v2 source available on request",
+    )
     canvas.setFont("Helvetica", 6.6)
     canvas.drawString(
         margin,
@@ -1236,7 +1256,10 @@ def _validate_pdf(payload: bytes) -> None:
     text = page.extract_text() or ""
     required_text = (
         "PPTrans",
-        "V2 LOCAL / UNRELEASED",
+        "V2 LOCAL / NON-PUBLIC / UNRELEASED",
+        "examples/pptrans-demo.en.pptx",
+        "examples/pptrans-demo.zh-CN.pptx",
+        "Private v2 source available on request",
         "WHAT I ENGINEERED",
         "NO-SPEND PROVIDER PREVIEW",
         "MEASURED EVIDENCE",

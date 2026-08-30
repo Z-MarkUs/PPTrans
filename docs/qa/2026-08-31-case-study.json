@@ -4,8 +4,8 @@
   "evidence_revision": "63a0e95b2187c4ad8ac247d98429a2be51f0725d",
   "artifact": {
     "path": "output/pdf/PPTrans-Engineering-Case-Study.pdf",
-    "bytes": 164132,
-    "sha256": "387f53a76eaf18e063bba8cbd5d9740abaa886632177be19884589820f276182",
+    "bytes": 164231,
+    "sha256": "d1655b56fcffbe2c9c15673ff39a2bb4ead8d55ea4bdee6f6d10a558a30af641",
     "pages": 1,
     "media_box_points": [
       595.2756,
@@ -22,8 +22,8 @@
   "source": {
     "builder": {
       "path": "scripts/build_case_study.py",
-      "bytes": 54972,
-      "sha256": "d57b8d4ecd2c0dc873cb58567306f4e439c11ed68546eaf5763bd126d8eb9692"
+      "bytes": 55534,
+      "sha256": "d974a43c77b62b582cbfc880249df6cd4224ed127cdd67eec69152c5f0ac84ac"
     },
     "claim_ledger": {
       "path": "docs/portfolio/pptrans-engineering-case-study.json",
@@ -63,8 +63,8 @@
       "/Pages",
       "/Type"
     ],
-    "selectable_text_characters": 2803,
-    "selectable_text_sha256": "819744c93e5f47e3af2def3e3692d6a003aa44ff77f760960201bf816265236e",
+    "selectable_text_characters": 2929,
+    "selectable_text_sha256": "a0c110fdea0491cfc07bca1165002ed148f6e63ce4134079a3732343f64a64ec",
     "required_status_and_evidence_text": "passed",
     "absolute_local_paths_absent": true,
     "legacy_public_repository_link_absent": true,
@@ -78,8 +78,8 @@
       2339
     ],
     "mode": "RGB",
-    "png_bytes": 535154,
-    "png_sha256": "2d2281ebf09323de6928a645d001496a8e191909cc5f7f23493abde02cbeb7e9",
+    "png_bytes": 547849,
+    "png_sha256": "2127005a1b19ec64c83db15949d83ccdf718dadc9f89f52e3a83b42c76b80126",
     "committed": false
   },
   "visual_review": {
@@ -99,7 +99,9 @@
     "broken_wrapping": "none found",
     "off_page_content": "none found",
     "legibility": "passed at original resolution and at the recorded fit-page preview size",
-    "header_status_badge": "fully visible",
+    "header_status_badge": "fully visible; includes V2 LOCAL / NON-PUBLIC / UNRELEASED",
+    "demo_locator": "fully visible and legible at original resolution",
+    "source_label_overlay": "fully covers the embedded slide kicker; no stray text remains",
     "source_target_images": "sharp, aligned, and fully visible",
     "result": "passed"
   },

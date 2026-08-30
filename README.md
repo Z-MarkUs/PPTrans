@@ -4,10 +4,11 @@
 
 [简体中文](README.zh-CN.md)
 
-**Job-application attachment:** the [one-page PPTrans engineering case study](output/pdf/PPTrans-Engineering-Case-Study.pdf) compresses the role, architecture, visual proof, measured evidence, and limitations into a recruiter-ready A4 PDF. It is explicitly labeled as an unreleased, non-public local v2 showcase, contains no link to the legacy public `main` branch, and is reproducible from its [scoped claim ledger](docs/portfolio/pptrans-engineering-case-study.json) with `python scripts/build_case_study.py`.
+**Job-application attachment:** the [one-page PPTrans engineering case study](output/pdf/PPTrans-Engineering-Case-Study.pdf) compresses the role, architecture, visual proof, measured evidence, and limitations into a recruiter-ready A4 PDF. It is explicitly labeled as an unreleased, non-public local v2 showcase, contains no link to the legacy public `main` branch, and is reproducible from its [scoped claim ledger](docs/portfolio/pptrans-engineering-case-study.json). The [case-study guide](docs/portfolio/README.md) provides evaluator links and the exact clean setup and rebuild commands.
 
 ## 60-second overview
 
+- **Role — Hehan Zhao:** maintains PPTrans and led v2's product direction, safety bar, and end-to-end re-architecture across defensive OOXML intake, strict provider contracts, transactional publication, testing, CI, and the showcase demo.
 - **Outcome:** translates editable slide text at existing DrawingML `a:t` boundaries while retaining the surrounding package structure and formatting objects.
 - **Integrity:** binds work to the source SHA-256 and stable unit/span addresses, patches a staged copy, verifies planned and untouched content, then publishes atomically.
 - **Untrusted-AI boundary:** OpenAI and Anthropic results must satisfy strict schemas and exact IDs; partial, reordered, duplicated, or invented output fails closed.

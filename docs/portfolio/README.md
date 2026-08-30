@@ -2,13 +2,16 @@
 
 The one-page [PPTrans engineering case study](../../output/pdf/PPTrans-Engineering-Case-Study.pdf) is a self-contained job-application attachment. It is deliberately labeled as an unreleased, non-public local v2 showcase and does not link the legacy public `main` branch as though that branch contained the audited v2 implementation.
 
+**Evaluate the project:** [product overview](../../README.md) | [English source deck](../../examples/pptrans-demo.en.pptx) -> [verified zh-CN output](../../examples/pptrans-demo.zh-CN.pptx) | [demo and QA notes](../DEMO.md) | [architecture](../ARCHITECTURE.md) | [known limitations](../LIMITATIONS.md)
+
 The [claim ledger](pptrans-engineering-case-study.json) is the canonical inventory for every number rendered into the PDF. It pins the dated verification commit, machine-readable source location or locations, and narrow scope for each claim. The generator independently reconciles the local suite, coverage, property-example, and provider-preview claims against the [local test audit](../qa/2026-08-31-local-test-audit.json), then checks the demo, benchmark, package, and compatibility sources rather than trusting display strings.
 
 ## Rebuild and check
 
-Install the development dependencies, then build or verify the tracked artifact:
+From a clean checkout with supported CPython 3.10-3.13, install the exact development extra, then build or verify the tracked artifact:
 
 ```bash
+python -m pip install -e ".[dev]"
 python scripts/build_case_study.py
 python scripts/build_case_study.py --check
 ```

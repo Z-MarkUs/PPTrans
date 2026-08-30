@@ -4,10 +4,11 @@
 
 [English](README.md) | 简体中文
 
-**求职附件：** [PPTrans 单页工程案例 PDF](output/pdf/PPTrans-Engineering-Case-Study.pdf)将个人职责、架构、可视化证明、量化证据与边界压缩为适合招聘方快速阅读的 A4 页面。它明确标为未发布、未公开的本地 v2 展示版，不含指向旧版公开 `main` 分支的链接；所有数字来自带适用范围的[证据账本](docs/portfolio/pptrans-engineering-case-study.json)，并可用 `python scripts/build_case_study.py` 重建。
+**求职附件：** [PPTrans 单页工程案例 PDF](output/pdf/PPTrans-Engineering-Case-Study.pdf)将个人职责、架构、可视化证明、量化证据与边界压缩为适合招聘方快速阅读的 A4 页面。它明确标为未发布、未公开的本地 v2 展示版，不含指向旧版公开 `main` 分支的链接；所有数字来自带适用范围的[证据账本](docs/portfolio/pptrans-engineering-case-study.json)。[案例说明](docs/portfolio/README.md)提供评估入口，以及从干净环境开始的准确安装与重建命令。
 
 ## 60 秒概览
 
+- **角色 — Hehan Zhao：** 维护 PPTrans，并主导 v2 的产品方向、安全标准及端到端重构，涵盖防御式 OOXML、严格服务商契约、事务式发布、测试与 CI，以及展示 demo。
 - **结果：** 在现有 DrawingML `a:t` 边界上翻译可编辑文本，同时保留周边包结构与格式对象。
 - **完整性：** 以源文件 SHA-256 和稳定的单元/片段地址绑定任务，在临时副本中修改，验证计划内与未修改内容，再原子发布。
 - **不可信 AI 边界：** OpenAI 与 Anthropic 结果必须满足严格 schema 与精确 ID；缺失、乱序、重复或伪造输出都会失败关闭。

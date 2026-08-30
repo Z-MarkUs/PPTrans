@@ -11,7 +11,7 @@ Operate PPTrans with an explicit data boundary, a distinct output, and evidence 
 
 - For environment checks, deck-text-free inspection, warning handling, or the offline identity transaction, read [offline operation](references/offline-operation.md).
 - Before any OpenAI or Anthropic translation, read [provider operation](references/provider-operation.md).
-- For implementation, debugging, tests, benchmarks, documentation claims, or releases, use `$pptrans-engineering` instead.
+- For implementation, debugging, tests, benchmarks, documentation claims, or releases, use the `pptrans-engineering` skill instead (`$pptrans-engineering` in Codex; `/pptrans-engineering` in Claude Code).
 
 Read only the reference needed for the current request. Check `pptrans --help` or the relevant subcommand help before relying on an example when the installed version may differ.
 

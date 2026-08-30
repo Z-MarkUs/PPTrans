@@ -42,6 +42,9 @@ DISCOVERY_REQUIREMENTS = {
         "/pptrans-operator",
     ),
 }
+CROSS_PLATFORM_SKILL_REFERENCES = {
+    "pptrans-operator": ("$pptrans-engineering", "/pptrans-engineering"),
+}
 
 
 def _skill_roots(skill_name: str) -> tuple[Path, Path]:
@@ -241,6 +244,11 @@ def _validate_skill(root: Path, skill_name: str, errors: list[str]) -> None:
         errors.append(
             f"{_relative(skill_path)}: entrypoint should stay below {MAX_SKILL_LINES} lines"
         )
+    errors.extend(
+        f"{_relative(skill_path)}: missing cross-platform skill reference {fragment!r}"
+        for fragment in CROSS_PLATFORM_SKILL_REFERENCES.get(skill_name, ())
+        if fragment not in text
+    )
     errors.extend(
         f"{_relative(skill_path)}: unfinished scaffold marker {marker!r}"
         for marker in SCAFFOLD_MARKERS

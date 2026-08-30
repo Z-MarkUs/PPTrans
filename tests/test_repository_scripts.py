@@ -293,7 +293,10 @@ def test_source_distribution_policy_requires_complete_agent_skills() -> None:
     } <= checker.SDIST_REQUIRED_SUFFIXES
 
 
-def test_agent_skill_validator_covers_the_complete_inventory() -> None:
+def test_agent_skill_validator_covers_the_complete_inventory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     validator = _load_script("validate_agent_skills.py")
 
     assert tuple(EXPECTED_SKILL_RESOURCES) == validator.SKILL_NAMES
@@ -305,6 +308,41 @@ def test_agent_skill_validator_covers_the_complete_inventory() -> None:
     validator._validate_discovery(errors)
 
     assert errors == []
+    operator_skill = (REPO_ROOT / ".agents" / "skills" / "pptrans-operator" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    assert validator.CROSS_PLATFORM_SKILL_REFERENCES["pptrans-operator"] == (
+        "$pptrans-engineering",
+        "/pptrans-engineering",
+    )
+    assert all(
+        invocation in operator_skill
+        for invocation in validator.CROSS_PLATFORM_SKILL_REFERENCES["pptrans-operator"]
+    )
+
+    copied_operator = tmp_path / ".agents" / "skills" / "pptrans-operator"
+    shutil.copytree(
+        REPO_ROOT / ".agents" / "skills" / "pptrans-operator",
+        copied_operator,
+    )
+    copied_entrypoint = copied_operator / "SKILL.md"
+    copied_entrypoint.write_text(
+        operator_skill.replace("; `/pptrans-engineering` in Claude Code", ""),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(validator, "REPO_ROOT", tmp_path)
+    missing_reference_errors: list[str] = []
+
+    validator._validate_skill(
+        copied_operator,
+        "pptrans-operator",
+        missing_reference_errors,
+    )
+
+    assert any(
+        "missing cross-platform skill reference '/pptrans-engineering'" in error
+        for error in missing_reference_errors
+    )
 
 
 def test_agent_skill_validator_rejects_missing_operator_discovery(
