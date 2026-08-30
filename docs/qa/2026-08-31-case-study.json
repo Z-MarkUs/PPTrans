@@ -1,0 +1,107 @@
+{
+  "schema_version": "pptrans.case-study-qa/v1",
+  "review_date": "2026-08-31",
+  "evidence_revision": "63a0e95b2187c4ad8ac247d98429a2be51f0725d",
+  "artifact": {
+    "path": "output/pdf/PPTrans-Engineering-Case-Study.pdf",
+    "bytes": 164132,
+    "sha256": "387f53a76eaf18e063bba8cbd5d9740abaa886632177be19884589820f276182",
+    "pages": 1,
+    "media_box_points": [
+      595.2756,
+      841.8898
+    ],
+    "format": "A4 portrait",
+    "encrypted": false,
+    "annotations": false,
+    "form": false,
+    "javascript": false,
+    "attachments": false,
+    "external_links": false
+  },
+  "source": {
+    "builder": {
+      "path": "scripts/build_case_study.py",
+      "bytes": 54972,
+      "sha256": "d57b8d4ecd2c0dc873cb58567306f4e439c11ed68546eaf5763bd126d8eb9692"
+    },
+    "claim_ledger": {
+      "path": "docs/portfolio/pptrans-engineering-case-study.json",
+      "bytes": 5582,
+      "sha256": "20eb204031fdfa799f64ef9c4f40e86b9a7c20058374f81aa091cdef3d4abdca"
+    },
+    "local_test_audit": {
+      "path": "docs/qa/2026-08-31-local-test-audit.json",
+      "bytes": 1684,
+      "sha256": "d41bbbc2885a291b50328ff180dcfe30df1b5b84580a600d3baaaaa8f23ef358"
+    },
+    "benchmark_result": {
+      "path": "benchmarks/results/2026-08-31-honest-showcase-ooxml-windows-python312.json",
+      "bytes": 1375,
+      "sha256": "f8ca92c6501b9dd88a8f4a6226c48fe461fe81472d3af548810b36d680b6b466"
+    },
+    "ci_workflow": {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 7117,
+      "sha256": "798255206cc27354b06767f0f59db3a24223326ca81c30ce5f09a72da0f1c8ad"
+    },
+    "command": "python scripts/build_case_study.py",
+    "check_command": "python scripts/build_case_study.py --check",
+    "byte_identical_rebuild": true
+  },
+  "toolchain": {
+    "operating_system": "Windows 11",
+    "python": "3.12.13",
+    "reportlab": "4.4.9",
+    "pypdf": "6.16.2",
+    "poppler_pdftoppm": "26.05.0"
+  },
+  "structural_review": {
+    "strict_parse": "passed",
+    "root_keys": [
+      "/PageMode",
+      "/Pages",
+      "/Type"
+    ],
+    "selectable_text_characters": 2803,
+    "selectable_text_sha256": "819744c93e5f47e3af2def3e3692d6a003aa44ff77f760960201bf816265236e",
+    "required_status_and_evidence_text": "passed",
+    "absolute_local_paths_absent": true,
+    "legacy_public_repository_link_absent": true,
+    "unsafe_action_tokens_absent": true
+  },
+  "raster_review": {
+    "command": "pdftoppm -png -r 200 -singlefile output/pdf/PPTrans-Engineering-Case-Study.pdf tmp/pdfs/pptrans-case-study-final",
+    "dpi": 200,
+    "pixels": [
+      1654,
+      2339
+    ],
+    "mode": "RGB",
+    "png_bytes": 535154,
+    "png_sha256": "2d2281ebf09323de6928a645d001496a8e191909cc5f7f23493abde02cbeb7e9",
+    "committed": false
+  },
+  "visual_review": {
+    "reviewed_pages": [
+      1
+    ],
+    "reviewed_at_raster_dimensions": [
+      1654,
+      2339
+    ],
+    "fit_page_preview_dimensions": [
+      1334,
+      1888
+    ],
+    "clipping": "none found",
+    "unintended_overlap": "none found",
+    "broken_wrapping": "none found",
+    "off_page_content": "none found",
+    "legibility": "passed at original resolution and at the recorded fit-page preview size",
+    "header_status_badge": "fully visible",
+    "source_target_images": "sharp, aligned, and fully visible",
+    "result": "passed"
+  },
+  "scope": "This validates one deterministic recruiter-facing PDF and its complete 200 DPI render. The page remains an unreleased, non-public local showcase. It does not establish public v2 availability, clear repository provenance/licensing, prove provider translation quality, establish Microsoft PowerPoint pixel identity, guarantee automatic layout fit, or measure universal compatibility or maximum practical deck size."
+}

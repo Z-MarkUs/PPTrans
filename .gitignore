@@ -38,6 +38,8 @@ env/
 *.ppt
 !examples/pptrans-demo.en.pptx
 !examples/pptrans-demo.zh-CN.pptx
+*.pdf
+!output/pdf/PPTrans-Engineering-Case-Study.pdf
 *.xml
 !examples/pptrans-demo.source/
 !examples/pptrans-demo.source/**
@@ -74,6 +76,7 @@ slide_*.xml
 
 # Temporary files
 .tmp-*/
+tmp/pdfs/
 *.tmp
 *.bak
 *.cache

@@ -11,11 +11,12 @@ Run for every code or test change:
 ```bash
 python -m ruff check .
 python -m ruff format --check .
-python -m mypy src/pptrans tests/typecheck_provider_exports.py tests/test_provider_sdk_wire_contracts.py scripts/benchmark_core.py scripts/check_wheel.py scripts/rebuild_demo.py scripts/reproduce_native_demo.py
+python -m mypy src/pptrans tests/typecheck_provider_exports.py tests/test_provider_sdk_wire_contracts.py scripts/benchmark_core.py scripts/build_case_study.py scripts/check_wheel.py scripts/rebuild_demo.py scripts/reproduce_native_demo.py
 python -m pytest -q
 python -m bandit -q -r src/pptrans
 python scripts/check_doc_links.py
 python scripts/rebuild_demo.py --check
+python scripts/build_case_study.py --check
 python scripts/sync_agent_skills.py --check
 python scripts/validate_agent_skills.py
 pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --json --fail-on-warnings
@@ -87,6 +88,8 @@ Security-tool updates must pin the bytes that execute, not only a wrapper action
 Hard-coded scanner binaries are outside Dependabot's update scope. Review the Gitleaks pin at least quarterly and whenever upstream publishes a release; adopt only a release whose official archive checksum verifies and whose runtime control detects the synthetic fixture. The 2026-08-31 audit refreshed the verified pin to v8.30.0 and rescanned the complete local Git history cleanly.
 
 The showcase demo has inspectable canonical package source and QA records in [DEMO.md](DEMO.md). Every checkout must rebuild the English deck byte for byte from the 29-member manifest using fixed `ZIP_STORED` fields; CI configures this check in every compatibility job. A replacement must remain synthetic, preserve LF source checkout and exact inventory, be built into a disposable path, preserve the asserted slide/unit/span counts, pass the offline identity transaction and independent reopen, and receive native visual review of every generated slide. The curated changed-text target must also rebuild byte for byte, change only its asserted slide XML members, pass structural/text verification, and render every target slide in the recorded office runtime. Record the exact package source, renderer, dimensions, hashes, visual result, and scope; a rendered image does not establish Microsoft PowerPoint pixel identity or translation quality.
+
+The one-page recruiter case study is a separately scoped publication artifact, not evidence for itself. Its machine-readable ledger must pin each displayed metric to the dated verification commit and underlying source. The deterministic builder must consume that ledger, verify the pinned visual-input hashes, generate exactly one fixed A4 page, expose selectable text, and reject unsafe metadata or interactive PDF features. CI and pre-commit require a byte-identical rebuild. After any content or layout change, render the complete page at 200 DPI, inspect it at original resolution for clipping, overlap, and legibility, and commit a new no-clobber QA record containing the PDF and raster hashes. The artifact must retain its unreleased/non-public label, provenance gate, synthetic-fixture boundary, benchmark scope, and provider-quality disclaimer while v2 remains unpublished.
 
 The current narrow result and method are committed under [`benchmarks/`](../benchmarks/). Regenerate into a new no-clobber result path from a clean tree; never overwrite old evidence or broaden the claim beyond the systems actually measured.
 

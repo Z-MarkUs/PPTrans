@@ -1,0 +1,51 @@
+{
+  "schema_version": "pptrans.local-test-audit/v1",
+  "observed_date": "2026-08-31",
+  "git_commit": "63a0e95b2187c4ad8ac247d98429a2be51f0725d",
+  "git_dirty": false,
+  "environment": {
+    "operating_system": "Windows 11",
+    "python": "3.12.13"
+  },
+  "test_run": {
+    "command": "python -m pytest -q",
+    "passed": 541,
+    "skipped": 12,
+    "coverage_branch_aware_percent": 92.12,
+    "configured_coverage_floor_percent": 90
+  },
+  "property_examples": {
+    "source": "tests/test_properties.py",
+    "configured_examples": [
+      4096,
+      2000,
+      1000,
+      2000,
+      250
+    ],
+    "total": 9346,
+    "database": null,
+    "deadlines": null,
+    "deterministic": true
+  },
+  "provider_preview": {
+    "command": "pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider identity --dry-run --json --fail-on-warnings",
+    "source_sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee",
+    "slides": 3,
+    "translation_units": 41,
+    "translatable_spans": 45,
+    "provider_units": 41,
+    "provider_calls": 2,
+    "source_context_characters": 2799,
+    "request_characters": 8867,
+    "largest_request_characters": 5903,
+    "request_characters_per_call": [
+      5903,
+      2964
+    ],
+    "assumes_zero_memory_hits": true,
+    "measurement_scope": "characters-not-tokens-cost-or-latency",
+    "warnings": []
+  },
+  "scope": "This records the complete deterministic local suite, configured property-example budget, and no-provider-request preview at the pinned commit. It is not a public CI result, provider translation-quality test, token or cost estimate, cross-machine benchmark, or release clearance."
+}

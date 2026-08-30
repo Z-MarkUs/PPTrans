@@ -4,6 +4,8 @@
 
 [English](README.md) | 简体中文
 
+**求职附件：** [PPTrans 单页工程案例 PDF](output/pdf/PPTrans-Engineering-Case-Study.pdf)将个人职责、架构、可视化证明、量化证据与边界压缩为适合招聘方快速阅读的 A4 页面。它明确标为未发布、未公开的本地 v2 展示版，不含指向旧版公开 `main` 分支的链接；所有数字来自带适用范围的[证据账本](docs/portfolio/pptrans-engineering-case-study.json)，并可用 `python scripts/build_case_study.py` 重建。
+
 ## 60 秒概览
 
 - **结果：** 在现有 DrawingML `a:t` 边界上翻译可编辑文本，同时保留周边包结构与格式对象。

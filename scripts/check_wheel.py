@@ -27,8 +27,30 @@ SHA256_HEX_LENGTH = 64
 DEMO_FIXED_TIMESTAMP = [2026, 8, 28, 0, 34, 0]
 CURRENT_QA_SUFFIX = "docs/qa/2026-08-31-exact-rebuild.json"
 CURRENT_QA_CANONICAL_SHA256 = "462eef3c18c1cd00dfbf4e7a6521791564c4962fb7fc88bdb84eeff7a436270b"
+CASE_STUDY_QA_SUFFIX = "docs/qa/2026-08-31-case-study.json"
+CASE_STUDY_QA_CANONICAL_SHA256 = "440e0e9e98123dafeeff1b155102318324747739686a6f09fb188c662971a21e"
+CASE_STUDY_PDF_SUFFIX = "output/pdf/PPTrans-Engineering-Case-Study.pdf"
+CASE_STUDY_PACKAGED_INPUTS = {
+    ".github/workflows/ci.yml",
+    "README.md",
+    "NOTICE.md",
+    "benchmarks/results/2026-08-31-honest-showcase-ooxml-windows-python312.json",
+    "docs/DEMO.md",
+    "docs/assets/pptrans-demo-libreoffice-en-slide-01.png",
+    "docs/assets/pptrans-demo-libreoffice-zh-CN-slide-01.png",
+    "docs/portfolio/pptrans-engineering-case-study.json",
+    "docs/qa/2026-08-31-exact-rebuild.json",
+    "docs/qa/2026-08-31-local-test-audit.json",
+    "examples/pptrans-demo.en.pptx",
+    CASE_STUDY_PDF_SUFFIX,
+    CASE_STUDY_QA_SUFFIX,
+    "pyproject.toml",
+    "scripts/build_case_study.py",
+    "tests/test_properties.py",
+}
 PNG_HEADER_BYTES = 24
 SDIST_REQUIRED_SUFFIXES = {
+    ".github/workflows/ci.yml",
     ".agents/skills/pptrans-engineering/agents/openai.yaml",
     ".agents/skills/pptrans-engineering/references/architecture.md",
     ".agents/skills/pptrans-engineering/references/release.md",
@@ -49,6 +71,8 @@ SDIST_REQUIRED_SUFFIXES = {
     ".claude/skills/pptrans-operator/SKILL.md",
     "AGENTS.md",
     "CLAUDE.md",
+    "NOTICE.md",
+    "pyproject.toml",
     "README.md",
     "README.zh-CN.md",
     "benchmarks/README.md",
@@ -58,6 +82,8 @@ SDIST_REQUIRED_SUFFIXES = {
     "benchmarks/results/2026-08-31-windows-python312.json",
     "benchmarks/results/2026-08-31-stored-ooxml-windows-python312.json",
     "docs/ARCHITECTURE.md",
+    "docs/portfolio/pptrans-engineering-case-study.json",
+    "docs/portfolio/README.md",
     "docs/DEMO.md",
     "docs/assets/pptrans-demo-libreoffice-en-slide-01.png",
     "docs/assets/pptrans-demo-libreoffice-en-slide-02.png",
@@ -67,11 +93,14 @@ SDIST_REQUIRED_SUFFIXES = {
     "docs/assets/pptrans-demo-libreoffice-zh-CN-slide-03.png",
     "docs/qa/2026-08-28-curated-zh-cn.json",
     "docs/qa/2026-08-28-windows-libreoffice.json",
+    "docs/qa/2026-08-31-case-study.json",
+    "docs/qa/2026-08-31-local-test-audit.json",
     CURRENT_QA_SUFFIX,
     "examples/pptrans-demo.source/manifest.json",
     "examples/pptrans-demo.en.pptx",
     "examples/pptrans-demo.zh-CN.pptx",
     "scripts/build_curated_demo.py",
+    "scripts/build_case_study.py",
     "scripts/check_doc_links.py",
     "scripts/check_installed_version.py",
     "scripts/check_minimal_install.py",
@@ -83,12 +112,17 @@ SDIST_REQUIRED_SUFFIXES = {
     "tests/test_demo_rebuild.py",
     "tests/test_provider_sdk_wire_contracts.py",
     "tests/test_public_demo.py",
+    "tests/test_properties.py",
     "tests/typecheck_provider_exports.py",
+    "output/pdf/PPTrans-Engineering-Case-Study.pdf",
 }
 FORBIDDEN_FRAGMENTS = {
     ".env",
+    ".pdf",
     ".ppt",
     ".pptx",
+    "docs/portfolio/",
+    "output/",
     ".pyc",
     ".sqlite3",
     "ppt_translator/",
@@ -115,6 +149,7 @@ SDIST_FORBIDDEN_PARTS = {
     ".venv",
     "__pycache__",
     "ppt_translator",
+    "tmp",
 }
 SQLITE_SUFFIXES = (".db", ".sqlite", ".sqlite3")
 SQLITE_SIDECARS = ("-journal", "-shm", "-wal")
@@ -162,12 +197,16 @@ def _forbidden_sdist_path(relative: str) -> bool:
         or any(filename.endswith(suffix + sidecar) for sidecar in SQLITE_SIDECARS)
         for suffix in SQLITE_SUFFIXES
     )
+    unexpected_pdf = (
+        path.suffix.lower() == ".pdf" and folded_relative != CASE_STUDY_PDF_SUFFIX.casefold()
+    )
     return (
         folded_relative in SDIST_FORBIDDEN_PATHS
         or any(part in SDIST_FORBIDDEN_PARTS or part.startswith(".tmp-") for part in folded_parts)
         or path.suffix.lower() in {".pyc", ".pyo"}
         or dotenv
         or sqlite
+        or unexpected_pdf
     )
 
 
@@ -573,6 +612,94 @@ def _qa_evidence_failures(
     return tuple(failures)
 
 
+def _case_study_evidence_failures(
+    archive: tarfile.TarFile,
+    archive_members: tuple[tarfile.TarInfo, ...],
+    members: tuple[str, ...],
+) -> tuple[str, ...]:
+    qa_members = [
+        (member, normalized)
+        for member, normalized in zip(archive_members, members, strict=True)
+        if member.isfile() and normalized.endswith(CASE_STUDY_QA_SUFFIX)
+    ]
+    if len(qa_members) != 1:
+        return ("source distribution must contain exactly one case-study QA record",)
+    qa_member, qa_name = qa_members[0]
+    distribution_root = qa_name[: -len(CASE_STUDY_QA_SUFFIX)]
+    try:
+        record = json.loads(_read_tar_member(archive, qa_member).decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return (f"source distribution case-study QA record is invalid: {exc}",)
+    if not isinstance(record, dict) or record.get("schema_version") != "pptrans.case-study-qa/v1":
+        return ("source distribution case-study QA record has an invalid schema",)
+    canonical = json.dumps(record, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+    if hashlib.sha256(canonical.encode()).hexdigest() != CASE_STUDY_QA_CANONICAL_SHA256:
+        return ("source distribution case-study QA record differs from the pinned contract",)
+
+    artifact = record.get("artifact")
+    source = record.get("source")
+    if not isinstance(artifact, dict) or not isinstance(source, dict):
+        return ("source distribution case-study QA artifact contract is invalid",)
+    builder = source.get("builder")
+    ledger = source.get("claim_ledger")
+    local_test_audit = source.get("local_test_audit")
+    benchmark_result = source.get("benchmark_result")
+    ci_workflow = source.get("ci_workflow")
+    expected_contracts = (
+        ("PDF", artifact, "output/pdf/PPTrans-Engineering-Case-Study.pdf"),
+        ("builder", builder, "scripts/build_case_study.py"),
+        (
+            "claim ledger",
+            ledger,
+            "docs/portfolio/pptrans-engineering-case-study.json",
+        ),
+        (
+            "local-test audit",
+            local_test_audit,
+            "docs/qa/2026-08-31-local-test-audit.json",
+        ),
+        (
+            "benchmark result",
+            benchmark_result,
+            "benchmarks/results/2026-08-31-honest-showcase-ooxml-windows-python312.json",
+        ),
+        ("CI workflow", ci_workflow, ".github/workflows/ci.yml"),
+    )
+
+    failures: list[str] = []
+    for label, contract, expected_path in expected_contracts:
+        if not isinstance(contract, dict):
+            failures.append(f"source distribution case-study {label} contract is invalid")
+            continue
+        size = contract.get("bytes")
+        digest = contract.get("sha256")
+        if (
+            contract.get("path") != expected_path
+            or not isinstance(size, int)
+            or isinstance(size, bool)
+            or size <= 0
+            or not isinstance(digest, str)
+            or len(digest) != SHA256_HEX_LENGTH
+        ):
+            failures.append(f"source distribution case-study {label} contract is invalid")
+            continue
+        expected_name = distribution_root + expected_path
+        matches = [
+            member
+            for member, normalized in zip(archive_members, members, strict=True)
+            if member.isfile() and normalized == expected_name
+        ]
+        if len(matches) != 1:
+            failures.append(f"source distribution must contain one case-study {label}")
+            continue
+        payload = _read_tar_member(archive, matches[0])
+        if (len(payload), hashlib.sha256(payload).hexdigest()) != (size, digest):
+            failures.append(f"source distribution case-study {label} differs from QA record")
+        if label == "PDF" and not payload.startswith(b"%PDF-1.4"):
+            failures.append("source distribution case-study PDF has an unexpected header")
+    return tuple(failures)
+
+
 def _inspect_sdist_snapshot(snapshot: bytes) -> tuple[str, ...]:
     """Return validation failures for one immutable source-distribution snapshot."""
 
@@ -581,6 +708,7 @@ def _inspect_sdist_snapshot(snapshot: bytes) -> tuple[str, ...]:
         members = tuple(member.name for member in archive_members)
         demo_failures = _demo_source_failures(archive, archive_members, members)
         qa_failures = _qa_evidence_failures(archive, archive_members, members)
+        case_study_failures = _case_study_evidence_failures(archive, archive_members, members)
     failures = [
         f"unsafe source-distribution member: {member}"
         for member in members
@@ -620,6 +748,7 @@ def _inspect_sdist_snapshot(snapshot: bytes) -> tuple[str, ...]:
         )
     failures.extend(demo_failures)
     failures.extend(qa_failures)
+    failures.extend(case_study_failures)
     expected_pptx_members = {
         "examples/pptrans-demo.en.pptx",
         "examples/pptrans-demo.zh-CN.pptx",
@@ -635,6 +764,15 @@ def _inspect_sdist_snapshot(snapshot: bytes) -> tuple[str, ...]:
         failures.append(
             "source distribution must contain only the English and curated zh-CN demo PPTX files"
         )
+    actual_pdf_members = {
+        member.name.removeprefix(f"{distribution_root}/")
+        for member in archive_members
+        if distribution_root is not None
+        and member.isfile()
+        and member.name.lower().endswith(".pdf")
+    }
+    if actual_pdf_members != {CASE_STUDY_PDF_SUFFIX}:
+        failures.append("source distribution must contain only the canonical recruiter PDF")
     return tuple(failures)
 
 
@@ -792,6 +930,136 @@ def verify_packaged_demo_builder(snapshot: bytes) -> tuple[str, ...]:
     return ()
 
 
+def _packaged_case_study_payloads(snapshot: bytes) -> dict[str, bytes]:
+    with tarfile.open(fileobj=io.BytesIO(snapshot), mode="r:gz") as archive:
+        members = tuple(archive.getmembers())
+        roots = {
+            PurePosixPath(member.name).parts[0]
+            for member in members
+            if PurePosixPath(member.name).parts
+        }
+        if len(roots) != 1:
+            raise ValueError("packaged case-study check requires one source-distribution root")
+        distribution_root = next(iter(roots))
+        selected: dict[str, bytes] = {}
+        for member in members:
+            if not member.isfile() or not member.name.startswith(f"{distribution_root}/"):
+                continue
+            relative = member.name.removeprefix(f"{distribution_root}/")
+            if relative not in CASE_STUDY_PACKAGED_INPUTS:
+                continue
+            pure = PurePosixPath(relative)
+            if pure.is_absolute() or ".." in pure.parts or "\\" in relative:
+                raise ValueError(f"unsafe packaged case-study member: {relative}")
+            if relative in selected:
+                raise ValueError(f"duplicate packaged case-study member: {relative}")
+            selected[relative] = _read_tar_member(archive, member)
+    if set(selected) != CASE_STUDY_PACKAGED_INPUTS:
+        raise ValueError("source distribution is missing packaged case-study inputs")
+    return selected
+
+
+def _authenticate_packaged_case_study(selected: dict[str, bytes]) -> None:
+    qa_payload = selected[CASE_STUDY_QA_SUFFIX]
+    try:
+        record = json.loads(qa_payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"source distribution case-study QA record is invalid: {exc}") from exc
+    if not isinstance(record, dict) or record.get("schema_version") != "pptrans.case-study-qa/v1":
+        raise ValueError("source distribution case-study QA record has an invalid schema")
+    canonical = json.dumps(record, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+    if hashlib.sha256(canonical.encode()).hexdigest() != CASE_STUDY_QA_CANONICAL_SHA256:
+        raise ValueError(
+            "source distribution case-study QA record differs from the pinned contract"
+        )
+    artifact = record.get("artifact")
+    source = record.get("source")
+    if not isinstance(artifact, dict) or not isinstance(source, dict):
+        raise TypeError("source distribution case-study QA contract is invalid")
+    contracts = (
+        (artifact, CASE_STUDY_PDF_SUFFIX, "PDF"),
+        (source.get("builder"), "scripts/build_case_study.py", "builder"),
+        (
+            source.get("claim_ledger"),
+            "docs/portfolio/pptrans-engineering-case-study.json",
+            "claim ledger",
+        ),
+        (
+            source.get("local_test_audit"),
+            "docs/qa/2026-08-31-local-test-audit.json",
+            "local-test audit",
+        ),
+        (
+            source.get("benchmark_result"),
+            "benchmarks/results/2026-08-31-honest-showcase-ooxml-windows-python312.json",
+            "benchmark result",
+        ),
+        (source.get("ci_workflow"), ".github/workflows/ci.yml", "CI workflow"),
+    )
+    for contract, expected_path, label in contracts:
+        if not isinstance(contract, dict) or contract.get("path") != expected_path:
+            raise ValueError(f"source distribution case-study {label} contract is invalid")
+        size = contract.get("bytes")
+        digest = contract.get("sha256")
+        payload = selected[expected_path]
+        if (
+            not isinstance(size, int)
+            or isinstance(size, bool)
+            or not isinstance(digest, str)
+            or (len(payload), hashlib.sha256(payload).hexdigest()) != (size, digest)
+        ):
+            raise ValueError(f"refusing to execute with an unpinned case-study {label}")
+
+
+def verify_packaged_case_study_builder(snapshot: bytes) -> tuple[str, ...]:
+    """Run the authenticated case-study validator from isolated sdist inputs."""
+
+    try:
+        selected = _packaged_case_study_payloads(snapshot)
+        _authenticate_packaged_case_study(selected)
+    except (OSError, tarfile.TarError) as exc:
+        return (f"could not read packaged case-study inputs: {exc}",)
+    except (TypeError, ValueError) as exc:
+        return (str(exc),)
+
+    with tempfile.TemporaryDirectory(prefix="pptrans-sdist-case-study-") as directory:
+        project = Path(directory) / "project"
+        for relative, payload in selected.items():
+            destination = project.joinpath(*PurePosixPath(relative).parts)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(payload)
+        environment = {
+            key: value for key, value in os.environ.items() if not key.upper().startswith("PYTHON")
+        }
+        try:
+            result = subprocess.run(  # noqa: S603
+                [
+                    sys.executable,
+                    "-I",
+                    "-X",
+                    "utf8",
+                    str(project / "scripts" / "build_case_study.py"),
+                    "--check",
+                ],
+                cwd=project,
+                env=environment,
+                check=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=PACKAGED_REBUILD_TIMEOUT_SECONDS,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return (f"packaged case-study check could not run: {exc}",)
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()[-500:]
+        return (f"packaged case-study check failed with status {result.returncode}: {detail}",)
+    if "case-study PDF is current:" not in result.stdout:
+        return ("packaged case-study check returned an unexpected result",)
+    return ()
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -818,6 +1086,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     sdist_failures = _inspect_sdist_snapshot(sdist_snapshot)
     if not sdist_failures:
         sdist_failures = verify_packaged_demo_builder(sdist_snapshot)
+    if not sdist_failures:
+        sdist_failures = verify_packaged_case_study_builder(sdist_snapshot)
     failures = (*wheel_failures, *sdist_failures)
     if failures:
         print("\n".join(failures))

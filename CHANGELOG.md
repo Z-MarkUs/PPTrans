@@ -28,6 +28,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Six exact, hash-pinned native LibreOffice source/target PNGs plus a local replay command that rebuilds the identity transaction, rerenders all nine pages with the recorded build, and emits a deterministic evidence manifest.
 - A current exact-rebuild acceptance record linking both hash-pinned builders, the hash-pinned native replay script, the canonical 29-member source tree, deterministic source and curated packages, prior-package payload lineage, exact native renders, and original-resolution visual review.
 - Deterministic property-based stress tests covering XML character handling, Unicode round trips, exact provider result ordering, relationship target containment, and byte-mutated presentation input.
+- A deterministic, one-page recruiter engineering case study with a machine-readable scoped claim ledger, structural PDF validation, exact rebuild gate, and original-resolution visual QA workflow.
 
 ### Changed
 

@@ -28,3 +28,9 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: recruiter-case-study
+        name: Verify recruiter case study
+        entry: python scripts/build_case_study.py --check
+        language: system
+        pass_filenames: false
+        always_run: true

@@ -1,4 +1,5 @@
 include .env.example
+include .github/workflows/ci.yml
 include AGENTS.md
 include CHANGELOG.md
 include CLAUDE.md
@@ -12,6 +13,7 @@ recursive-include .agents *.md *.yaml
 recursive-include .claude *.md *.yaml
 recursive-include benchmarks *.json *.md
 recursive-include docs *.json *.md *.png
+include output/pdf/PPTrans-Engineering-Case-Study.pdf
 recursive-include examples *.pptx *.yaml
 graft examples/pptrans-demo.source
 recursive-include scripts *.py

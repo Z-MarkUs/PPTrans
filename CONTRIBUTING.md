@@ -73,11 +73,12 @@ For a complete code change, run:
 ```bash
 python -m ruff check .
 python -m ruff format --check .
-python -m mypy src/pptrans tests/typecheck_provider_exports.py tests/test_provider_sdk_wire_contracts.py scripts/benchmark_core.py scripts/check_wheel.py scripts/rebuild_demo.py scripts/reproduce_native_demo.py
+python -m mypy src/pptrans tests/typecheck_provider_exports.py tests/test_provider_sdk_wire_contracts.py scripts/benchmark_core.py scripts/build_case_study.py scripts/check_wheel.py scripts/rebuild_demo.py scripts/reproduce_native_demo.py
 python -m pytest -q
 python -m bandit -q -r src/pptrans
 python scripts/check_doc_links.py
 python scripts/rebuild_demo.py --check
+python scripts/build_case_study.py --check
 python scripts/sync_agent_skills.py --check
 python scripts/validate_agent_skills.py
 ```
@@ -89,6 +90,8 @@ Use the full [quality-gate checklist](docs/QUALITY_GATES.md) for OOXML, provider
 Document current behavior, not planned behavior. In particular, do not describe the review foundation as an end-to-end vision-review feature until a reviewed provider adapter, orchestration path, and repair executor exist and are tested together.
 
 Every speed, cost, quality, compatibility, or preservation claim needs committed evidence identifying the commit, fixture, environment, and command. Do not infer universal PowerPoint compatibility from a synthetic fixture or a successful `python-pptx` reopen.
+
+The recruiter case study takes its metrics from the machine-readable ledger under `docs/portfolio/`; do not hand-edit the PDF. Update the scoped ledger and generator, rebuild the artifact, render the complete page at 200 DPI, inspect it at original resolution, and add a no-clobber QA record before changing any claim or visual.
 
 Update [CHANGELOG.md](CHANGELOG.md) under the Unreleased version when a user-visible behavior changes. New limitations belong in [docs/LIMITATIONS.md](docs/LIMITATIONS.md); new trust boundaries or mitigations belong in [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 

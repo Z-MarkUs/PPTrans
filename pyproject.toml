@@ -71,6 +71,8 @@ dev = [
     "pytest-cov>=6,<8",
     "pytest-socket>=0.8,<1",
     "python-pptx>=1.0.2,<2",
+    "pypdf>=6.10,<7",
+    "reportlab==4.4.9",
     "ruff>=0.9,<1",
     "twine>=6,<7",
     "types-PyYAML>=6.0.12,<7",
