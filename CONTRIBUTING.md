@@ -62,6 +62,7 @@ Tests should be offline, deterministic, and safe to publish.
 - Include failure tests for malformed, stale, partial, duplicated, and reordered data.
 - For renderer work, test command construction, timeouts, resource ceilings, environment redaction, and invalid output.
 - Do not commit customer decks, provider responses, API keys, local translation-memory databases, or generated review images.
+- Treat `examples/pptrans-demo.source/` and its manifest as one canonical artifact: preserve LF checkout, member order, fixed ZIP fields, and every payload hash; any intentional fixture change requires fresh package, transaction, native-render, and benchmark evidence.
 
 A live provider or renderer smoke test is supplementary evidence, not a replacement for deterministic tests. It requires explicit authorization, synthetic content, and a separate report of the provider/model or renderer version used.
 
@@ -72,10 +73,11 @@ For a complete code change, run:
 ```bash
 python -m ruff check .
 python -m ruff format --check .
-python -m mypy src/pptrans tests/typecheck_provider_exports.py
+python -m mypy src/pptrans tests/typecheck_provider_exports.py tests/test_provider_sdk_wire_contracts.py scripts/check_wheel.py scripts/rebuild_demo.py scripts/reproduce_native_demo.py
 python -m pytest -q
 python -m bandit -q -r src/pptrans
 python scripts/check_doc_links.py
+python scripts/rebuild_demo.py --check
 python scripts/sync_agent_skills.py --check
 python scripts/validate_agent_skills.py
 ```

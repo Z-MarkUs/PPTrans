@@ -11,7 +11,8 @@ include SECURITY.md
 recursive-include .agents *.md *.yaml
 recursive-include .claude *.md *.yaml
 recursive-include benchmarks *.json *.md
-recursive-include docs *.json *.md *.png *.webp
+recursive-include docs *.json *.md *.png
 recursive-include examples *.pptx *.yaml
-recursive-include scripts *.py *.mjs
+graft examples/pptrans-demo.source
+recursive-include scripts *.py
 recursive-include tests *.py

@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "archive": {
+    "compression": "stored",
+    "timestamp": [
+      2026,
+      8,
+      28,
+      0,
+      34,
+      0
+    ],
+    "create_system": 3,
+    "create_version": 20,
+    "extract_version": 20,
+    "flag_bits": 0,
+    "internal_attributes": 0,
+    "external_attributes_octal": "100644",
+    "reserved": 0,
+    "volume": 0,
+    "extra": "",
+    "member_comment": "",
+    "comment": ""
+  },
+  "expected_package": {
+    "path": "examples/pptrans-demo.en.pptx",
+    "bytes": 87523,
+    "sha256": "07cd8af375046b7d22a5cd53723324b4a2a219097922d8f1854b742cb9af956d"
+  },
+  "entries": [
+    {
+      "path": "docProps/core.xml",
+      "bytes": 902,
+      "sha256": "7005dca4177493070f0ca5b2659cd5b315849f42d8daf72a4594d23934377448"
+    },
+    {
+      "path": "docProps/app.xml",
+      "bytes": 434,
+      "sha256": "920bc10bc45f798a473beed9c3334d4e5d39c2cad4cd659fc082245a1f5f0227"
+    },
+    {
+      "path": "ppt/presentation.xml",
+      "bytes": 947,
+      "sha256": "76a9755f2d57d9895acfd5cc6c6644080c78b4eae82705506362be3c128713c8"
+    },
+    {
+      "path": "ppt/theme/theme1.xml",
+      "bytes": 4631,
+      "sha256": "8b500abccb3a86061340d95e2edfe2ca62da665f2741801d8790930dba1507a0"
+    },
+    {
+      "path": "ppt/slideMasters/slideMaster1.xml",
+      "bytes": 7510,
+      "sha256": "979ff74a51a2598a1b407732ccdec3dc3394640b9e3063b1f88ea28f264c3cb5"
+    },
+    {
+      "path": "ppt/slideMasters/theme/theme2.xml",
+      "bytes": 4631,
+      "sha256": "8b500abccb3a86061340d95e2edfe2ca62da665f2741801d8790930dba1507a0"
+    },
+    {
+      "path": "ppt/slideLayouts/slideLayout1.xml",
+      "bytes": 380,
+      "sha256": "2300fbb688968eebb7a1858e65f8aae0da29e9c5cefc4607fdc04101568c6b62"
+    },
+    {
+      "path": "ppt/notesMasters/notesMaster1.xml",
+      "bytes": 4047,
+      "sha256": "67e34238b0ae378d2b06825cab5051767fe5c55010ccc2f8c4bc250056068e22"
+    },
+    {
+      "path": "ppt/notesMasters/theme/theme3.xml",
+      "bytes": 4631,
+      "sha256": "8b500abccb3a86061340d95e2edfe2ca62da665f2741801d8790930dba1507a0"
+    },
+    {
+      "path": "ppt/presProps.xml",
+      "bytes": 660,
+      "sha256": "1db4fc10ae1c50c0bf989e54950b4489fbe1ce68105fa850073337ef8e043f5f"
+    },
+    {
+      "path": "ppt/tableStyles.xml",
+      "bytes": 164,
+      "sha256": "eefe8607728a909fd3cf65c0e18a5abf20526c77e5d206950696a268edd823c8"
+    },
+    {
+      "path": "ppt/slides/slide1.xml",
+      "bytes": 9222,
+      "sha256": "c41bcbf0e16133c52a8ee37077344d5eb2ccd766c6c8c49942c01a71781918f1"
+    },
+    {
+      "path": "ppt/notesSlides/notesSlide1.xml",
+      "bytes": 1694,
+      "sha256": "233d7373f5475366a75fa5605a96451fcbd17626d9c7a38d8f4e4c0d8bfefd50"
+    },
+    {
+      "path": "ppt/slides/slide2.xml",
+      "bytes": 15670,
+      "sha256": "25e5c8138192c5e5712a52be9c3d23486fb8bc571ae409514bc252a26e8664bc"
+    },
+    {
+      "path": "ppt/notesSlides/notesSlide2.xml",
+      "bytes": 1694,
+      "sha256": "233d7373f5475366a75fa5605a96451fcbd17626d9c7a38d8f4e4c0d8bfefd50"
+    },
+    {
+      "path": "ppt/slides/slide3.xml",
+      "bytes": 16067,
+      "sha256": "0a489dc7076907a3757eeb011e46626f48b643b72ff5aed3e5930fa978c54e49"
+    },
+    {
+      "path": "ppt/notesSlides/notesSlide3.xml",
+      "bytes": 1694,
+      "sha256": "233d7373f5475366a75fa5605a96451fcbd17626d9c7a38d8f4e4c0d8bfefd50"
+    },
+    {
+      "path": "_rels/.rels",
+      "bytes": 622,
+      "sha256": "edd7b17f89aa5ecb6020077cc4abd98d94b9d0251a80e6b90d9aca24fb9c40df"
+    },
+    {
+      "path": "ppt/notesMasters/_rels/notesMaster1.xml.rels",
+      "bytes": 305,
+      "sha256": "4f2f2354c17948b8b33e29e94dff097410b4a45386e111c2608599288f8a5d7d"
+    },
+    {
+      "path": "ppt/notesSlides/_rels/notesSlide1.xml.rels",
+      "bytes": 463,
+      "sha256": "6a54e5b65884bbfce110e7bd11182956dc49fa8e9d11cc2aea4229892a46d339"
+    },
+    {
+      "path": "ppt/notesSlides/_rels/notesSlide2.xml.rels",
+      "bytes": 463,
+      "sha256": "dfac79ec6adbba0a7332298b6b9738595d5489e52acc1cafeae64fa99daa000b"
+    },
+    {
+      "path": "ppt/notesSlides/_rels/notesSlide3.xml.rels",
+      "bytes": 463,
+      "sha256": "2cd40defc32130a8673973e9400a495d34ccb22fb486b1918b650470e011f5d9"
+    },
+    {
+      "path": "ppt/_rels/presentation.xml.rels",
+      "bytes": 1396,
+      "sha256": "52b5fae1b62d29ad8cfb519f5fcfbc97fccc888c63556b055f5e652d4d88c47e"
+    },
+    {
+      "path": "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
+      "bytes": 311,
+      "sha256": "7c07fb12a7f0563469e78d8d45a8c1bb0c3c64bdbf56c62e6b6304526e711846"
+    },
+    {
+      "path": "ppt/slideMasters/_rels/slideMaster1.xml.rels",
+      "bytes": 475,
+      "sha256": "8607a8ad642f320f9f8e883849c721d5eb79d8c72a13edfcf2e4a92064b1d50c"
+    },
+    {
+      "path": "ppt/slides/_rels/slide1.xml.rels",
+      "bytes": 669,
+      "sha256": "be7bf9ee740ca62963df1e5974a2e1a8a0d1d7a6271152a5e0c9094796c93a1f"
+    },
+    {
+      "path": "ppt/slides/_rels/slide2.xml.rels",
+      "bytes": 478,
+      "sha256": "852565b814c944222ad871dda8fc476f9f7040141381bd3442afb893e953136a"
+    },
+    {
+      "path": "ppt/slides/_rels/slide3.xml.rels",
+      "bytes": 478,
+      "sha256": "9ae54512179f5a4f25f598b7fc2827cd3db53cb41825ec76c55452291c40dd11"
+    },
+    {
+      "path": "[Content_Types].xml",
+      "bytes": 2506,
+      "sha256": "3eecbdb92628d24d01cf89681b734de5bd1fcc847d8cbd086c5661ef3f2c9bec"
+    }
+  ]
+}

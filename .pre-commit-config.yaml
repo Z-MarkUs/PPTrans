@@ -22,3 +22,9 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: public-demo-rebuild
+        name: Verify exact demo rebuild
+        entry: python scripts/rebuild_demo.py --check
+        language: system
+        pass_filenames: false
+        always_run: true

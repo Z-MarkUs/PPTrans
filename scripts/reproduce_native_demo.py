@@ -2,7 +2,7 @@
 
 This command is intentionally exacting: it rebuilds the offline identity output,
 renders the English source, identity output, and curated zh-CN target, then compares
-every result with the pinned Windows/LibreOffice acceptance records and committed PNGs.
+every result with the pinned exact-rebuild acceptance record and committed PNGs.
 PPTrans makes no provider/API request, but the LibreOffice subprocess is not placed
 under an OS-level network sandbox. The command refuses to reuse an existing output.
 """
@@ -32,8 +32,7 @@ REPO_ROOT = Path(__file__).parents[1]
 DEFAULT_SOURCE = REPO_ROOT / "examples" / "pptrans-demo.en.pptx"
 DEFAULT_TARGET = REPO_ROOT / "examples" / "pptrans-demo.zh-CN.pptx"
 DEFAULT_ASSETS = REPO_ROOT / "docs" / "assets"
-NATIVE_QA_PATH = REPO_ROOT / "docs" / "qa" / "2026-08-28-windows-libreoffice.json"
-CURATED_QA_PATH = REPO_ROOT / "docs" / "qa" / "2026-08-28-curated-zh-cn.json"
+QA_PATH = REPO_ROOT / "docs" / "qa" / "2026-08-31-exact-rebuild.json"
 
 _VERSION_PATTERN = re.compile(r"^LibreOffice (?P<version>\d+(?:\.\d+){3}) (?P<build>[0-9a-f]{40})$")
 _SECRET_ENVIRONMENT_KEY = re.compile(
@@ -83,76 +82,51 @@ def _load_json(path: Path) -> dict[str, Any]:
     return value
 
 
-def load_contract(
-    native_qa_path: Path = NATIVE_QA_PATH,
-    curated_qa_path: Path = CURATED_QA_PATH,
-) -> NativeEvidenceContract:
-    """Load the two pinned QA records as one strict native-evidence contract."""
+def load_contract(qa_path: Path = QA_PATH) -> NativeEvidenceContract:
+    """Load the current exact-rebuild record as a strict native-evidence contract."""
 
-    native = _load_json(native_qa_path)
-    curated = _load_json(curated_qa_path)
-    native_renderer = native["renderer"]
-    curated_renderer = curated["renderer"]
-    for key in ("libreoffice_version", "libreoffice_build", "pymupdf_version", "dpi"):
-        if native_renderer[key] != curated_renderer[key]:
-            raise ValueError(f"native QA records disagree on renderer field: {key}")
-
-    native_source = native["presentations"]["source"]
-    curated_source = curated["presentations"]["source"]
-    if native_source != curated_source:
-        raise ValueError("native QA records disagree on the English source deck")
-    native_identity = native["presentations"]["identity_output"]
-    if not native_identity["byte_identical_to_source"]:
+    record = _load_json(qa_path)
+    renderer = record["renderer"]
+    source = record["presentations"]["source"]
+    identity = record["presentations"]["identity_output"]
+    target = record["presentations"]["curated_target"]
+    if not identity["byte_identical_to_source"]:
         raise ValueError("identity QA record does not require a byte-identical output")
-    if (native_identity["bytes"], native_identity["sha256"]) != (
-        native_source["bytes"],
-        native_source["sha256"],
+    if (identity["bytes"], identity["sha256"]) != (
+        source["bytes"],
+        source["sha256"],
     ):
         raise ValueError("identity QA package hash does not match its source")
 
-    native_slides = native["slides"]
-    curated_slides = curated["slides"]
-    if len(native_slides) != len(curated_slides) or not native_slides:
-        raise ValueError("native QA records must contain the same nonzero slide count")
-
     slides: list[ExpectedSlide] = []
-    for identity_slide, target_slide in zip(native_slides, curated_slides, strict=True):
-        slide_number = identity_slide["slide_number"]
-        if target_slide["slide_number"] != slide_number:
-            raise ValueError("native QA slide order differs between records")
-        if identity_slide["source_png_sha256"] != target_slide["source_png_sha256"]:
-            raise ValueError(f"source render hash differs for slide {slide_number}")
-        if identity_slide["source_png_sha256"] != identity_slide["identity_png_sha256"]:
+    for slide in record["slides"]:
+        slide_number = slide["slide_number"]
+        if slide["source_png_sha256"] != slide["identity_png_sha256"]:
             raise ValueError(f"identity render hash differs for slide {slide_number}")
-        if not identity_slide["pixel_equal"] or not target_slide["dimensions_equal"]:
+        if not slide["identity_pixel_equal"] or not slide["target_dimensions_equal"]:
             raise ValueError(f"native QA comparison failed for slide {slide_number}")
-        if (identity_slide["width"], identity_slide["height"]) != (
-            target_slide["width"],
-            target_slide["height"],
-        ):
-            raise ValueError(f"native QA dimensions differ for slide {slide_number}")
         slides.append(
             ExpectedSlide(
                 slide_number=slide_number,
-                width=identity_slide["width"],
-                height=identity_slide["height"],
-                source_sha256=identity_slide["source_png_sha256"],
-                identity_sha256=identity_slide["identity_png_sha256"],
-                target_sha256=target_slide["target_png_sha256"],
+                width=slide["width"],
+                height=slide["height"],
+                source_sha256=slide["source_png_sha256"],
+                identity_sha256=slide["identity_png_sha256"],
+                target_sha256=slide["target_png_sha256"],
                 source_asset=f"pptrans-demo-libreoffice-en-slide-{slide_number:02d}.png",
                 target_asset=f"pptrans-demo-libreoffice-zh-CN-slide-{slide_number:02d}.png",
             )
         )
-
-    target = curated["presentations"]["curated_target"]
+    if not slides:
+        raise ValueError("native QA record must contain a nonzero slide count")
     return NativeEvidenceContract(
-        libreoffice_version=native_renderer["libreoffice_version"],
-        libreoffice_build=native_renderer["libreoffice_build"],
-        pymupdf_version=native_renderer["pymupdf_version"],
-        dpi=native_renderer["dpi"],
-        source_path=native_source["path"],
-        source_bytes=native_source["bytes"],
-        source_sha256=native_source["sha256"],
+        libreoffice_version=renderer["libreoffice_version"],
+        libreoffice_build=renderer["libreoffice_build"],
+        pymupdf_version=renderer["pymupdf_version"],
+        dpi=renderer["dpi"],
+        source_path=source["path"],
+        source_bytes=source["bytes"],
+        source_sha256=source["sha256"],
         target_path=target["path"],
         target_bytes=target["bytes"],
         target_sha256=target["sha256"],
@@ -383,15 +357,9 @@ def reproduce(
             "sha256": contract.target_sha256,
         },
         "slides": slide_evidence,
-        "qa_records": {
-            "identity": {
-                "path": NATIVE_QA_PATH.relative_to(REPO_ROOT).as_posix(),
-                "sha256": _sha256(NATIVE_QA_PATH),
-            },
-            "curated_target": {
-                "path": CURATED_QA_PATH.relative_to(REPO_ROOT).as_posix(),
-                "sha256": _sha256(CURATED_QA_PATH),
-            },
+        "qa_record": {
+            "path": QA_PATH.relative_to(REPO_ROOT).as_posix(),
+            "sha256": _sha256(QA_PATH),
         },
     }
     manifest_path = output_dir / "manifest.json"

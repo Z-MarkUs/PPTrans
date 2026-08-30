@@ -11,7 +11,7 @@
 - **不可信 AI 边界：** OpenAI 与 Anthropic 结果必须满足严格 schema 与精确 ID；缺失、乱序、重复或伪造输出都会失败关闭。
 - **自动化门禁：** `--fail-on-warnings` 可在发现已识别的不支持内容时停止运行，且不会构造 provider 或发布输出。
 - **隐私与安全：** 对 ZIP、XML 和资源使用量设置防御上限；只向明确选择的服务商发送必要文本与上下文，不发送 deck 二进制、媒体或原始 XML。
-- **证据：** 最近一次本地审计为 466 项测试通过、含分支统计的综合覆盖率 92.00%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
+- **证据：** 最近一次本地审计为 516 项测试通过、含分支统计的综合覆盖率 92.00%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
 - **可运行证明：** 3 张幻灯片 / 41 个单元 / 45 个片段的合成 demo、真实改字的简体中文输出，以及有明确边界的 LibreOffice 验收证据。
 
 ### 前后对比：文本确实发生变化
@@ -20,7 +20,7 @@
 | --- | --- |
 | ![LibreOffice 原生渲染的英文 demo 封面：“Translate PowerPoint. Preserve the PowerPoint.”](docs/assets/pptrans-demo-libreoffice-en-slide-01.png) | ![LibreOffice 原生渲染的简体中文 demo 封面：“翻译 PowerPoint。保留 PowerPoint 结构。”，版式保持一致](docs/assets/pptrans-demo-libreoffice-zh-CN-slide-01.png) |
 
-可下载[英文源 deck](examples/pptrans-demo.en.pptx)与[已验证的简体中文输出](examples/pptrans-demo.zh-CN.pptx)，也可查看确定性的 [fixture 生成脚本](scripts/build_curated_demo.py)。上图是 LibreOffice 26.8.0.3 的精确原生渲染，不是制作工具预览。目标文本是人工复核的固定测试数据，并通过真实的精确 ID 补丁、验证与发布流水线；这证明 OOXML 确实改字且结构受到保护，不代表生产服务商的翻译质量。六张原生前后对比图、固定哈希、适用边界与[本地重放脚本](scripts/reproduce_native_demo.py)见 [demo 说明](docs/DEMO.md)。
+可下载[英文源 deck](examples/pptrans-demo.en.pptx)与[已验证的简体中文输出](examples/pptrans-demo.zh-CN.pptx)，检查英文 deck 的[规范 OOXML 源文件](examples/pptrans-demo.source/manifest.json)，或运行只依赖 Python 标准库的[精确重建脚本](scripts/rebuild_demo.py)。上图是 LibreOffice 26.8.0.3 的精确原生渲染，不是制作工具预览。目标文本是人工复核的固定测试数据，并通过真实的精确 ID 补丁、验证与发布流水线；这证明 OOXML 确实改字且结构受到保护，不代表生产服务商的翻译质量。六张原生前后对比图、固定哈希、适用边界与[本地重放脚本](scripts/reproduce_native_demo.py)见 [demo 说明](docs/DEMO.md)。
 
 ## 我的角色与贡献
 
@@ -142,7 +142,7 @@ Anthropic 通过 `.[anthropic]` 安装，并使用 `--provider anthropic` 与 `A
 - [核心、安全与属性测试](tests/)覆盖丰富 OOXML fixture、恶意包、过期源、计划外变化，以及 9,346 个 Unicode/顺序/路径/变异生成样例。
 - [服务商适配器测试](tests/test_provider_adapters.py)通过注入 client 检查严格 schema、安全错误映射、配置与失败边界；独立的[SDK HTTP 契约测试](tests/test_provider_sdk_wire_contracts.py)使用内存 transport，穿过真实 OpenAI/Anthropic SDK 的序列化器和响应模型，在当前版本与声明的最低版本上运行，不开启 socket，也不调用服务商。
 - [审查基础安全测试](tests/test_security_review_foundation.py)扫描 v2 包中的动态执行调用，并验证 renderer/图片边界。
-- [展示 demo 与仓库工具测试](tests/)固定逐字节可重建 deck、精确变化成员、[identity](docs/qa/2026-08-28-windows-libreoffice.json)与[改字](docs/qa/2026-08-28-curated-zh-cn.json)两份原生记录，以及每张已提交原生 PNG 的哈希与尺寸。[原生重放脚本](scripts/reproduce_native_demo.py)可用精确 LibreOffice build 重建 identity 输出和全部九张渲染；普通 CI 无需安装 LibreOffice，只验证已提交证据。
+- [展示 demo 与仓库工具测试](tests/)从 29 个固定哈希的 OOXML 成员重建英文 deck，逐字节重建中文目标，固定两个构建脚本与原生重放脚本、精确变化成员与 ZIP 字段，并把每张原生 PNG 绑定到当前的[精确重建验收记录](docs/qa/2026-08-31-exact-rebuild.json)。[原生重放脚本](scripts/reproduce_native_demo.py)可用精确 LibreOffice build 重建 identity 输出和全部九张渲染；普通 CI 无需安装 LibreOffice，只验证已提交证据。
 - [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、文档完整性、打包、有超时边界的多系统测试、隔离运行且覆盖全部依赖集合的每周审计、CodeQL 与完整历史 secret scan；Actions 固定到 commit SHA，scanner 压缩包也固定并校验 SHA-256。来源问题未解决时，版本 tag 的打包 gate 会失败关闭；线上仓库仍必须用 tag rules 限制版本 tag 的创建。
 
 [pyproject.toml](pyproject.toml) 中可查看配置的含分支统计综合覆盖率下限。成功的工作流只代表其对应的 workflow 与 commit，不代表所有 PowerPoint 格式或翻译质量都已被证明。只有在经过审计的 v2 工作流公开且通过后，才会恢复公开 badge。

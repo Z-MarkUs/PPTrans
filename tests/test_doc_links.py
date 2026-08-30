@@ -43,7 +43,7 @@ def test_current_repository_documentation_is_internally_consistent() -> None:
     assert result.markdown_files >= 23
     assert result.internal_references >= 148
     assert result.external_references >= 7
-    assert result.image_references >= 11
+    assert result.image_references >= 10
 
 
 def test_checker_parses_reference_html_fragments_queries_and_images(tmp_path: Path) -> None:

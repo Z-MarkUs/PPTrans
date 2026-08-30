@@ -39,6 +39,8 @@ env/
 !examples/pptrans-demo.en.pptx
 !examples/pptrans-demo.zh-CN.pptx
 *.xml
+!examples/pptrans-demo.source/
+!examples/pptrans-demo.source/**
 *_temp/
 *_translated.pptx
 *_translated.xml
@@ -71,6 +73,7 @@ slide_*.xml
 *.log
 
 # Temporary files
+.tmp-*/
 *.tmp
 *.bak
 *.cache

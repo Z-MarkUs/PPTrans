@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +40,11 @@ def test_ci_bounds_jobs_drops_checkout_credentials_and_blocks_release_tags() -> 
     assert len(release_steps) == 1
     assert release_steps[0]["if"] == "github.ref_type == 'tag'"
     assert "scripts/check_release_policy.py" in release_steps[0]["run"]
+    demo_steps = [
+        step for step in _steps(workflow) if step.get("name") == "Verify exact demo rebuild"
+    ]
+    assert len(demo_steps) == 2
+    assert all(step["run"] == "python scripts/rebuild_demo.py --check" for step in demo_steps)
 
 
 def test_security_covers_tags_and_schedules_a_bounded_dependency_audit() -> None:
@@ -95,6 +102,10 @@ def test_bug_form_and_precommit_gate_enforce_safe_repository_inputs() -> None:
     documentation = next(hook for hook in hooks if hook["id"] == "documentation-links")
     assert documentation["pass_filenames"] is False
     assert documentation["always_run"] is True
+    demo_rebuild = next(hook for hook in hooks if hook["id"] == "public-demo-rebuild")
+    assert demo_rebuild["entry"] == "python scripts/rebuild_demo.py --check"
+    assert demo_rebuild["pass_filenames"] is False
+    assert demo_rebuild["always_run"] is True
 
 
 def test_dependabot_groups_pep621_optional_dependencies_by_pattern() -> None:
@@ -103,6 +114,48 @@ def test_dependabot_groups_pep621_optional_dependencies_by_pattern() -> None:
         update for update in policy["updates"] if update["package-ecosystem"] == "pip"
     )
     assert python_updates["groups"] == {"python-dependencies": {"patterns": ["*"]}}
+
+
+def test_demo_source_checkout_attributes_preserve_exact_payloads() -> None:
+    git = shutil.which("git")
+    assert git is not None
+    completed = subprocess.run(  # noqa: S603 - resolved executable and fixed arguments
+        [
+            git,
+            "check-attr",
+            "text",
+            "eol",
+            "diff",
+            "--",
+            "examples/pptrans-demo.source/docProps/core.xml",
+            "examples/pptrans-demo.en.pptx",
+        ],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.stdout.splitlines() == [
+        "examples/pptrans-demo.source/docProps/core.xml: text: set",
+        "examples/pptrans-demo.source/docProps/core.xml: eol: lf",
+        "examples/pptrans-demo.source/docProps/core.xml: diff: unspecified",
+        "examples/pptrans-demo.en.pptx: text: unset",
+        "examples/pptrans-demo.en.pptx: eol: unspecified",
+        "examples/pptrans-demo.en.pptx: diff: unset",
+    ]
+    ignore_check = subprocess.run(  # noqa: S603 - resolved executable and fixed arguments
+        [
+            git,
+            "check-ignore",
+            "--no-index",
+            "--quiet",
+            "examples/pptrans-demo.source/docProps/core.xml",
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+    )
+    assert ignore_check.returncode == 1
 
 
 def test_reviewed_tree_has_no_release_trigger_or_publication_workflow() -> None:

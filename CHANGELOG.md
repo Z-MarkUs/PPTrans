@@ -20,11 +20,12 @@ This alpha is active development, not a release candidate. Publication is blocke
 - An optional LibreOffice-to-PDF-to-PNG rendering adapter with resource ceilings, explicit hidden-slide export, whole-deck page-count checks, staged image publication, and isolated-profile execution.
 - Provider-neutral review schemas, deterministic score evaluation, privacy policy helpers, review budgets, and allowlisted repair-plan schemas.
 - Cross-platform CI configuration, package smoke checks, dependency/security scanning, repository guidance, and Codex/Claude Code engineering skills.
-- A self-authored three-slide showcase demo deck, committed Artifact Tool authoring source, deterministic metadata normalization, rendered QA preview, source-distribution fixture checks, a deterministic core benchmark harness, and English/Chinese recruiter-facing documentation.
+- Author-written synthetic slide content and a reviewed translation mapping for a three-slide showcase deck, plus inspectable canonical OOXML package source, a standard-library-only exact rebuild, source-distribution fixture checks, a deterministic core benchmark harness, and English/Chinese recruiter-facing documentation.
 - A clean-tree raw deterministic-core benchmark result with commit, fixture, environment, command, and distribution timings.
 - A machine-readable Windows/LibreOffice native acceptance record for the synthetic source and byte-identical identity output, including exact tool versions, hashes, per-slide pixel comparison, visual/overflow review, and cleanup checks.
 - A deterministic, author-reviewed EN → zh-CN showcase output that exercises real changed-text patching through the exact-ID pipeline, with six before/after previews and a second machine-readable LibreOffice acceptance record.
 - Six exact, hash-pinned native LibreOffice source/target PNGs plus a local replay command that rebuilds the identity transaction, rerenders all nine pages with the recorded build, and emits a deterministic evidence manifest.
+- A current exact-rebuild acceptance record linking both hash-pinned builders, the hash-pinned native replay script, the canonical 29-member source tree, deterministic source and curated packages, prior-package payload lineage, exact native renders, and original-resolution visual review.
 - Deterministic property-based stress tests covering XML character handling, Unicode round trips, exact provider result ordering, relationship target containment, and byte-mutated presentation input.
 
 ### Changed
@@ -58,6 +59,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - A privacy-oriented required bug form with blank-issue bypass disabled, plus a compact evidence-focused pull-request template, operationalizes the repository's contribution and security guidance.
 - The checksum-pinned Gitleaks binary was refreshed to v8.30.0 after its detection control and full-history scan passed; maintenance guidance now records a manual scanner-review cadence because Dependabot cannot update a downloaded binary pin.
 - The identity-demo QA record now pins its padded-canvas harness command, renderer, dimensions, padding, input hash, and rerun timestamp instead of recording only a bare pass result.
+- The showcase packages now use fixed `ZIP_STORED` members so byte identity does not depend on a zlib implementation; CI rebuilds the English fixture across the supported operating-system/Python matrix, and the curated target remains byte-reproducible through PPTrans itself.
 
 ### Security
 
@@ -83,6 +85,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Implicit paid-provider model defaults.
 - Legacy DeepSeek and Grok adapters pending a new adapter that satisfies the v2 exact-ID contract.
 - The legacy dynamic-code repair/sandbox path.
+- The private-runtime demo authoring/render scripts and seven redundant WebP previews; the standard-library rebuild and native LibreOffice PNGs are now the canonical source and visual evidence paths.
 
 ### Known gaps before release
 

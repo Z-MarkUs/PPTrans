@@ -52,7 +52,11 @@ jobs:
           python -m mypy src/pptrans
           tests/typecheck_provider_exports.py
           tests/test_provider_sdk_wire_contracts.py
+          scripts/check_wheel.py
+          scripts/rebuild_demo.py
           scripts/reproduce_native_demo.py
+      - name: Verify exact demo rebuild
+        run: python scripts/rebuild_demo.py --check
       - name: Test with branch coverage
         run: python -m pytest -q --cov-report=xml
       - name: Audit Python source
@@ -63,7 +67,7 @@ jobs:
         run: |
           python scripts/sync_agent_skills.py --check
           python scripts/validate_agent_skills.py
-      - name: Enforce warning-free public demo inspection
+      - name: Enforce warning-free demo inspection
         run: >-
           pptrans inspect examples/pptrans-demo.en.pptx
           --source en
@@ -101,6 +105,8 @@ jobs:
           cache: pip
       - name: Install test environment
         run: python -m pip install -e ".[dev,review]"
+      - name: Verify exact demo rebuild
+        run: python scripts/rebuild_demo.py --check
       - name: Run deterministic suite
         run: python -m pytest -q --no-cov
       - name: Exercise the documented offline path
