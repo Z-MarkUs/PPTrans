@@ -12,13 +12,13 @@ Confirm applicable authorization, residency, retention, and cost requirements be
 
 Run a deck-text-free inspection with `--fail-on-warnings` before translation. Resolve warnings and confirm the output name, provider, model, language pair, glossary, style, persistence choice, and ceilings before the paid command.
 
-Then preview the complete zero-memory-hit provider workload without loading credentials, a provider SDK, translation memory, an output path, or the network:
+Then preview the complete zero-memory-hit provider workload without loading credentials, a provider SDK, translation memory, an output path, or making a provider/API request:
 
 ```bash
 pptrans translate "deck.pptx" --source en --target fr --provider openai --model "EXACT_MODEL_NAME" --dry-run --max-provider-units 2000 --max-provider-calls 100 --max-provider-source-characters 2000000 --max-provider-request-characters 5000000 --fail-on-warnings --json
 ```
 
-The deck-text-free preview still reports the source SHA-256, slide/unit/span counts, workload counts, and warnings; it emits neither the source path nor slide text. Its total units, calls, and character work are upper bounds assuming zero translation-memory hits. The largest and per-call request sizes describe that zero-hit batching; cache hits can regroup misses, and the real run revalidates them. It is not a token, currency, latency, model-availability, credential, provider-readiness, or translation-quality estimate. `--dry-run` rejects `--output`, `--overwrite`, `--env-file`, and `--memory`; do not weaken that boundary. An explicit glossary or style may be included when its effect on the estimate must be measured.
+A successful deck-text-free preview still reports the source SHA-256, slide/unit/span counts, workload counts, and warnings; it emits neither the source path nor slide text. Validation errors may identify a user-selected failing path, while duplicate glossary terms are redacted. Its total units, calls, and character work are upper bounds assuming zero translation-memory hits. The largest and per-call request sizes describe that zero-hit batching; cache hits can regroup misses, and the real run revalidates them. It is not a token, currency, latency, model-availability, credential, provider-readiness, or translation-quality estimate. `--dry-run` rejects `--output`, `--overwrite`, `--env-file`, and `--memory`; do not weaken that boundary. An explicit glossary or style may be included when its effect on the estimate must be measured. User-selected deck and glossary paths can still be network-mounted; use confirmed local paths when filesystem-level isolation is required.
 
 Review the preview before proceeding.
 

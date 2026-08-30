@@ -15,7 +15,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - OpenAI Responses API and Anthropic Messages API translation adapters that require an explicit model, plus an offline identity adapter for pipeline verification.
 - A local SQLite translation memory keyed by semantic translation inputs and a prompt/schema-derived contract fingerprint rather than deck filename.
 - Strict JSON/YAML glossary loading, CLI `inspect`, `translate`, and `doctor` commands, and machine-readable output modes.
-- A side-effect-free `translate --dry-run` mode and immutable public `ProviderWorkEstimate` that expose deck-text-free, zero-memory-hit provider units, logical calls, source/context characters, and serialized request sizes before credentials, SDKs, memory, output handling, or network access.
+- A side-effect-free `translate --dry-run` mode and immutable public `ProviderWorkEstimate` that expose deck-text-free, zero-memory-hit provider units, logical calls, source/context characters, and serialized request sizes before credentials, SDKs, memory, output handling, or any provider/API request.
 - An opt-in `--fail-on-warnings` policy for inspection and translation, with actionable warning codes and slide/shape locations; strict translation stops before provider construction and output publication.
 - Post-write verification of package inventory, unrelated member bytes, target-slide structure, planned text values, and unplanned text nodes.
 - An optional LibreOffice-to-PDF-to-PNG rendering adapter with resource ceilings, explicit hidden-slide export, whole-deck page-count checks, staged image publication, and isolated-profile execution.
@@ -74,6 +74,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Rendering hashes, slide-counts, converts, and rasterizes one private per-run input snapshot, reducing local source-path replacement races.
 - Renderer rollback records staged file identities, so cleanup removes only final hard links still owned by the failed transaction and preserves paths replaced by another process.
 - Provider exceptions are mapped to concise PPTrans errors so request content is not copied into user-facing error messages.
+- Duplicate glossary validation now identifies the error without echoing the private source term; dry-run tests also guard paid-SDK imports, socket creation, budget failure, and every credential, memory, and output boundary.
 - Provider text must be nonblank, stay within a bounded expansion, and preserve high-confidence URLs, emails, placeholders, and digit sequences.
 - XML parts have a dedicated 32 MiB expansion ceiling, while safer archive/member/compression defaults bound opaque payload processing.
 - Human-facing CLI values escape every Unicode `Cc` control character as visible `\uXXXX` text, while machine modes emit compact ASCII-escaped JSON directly without Rich styling or ANSI color.

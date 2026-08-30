@@ -28,7 +28,7 @@ python -m pip install -e ".[openai]"
 python -m pip install -e ".[anthropic]"
 ```
 
-The `dev` extra deliberately includes both SDKs so the complete adapter suite can run offline with injected clients. A missing selected SDK fails with install guidance before client construction. `pptrans doctor --provider openai` or `--provider anthropic` checks both the selected SDK package and credential presence without making a network request.
+The `dev` extra deliberately includes both SDKs so the complete adapter suite can run offline with injected clients. A missing selected SDK fails with install guidance before client construction. `pptrans doctor --provider openai` or `--provider anthropic` checks both the selected SDK package and credential presence without making a provider/API request.
 
 ## CLI configuration
 
@@ -51,11 +51,12 @@ pptrans translate deck.pptx \
   --max-provider-calls 100 \
   --max-provider-source-characters 2000000 \
   --max-provider-request-characters 5000000 \
+  --no-memory \
   --fail-on-warnings \
   --output deck.fr.pptx
 ```
 
-Those four ceilings are the CLI defaults; spelling them out in an operational command makes cost policy reviewable. Raising one is an explicit opt-in. The complete plan is conservatively checked before a paid-provider client is constructed, and cache misses are checked again before provider work.
+Those four ceilings are the CLI defaults; spelling them out in an operational command makes cost policy reviewable. Raising one is an explicit opt-in. The complete plan is conservatively checked before a paid-provider client is constructed, and cache misses are checked again before provider work. This one-off example disables the default unencrypted persistent cache; replace `--no-memory` with an explicitly reviewed `--memory` path only when plaintext retention is intended.
 
 ### Deck-text-free provider-work preview
 
@@ -71,9 +72,9 @@ pptrans translate deck.pptx \
   --json
 ```
 
-The preview assumes **zero translation-memory hits**. For a later run with the same source, language, glossary, style, batch, and budget options, its total units, calls, source/context characters, and serialized request characters are conservative upper bounds. Its human and JSON reports are deck-text-free: they do not emit source spans, neighboring context, or glossary strings. They report the exact provider-unit count, logical-call count, source/context-character count, total serialized-request-character count, and largest serialized request for that zero-hit plan; JSON also includes the ordered per-call request-character counts. Cache hits can regroup the remaining misses, so the largest and ordered per-call sizes describe the zero-hit plan rather than an all-cache-pattern bound; translation recomputes and revalidates the actual miss batches. The same request serializer and ceiling checks used by translation produce these figures.
+The preview assumes **zero translation-memory hits**. For a later run with the same source, language, glossary, style, batch, and budget options, its total units, calls, source/context characters, and serialized request characters are conservative upper bounds. Successful human and JSON reports are deck-text-free: they do not emit source spans, neighboring context, the source path, or glossary strings. They report the source hash plus the exact provider-unit count, logical-call count, source/context-character count, total serialized-request-character count, and largest serialized request for that zero-hit plan; JSON also includes the ordered per-call request-character counts. Cache hits can regroup the remaining misses, so the largest and ordered per-call sizes describe the zero-hit plan rather than an all-cache-pattern bound; translation recomputes and revalidates the actual miss batches. The same request serializer and ceiling checks used by translation produce these figures. Validation errors may identify a user-selected input or glossary path, but duplicate-term errors do not echo the private term.
 
-Dry-run provider/model validation checks only the local selection rules. The command does not load a credential or dotenv environment, import or construct a paid-provider SDK/client, open translation memory, select or preflight an output path, write an output, or use the network. To keep that boundary unambiguous, `--dry-run` rejects `--output`, `--overwrite`, `--env-file`, and `--memory`; the default memory is not opened either. It may read an explicitly selected glossary because glossary and style change serialized-request size.
+Dry-run provider/model validation checks only the local selection rules. The command does not load a credential or dotenv environment, import or construct a paid-provider SDK/client, open translation memory, select or preflight an output path, write an output, or make a provider/API network request. To keep that boundary unambiguous, `--dry-run` rejects `--output`, `--overwrite`, `--env-file`, and `--memory`; the default memory is not opened either. It may read an explicitly selected glossary because glossary and style change serialized-request size. The user-selected deck and glossary paths may themselves refer to network-mounted storage; use confirmed local paths when filesystem-level isolation is required.
 
 This preview is not a token, currency-cost, latency, model-availability, model-readiness, credential-readiness, provider-readiness, translation-quality, or visual-fit estimate. Model identifiers can become unavailable independently of PPTrans, and cache hits can reduce the actual provider workload.
 

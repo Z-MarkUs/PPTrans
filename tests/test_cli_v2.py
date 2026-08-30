@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import socket
 from dataclasses import replace
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from typer.testing import CliRunner, Result
 
 from pptrans import __version__
 from pptrans import cli as cli_module
+from pptrans.adapters import providers as providers_module
 from pptrans.cli import app
 
 PRIVATE_TEXT = "Confidential launch plan for Project Juniper"
@@ -259,6 +261,8 @@ def test_dry_run_reports_a_deck_text_free_upper_bound_without_side_effects(
         "write_translated_deck",
     ):
         monkeypatch.setattr(cli_module, name, unexpected_side_effect)
+    monkeypatch.setattr(providers_module, "import_module", unexpected_side_effect)
+    monkeypatch.setattr(socket, "socket", unexpected_side_effect)
 
     result = runner.invoke(app, _dry_run_args(source))
 
@@ -313,8 +317,79 @@ def test_dry_run_human_output_states_its_upper_bound_and_side_effect_boundary(
     assert "Plan assumes zero translation-memory hits" in normalized_output
     assert "total workload is an upper bound" in normalized_output
     assert "per-call grouping describes this zero-hit plan" in normalized_output
-    assert "No credential, provider, memory, output, or network was used" in normalized_output
+    assert (
+        "No credential, provider client, translation memory, output path, or provider/API "
+        "network request was used" in normalized_output
+    )
     assert PRIVATE_TEXT not in result.stdout
+
+
+def test_dry_run_redacts_private_glossary_terms_on_validation_failure(
+    tmp_path: Path,
+    runner: CliRunner,
+) -> None:
+    source = tmp_path / "preview.pptx"
+    original = _create_private_deck(source)
+    private_term = "Project Juniper acquisition code name"
+    private_target = "Confidential target phrase"
+    glossary = tmp_path / "private-glossary.json"
+    glossary.write_text(
+        json.dumps(
+            {
+                "terms": [
+                    {"source": private_term, "target": private_target},
+                    {"source": private_term.upper(), "target": "second target"},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, _dry_run_args(source, "--glossary", str(glossary)))
+
+    assert result.exit_code == 2
+    assert "Glossary repeats a source term" in result.stderr
+    assert private_term not in result.output
+    assert private_term.upper() not in result.output
+    assert private_target not in result.output
+    assert PRIVATE_TEXT not in result.output
+    assert source.read_bytes() == original
+    assert not source.with_name("preview.fr.pptx").exists()
+
+
+def test_dry_run_budget_failure_stops_before_provider_boundaries(
+    tmp_path: Path,
+    runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "preview.pptx"
+    original = _create_private_deck(source)
+
+    def unexpected_side_effect_boundary(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("budget failure crossed a side-effect boundary")
+
+    for name in (
+        "create_translator",
+        "default_memory_path",
+        "load_environment",
+        "preflight_output",
+        "SQLiteTranslationMemory",
+        "write_translated_deck",
+    ):
+        monkeypatch.setattr(cli_module, name, unexpected_side_effect_boundary)
+    monkeypatch.setattr(providers_module, "import_module", unexpected_side_effect_boundary)
+    monkeypatch.setattr(socket, "socket", unexpected_side_effect_boundary)
+
+    result = runner.invoke(
+        app,
+        _dry_run_args(source, "--max-provider-request-characters", "1"),
+    )
+
+    assert result.exit_code == 2
+    assert "request characters; limit is 1" in result.stderr
+    assert PRIVATE_TEXT not in result.output
+    assert source.read_bytes() == original
+    assert not source.with_name("preview.fr.pptx").exists()
 
 
 @pytest.mark.parametrize(

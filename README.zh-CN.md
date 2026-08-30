@@ -10,9 +10,9 @@
 - **完整性：** 以源文件 SHA-256 和稳定的单元/片段地址绑定任务，在临时副本中修改，验证计划内与未修改内容，再原子发布。
 - **不可信 AI 边界：** OpenAI 与 Anthropic 结果必须满足严格 schema 与精确 ID；缺失、乱序、重复或伪造输出都会失败关闭。
 - **自动化门禁：** `--fail-on-warnings` 可在发现已识别的不支持内容时停止运行，且不会构造 provider 或发布输出。
-- **零支出预览：** `translate --dry-run` 在不加载凭证、付费 SDK、翻译记忆、输出路径或网络的前提下，给出不含 deck 文本的零记忆命中服务商工作量。
+- **零支出预览：** `translate --dry-run` 在不加载凭证、付费 SDK、翻译记忆、输出路径或发起服务商/API 请求的前提下，给出不含 deck 文本的零记忆命中服务商工作量。
 - **隐私与安全：** 对 ZIP、XML 和资源使用量设置防御上限；只向明确选择的服务商发送必要文本与上下文，不发送 deck 二进制、媒体或原始 XML。
-- **证据：** 最近一次本地审计为 539 项测试通过、含分支统计的综合覆盖率 92.12%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
+- **证据：** 最近一次本地审计为 541 项测试通过、含分支统计的综合覆盖率 92.12%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
 - **可运行证明：** 3 张幻灯片 / 41 个单元 / 45 个片段的合成 demo、真实改字的简体中文输出，以及有明确边界的 LibreOffice 验收证据。
 
 ### 前后对比：文本确实发生变化
@@ -114,7 +114,7 @@ pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provid
 python scripts/build_curated_demo.py examples/pptrans-demo.en.pptx pptrans-demo.curated.zh-CN.pptx
 ```
 
-第一条 `--dry-run` 是不显示幻灯片文本的零记忆命中预览。对当前 demo，它精确报告 41 个服务商单元、2 个逻辑调用、2,799 个源文本/上下文字符、8,867 个序列化请求字符，零命中批次中的最大单次请求为 5,903 个字符。总单元数、调用数和总字符工作量是保守上限；单次分组只描述零命中计划，实际缓存命中后会重新分组并再次校验。这些字符统计不是 token、费用、延迟、模型可用性或翻译质量估算。预览不会读取凭证、导入服务商 SDK、访问翻译记忆、要求输出路径或创建 `.pptx` 输出，也不会访问网络；JSON 仍会报告源文件 SHA-256、幻灯片/单元/片段计数、工作量计数与警告，但不输出幻灯片文本或源路径。
+第一条 `--dry-run` 是不显示幻灯片文本的零记忆命中预览。对当前 demo，它精确报告 41 个服务商单元、2 个逻辑调用、2,799 个源文本/上下文字符、8,867 个序列化请求字符，零命中批次中的最大单次请求为 5,903 个字符。总单元数、调用数和总字符工作量是保守上限；单次分组只描述零命中计划，实际缓存命中后会重新分组并再次校验。这些字符统计不是 token、费用、延迟、模型可用性或翻译质量估算。预览不会读取凭证、导入服务商 SDK、访问翻译记忆、要求输出路径或创建 `.pptx` 输出，也不会发起服务商/API 请求；成功的 JSON 会报告源文件 SHA-256、幻灯片/单元/片段计数、工作量计数与警告，但不输出幻灯片文本或源路径。
 
 第二条命令中的 `identity` 是用于证明离线事务的透传服务商；其 `provider_calls` 数值统计本地适配器批次，而非网络调用。第三条命令把完整、人工复核的映射送入同一编排与写入流程，用 JSON 列出改动的幻灯片部件和验证过的文本跨度，从而证明真实改字。重复运行时请改用新输出名，或显式加入 `--overwrite`。两条执行路径都由集成测试和有明确边界的原生记录固定，详见[完整 demo 与 QA 说明](docs/DEMO.md)。
 
@@ -132,10 +132,10 @@ pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --pro
 ```bash
 python -m pip install -e ".[openai]"
 pptrans doctor --provider openai --env-file .env
-pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <明确的模型名称> --env-file .env --glossary examples/glossary.example.yaml --fail-on-warnings --output pptrans-demo.zh-CN.pptx
+pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <明确的模型名称> --env-file .env --glossary examples/glossary.example.yaml --no-memory --fail-on-warnings --output pptrans-demo.zh-CN.pptx
 ```
 
-PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。Anthropic 通过 `.[anthropic]` 安装，并使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`；离线核心和 identity 适配器都不会导入任何付费 SDK。`--no-memory` 关闭本地留存，`--style`、`--glossary` 与 `--json` 提供主要控制项。实际付费工作还会预先检查单元数、调用数、源文本/上下文和序列化请求上限。严格警告选项只会阻止 PPTrans 实际发出的诊断，并不是完整的功能支持检查；完整 CLI、路由与成本边界见[服务商文档](docs/PROVIDERS.md)。
+PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。Anthropic 通过 `.[anthropic]` 安装，并使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`；离线核心和 identity 适配器都不会导入任何付费 SDK。一次性示例显式使用 `--no-memory`，因为默认缓存是持久化的明文 SQLite；只有在确实需要留存时才应选择经过审核的 `--memory` 路径。`--style`、`--glossary` 与 `--json` 提供其他主要控制项。实际付费工作还会预先检查单元数、调用数、源文本/上下文和序列化请求上限。严格警告选项只会阻止 PPTrans 实际发出的诊断，并不是完整的功能支持检查；完整 CLI、路由与成本边界见[服务商文档](docs/PROVIDERS.md)。
 
 ### 服务商契约与隐私
 
@@ -153,7 +153,7 @@ PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。Anthrop
 
 - [核心、安全与属性测试](tests/)覆盖丰富 OOXML fixture、恶意包、过期源、计划外变化，以及 9,346 个 Unicode/顺序/路径/变异生成样例。
 - [服务商适配器测试](tests/test_provider_adapters.py)通过注入 client 检查严格 schema、安全错误映射、配置与失败边界；独立的[SDK HTTP 契约测试](tests/test_provider_sdk_wire_contracts.py)使用内存 transport，穿过真实 OpenAI/Anthropic SDK 的序列化器和响应模型，在当前版本与声明的最低版本上运行，不开启 socket，也不调用服务商。
-- [CLI 无副作用预览测试](tests/test_cli_v2.py)把凭证加载、服务商构造、翻译记忆、输出预检与写入设为触发即失败的边界，并验证 `--dry-run` 不显示源路径或幻灯片文本、拒绝与输出、`--env-file` 或持久化记忆相关的选项、保持源文件不变且不生成目标文件；[demo 工作量测试](tests/test_public_demo.py)固定上述精确预览值。
+- [CLI 无副作用预览测试](tests/test_cli_v2.py)把凭证加载、付费 SDK 导入、服务商构造、socket、翻译记忆、输出预检与写入设为触发即失败的边界，并验证 `--dry-run` 的成功 payload 不显示源路径或幻灯片文本、预算失败会在服务商边界前停止、重复术语错误不会泄露私密词条、源文件保持不变且不生成目标文件；[demo 工作量测试](tests/test_public_demo.py)固定上述精确预览值。
 - [审查基础安全测试](tests/test_security_review_foundation.py)扫描 v2 包中的动态执行调用，并验证 renderer/图片边界。
 - [展示 demo 与仓库工具测试](tests/)从 29 个固定哈希的 OOXML 成员重建英文 deck，逐字节重建中文目标，固定两个构建脚本与原生重放脚本、精确变化成员与 ZIP 字段，并把每张原生 PNG 绑定到当前的[精确重建验收记录](docs/qa/2026-08-31-exact-rebuild.json)。[原生重放脚本](scripts/reproduce_native_demo.py)可用精确 LibreOffice build 重建 identity 输出和全部九张渲染；普通 CI 无需安装 LibreOffice，只验证已提交证据。
 - [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、文档完整性、打包、有超时边界的多系统测试、隔离运行且覆盖全部依赖集合的每周审计、CodeQL 与完整历史 secret scan；Actions 固定到 commit SHA，scanner 压缩包也固定并校验 SHA-256。来源问题未解决时，版本 tag 的打包 gate 会失败关闭；线上仓库仍必须用 tag rules 限制版本 tag 的创建。

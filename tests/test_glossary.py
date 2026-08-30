@@ -74,8 +74,16 @@ def test_rejects_duplicate_sources_case_insensitively(
     path = tmp_path / "duplicates.json"
     path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="repeats source term"):
+    terms = document["terms"]
+    assert isinstance(terms, list)
+    first_term = terms[0]
+    assert isinstance(first_term, dict)
+    private_source = first_term["source"]
+    assert isinstance(private_source, str)
+    with pytest.raises(ValueError, match="repeats a source term") as exc_info:
         load_glossary(path)
+
+    assert private_source not in str(exc_info.value)
 
 
 @pytest.mark.parametrize(

@@ -1,8 +1,8 @@
 # Offline operation
 
-Use this workflow for environment diagnosis, read-only inspection, and a no-network identity transaction. None of these commands require a provider credential.
+Use this workflow for environment diagnosis, read-only inspection, and an identity transaction with no provider/API request. None of these commands require a provider credential. User-selected paths may still be network-mounted; use confirmed local paths when filesystem-level isolation is required.
 
-## Diagnose without a network call
+## Diagnose without a provider/API request
 
 From the environment where PPTrans is installed, run:
 

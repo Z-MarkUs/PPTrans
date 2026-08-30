@@ -50,7 +50,7 @@ def load_glossary(path: Path) -> tuple[GlossaryTerm, ...]:
     for item in document.terms:
         identity = item.source.casefold()
         if identity in seen:
-            raise ValueError(f"Glossary repeats source term {item.source!r}.")
+            raise ValueError("Glossary repeats a source term.")
         seen.add(identity)
         terms.append(GlossaryTerm(source=item.source, target=item.target, note=item.note))
     return tuple(terms)

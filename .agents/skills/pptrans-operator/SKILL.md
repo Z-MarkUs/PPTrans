@@ -29,7 +29,7 @@ Read only the reference needed for the current request. Check `pptrans --help` o
 - A request to inspect, diagnose, or test a deck is not authorization to send its text to a cloud provider. Before a paid call, require an explicitly selected provider and exact model, and make the selected-text export clear.
 - Use only an exported credential or a user-selected `--env-file`. Never search for dotenv files, print a key, place a key on the command line, or copy one into logs.
 - Add `--no-memory` by default for sensitive or one-off work. The optional SQLite translation memory retains translated text locally without encryption; use it only when the user accepts that persistence and its exact path is safe.
-- Before a paid call, use `translate --dry-run` to obtain a deck-text-free, zero-memory-hit workload upper bound without loading credentials, a provider SDK, translation memory, an output path, or the network. The preview still discloses the source hash, counts, and diagnostics locally.
+- Before a paid call, use `translate --dry-run` to obtain a deck-text-free, zero-memory-hit workload upper bound without loading credentials, a provider SDK, translation memory, an output path, or making a provider/API request. A successful preview still discloses the source hash, counts, and diagnostics locally; validation errors may identify a user-selected failing path but must not echo glossary terms.
 - Keep provider ceilings explicit and do not raise them merely to make a run proceed. They bound units, logical calls, and characters—not tokens, currency, latency, or translation quality.
 
 ## Finish with evidence

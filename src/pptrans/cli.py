@@ -221,8 +221,8 @@ def _print_provider_preview(payload: dict[str, object]) -> None:
     console.print(
         "Plan assumes zero translation-memory hits; total workload is an upper bound, while "
         "per-call grouping describes this zero-hit plan. Character counts are not token, "
-        "currency, or latency estimates. No credential, provider, memory, output, or network "
-        "was used."
+        "currency, or latency estimates. No credential, provider client, translation memory, "
+        "output path, or provider/API network request was used."
     )
 
 
@@ -492,7 +492,7 @@ def translate_command(
             "--dry-run",
             help=(
                 "Preview a zero-memory-hit provider workload without credentials, memory, "
-                "output, or network access."
+                "output-file handling, or a provider/API request."
             ),
         ),
     ] = False,
