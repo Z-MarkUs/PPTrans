@@ -61,7 +61,7 @@ Changed slide XML is serialized by lxml. Its canonical structure is checked, but
 - Glossary instructions are sent to the provider; PPTrans does not apply a separate deterministic post-processing substitution.
 - The CLI requires full provider output. Partial patching exists only as an explicit lower-level Python API option.
 - Default provider ceilings are 2,000 units, 100 logical calls, 2,000,000 source/context characters, and 5,000,000 serialized request characters across all logical batches; every batch also has a fixed 1,000,000-character ceiling. These bounds are configurable CLI policy except for the per-batch ceiling, not provider token estimates or quality guarantees.
-- One committed clean-tree benchmark measures deterministic inspection, offline identity orchestration, patching, and verification on the small synthetic demo. It excludes provider/network latency, translation memory, rendering, cost, translation quality, maximum practical deck size, and cross-machine generalization; see [`benchmarks/README.md`](../benchmarks/README.md).
+- Versioned committed clean-tree benchmarks measure deterministic inspection, offline identity orchestration, patching, and verification on the small synthetic demo. They exclude provider/network latency, translation memory, rendering, cost, translation quality, maximum practical deck size, and cross-machine generalization; see [`benchmarks/README.md`](../benchmarks/README.md).
 
 The current providers are OpenAI, Anthropic, and the offline identity adapter. Legacy DeepSeek and Grok support is not part of the v2 provider surface. See [PROVIDERS.md](PROVIDERS.md).
 

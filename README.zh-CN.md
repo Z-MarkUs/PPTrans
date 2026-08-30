@@ -145,7 +145,7 @@ Anthropic 使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`。`--no-memory` 
 
 ### Benchmark 状态
 
-在 Windows 11 与 Python 3.12.13 上，仓库中的合成 deck 完成确定性的 `inspect → identity 编排 → patch → verify` 核心流程时，3 次预热后 30 次计时的**中位数为 59.998 ms**、**p95 为 66.442 ms**。该结果来自干净 commit `dd39e55`，fixture 大小为 18,687 bytes，包含 3 张幻灯片、41 个单元和 45 个片段；完整 SHA、环境、命令与计时见[原始 benchmark 结果](benchmarks/results/2026-08-28-windows-python312.json)。
+在 Windows 11 与 Python 3.12.13 上，仓库中的合成 deck 完成确定性的 `inspect → identity 编排 → patch → verify` 核心流程时，3 次预热后 30 次计时的**中位数为 57.369 ms**、**p95 为 65.65 ms**。该结果来自干净 commit `4fb51de`，fixture 大小为 18,687 bytes，包含 3 张幻灯片、41 个单元和 45 个片段；完整 SHA、环境、命令与计时见[原始 benchmark 结果](benchmarks/results/2026-08-31-windows-python312.json)。
 
 这是范围很窄的本机核心 benchmark，不包含服务商、网络、翻译记忆、LibreOffice、渲染、成本或翻译质量，也不能证明最大实用 deck 大小或其他机器上的性能。详见 [benchmark 方法](benchmarks/README.md)与[质量门禁](docs/QUALITY_GATES.md)。
 

@@ -47,6 +47,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Supported Python is explicitly bounded to CPython 3.10 through 3.13, and the default pytest configuration blocks in-process Python socket creation; subprocess and OS-level egress remain separately controlled boundaries.
 - CI now exercises the provider adapters against the declared minimum OpenAI and Anthropic SDK versions, in addition to the normally resolved dependency set.
 - Package validation accepts a disposable distribution directory, smoke-tests installed-wheel runtime/metadata agreement, checks exact `v{version}` agreement on tag builds, and does not upload blocked distribution artifacts.
+- Deterministic core benchmark evidence was refreshed from a clean post-hardening commit while retaining the earlier raw result as immutable history.
 - The identity-demo QA record now pins its padded-canvas harness command, renderer, dimensions, padding, input hash, and rerun timestamp instead of recording only a bare pass result.
 
 ### Security

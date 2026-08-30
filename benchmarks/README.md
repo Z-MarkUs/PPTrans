@@ -23,4 +23,4 @@ python scripts/benchmark_core.py \
 
 The script refuses to overwrite by default, rejects source/output aliases and symbolic-link destinations, stages the JSON beside its destination, and atomically publishes it. A result records the exact command, Git SHA and dirty state, input hash/size/counts, OS, architecture, processor string, Python version, warmups, iterations, median, p95, minimum, and maximum.
 
-The committed Windows result was generated from `dd39e55f80c5127f1eebcfc0903b0ac1bf15420b` with `git_dirty: false`. Treat comparisons across hardware, operating systems, Python versions, fixture revisions, or background-load conditions as directional only.
+The current committed Windows result was generated from `4fb51de01e19c74a488c9010d9408db719cc633a` with `git_dirty: false`; the earlier `dd39e55f80c5127f1eebcfc0903b0ac1bf15420b` result remains immutable historical evidence. Treat comparisons across hardware, operating systems, Python versions, fixture revisions, or background-load conditions as directional only.
