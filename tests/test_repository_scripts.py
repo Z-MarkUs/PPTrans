@@ -526,6 +526,20 @@ def test_benchmark_output_guards_source_aliases_and_existing_files(tmp_path: Pat
     assert existing.read_text(encoding="utf-8") == "preserve"
 
 
+def test_benchmark_summaries_are_recomputable_from_recorded_samples() -> None:
+    benchmark = _load_script("benchmark_core.py")
+
+    samples, median, p95, minimum, maximum = benchmark._summarize_durations(
+        [6.0004, 1.0004, 4.0004, 2.0004, 5.0004, 3.0004]
+    )
+
+    assert samples == (6.0, 1.0, 4.0, 2.0, 5.0, 3.0)
+    assert median == 3.5
+    assert p95 == 6.0
+    assert minimum == 1.0
+    assert maximum == 6.0
+
+
 def test_benchmark_output_rejects_symlink_target(tmp_path: Path) -> None:
     benchmark = _load_script("benchmark_core.py")
     source = tmp_path / "source.pptx"

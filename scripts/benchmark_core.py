@@ -14,6 +14,7 @@ import subprocess  # nosec B404
 import sys
 import tempfile
 import time
+from collections.abc import Sequence
 from contextlib import suppress
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
@@ -45,6 +46,7 @@ class BenchmarkResult:
     translated_spans: int
     warmups: int
     iterations: int
+    samples_ms: tuple[float, ...]
     median_ms: float
     p95_ms: float
     minimum_ms: float
@@ -66,10 +68,25 @@ def _git(*arguments: str) -> str:
     return completed.stdout.strip()
 
 
-def _percentile(values: list[float], fraction: float) -> float:
+def _percentile(values: Sequence[float], fraction: float) -> float:
     ordered = sorted(values)
     index = max(0, min(len(ordered) - 1, round((len(ordered) - 1) * fraction)))
     return ordered[index]
+
+
+def _summarize_durations(
+    durations: Sequence[float],
+) -> tuple[tuple[float, ...], float, float, float, float]:
+    if not durations:
+        raise ValueError("at least one benchmark duration is required")
+    samples = tuple(round(value, 3) for value in durations)
+    return (
+        samples,
+        round(statistics.median(samples), 3),
+        round(_percentile(samples, 0.95), 3),
+        min(samples),
+        max(samples),
+    )
 
 
 def _run_once(source: Path, output: Path) -> tuple[int, int]:
@@ -106,8 +123,9 @@ def benchmark(source: Path, *, warmups: int, iterations: int) -> BenchmarkResult
         "python scripts/benchmark_core.py "
         f"--input {display_source} --warmups {warmups} --iterations {iterations}"
     )
+    samples_ms, median_ms, p95_ms, minimum_ms, maximum_ms = _summarize_durations(durations)
     return BenchmarkResult(
-        schema_version="pptrans.core-benchmark/v1",
+        schema_version="pptrans.core-benchmark/v2",
         generated_at_utc=datetime.now(timezone.utc).isoformat(),
         command=command,
         git_commit=_git("rev-parse", "HEAD"),
@@ -125,10 +143,11 @@ def benchmark(source: Path, *, warmups: int, iterations: int) -> BenchmarkResult
         translated_spans=sum(len(unit.translatable_span_ids) for unit in plan.units),
         warmups=warmups,
         iterations=iterations,
-        median_ms=round(statistics.median(durations), 3),
-        p95_ms=round(_percentile(durations, 0.95), 3),
-        minimum_ms=round(min(durations), 3),
-        maximum_ms=round(max(durations), 3),
+        samples_ms=samples_ms,
+        median_ms=median_ms,
+        p95_ms=p95_ms,
+        minimum_ms=minimum_ms,
+        maximum_ms=maximum_ms,
     )
 
 

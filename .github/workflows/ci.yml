@@ -52,6 +52,7 @@ jobs:
           python -m mypy src/pptrans
           tests/typecheck_provider_exports.py
           tests/test_provider_sdk_wire_contracts.py
+          scripts/benchmark_core.py
           scripts/check_wheel.py
           scripts/rebuild_demo.py
           scripts/reproduce_native_demo.py
