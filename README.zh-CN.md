@@ -13,7 +13,7 @@
 - **完整性：** 以源文件 SHA-256 和稳定的单元/片段地址绑定任务，在临时副本中修改，验证计划内与未修改内容，再原子发布。
 - **不可信 AI 边界：** OpenAI 与 Anthropic 结果必须满足严格 schema 与精确 ID；缺失、乱序、重复或伪造输出都会失败关闭。
 - **隐私与安全：** 对 ZIP、XML 和资源使用量设置防御上限；只向明确选择的服务商发送必要文本与上下文，不发送 deck 二进制、媒体或原始 XML。
-- **证据：** 最近一次本地审计为 398 项测试通过、分支覆盖率 91.80%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包检查与安全扫描。
+- **证据：** 最近一次本地审计为 399 项测试通过、含分支统计的综合覆盖率 91.80%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包检查与安全扫描。
 - **可运行证明：** 3 张幻灯片 / 41 个单元 / 45 个片段的合成 demo、真实改字的简体中文输出，以及有明确边界的 LibreOffice 验收证据。
 
 ### 前后对比：文本确实发生变化
@@ -141,7 +141,7 @@ Anthropic 使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`。`--no-memory` 
 - [公开 demo 测试](tests/test_public_demo.py)固定逐字节可重建 deck、精确变化成员，以及 [identity](docs/qa/2026-08-28-windows-libreoffice.json) 与[改字](docs/qa/2026-08-28-curated-zh-cn.json)两份有边界原生记录的完整内容。原生渲染与视觉判断属于已记录的人工验收证据；测试套件不会重新生成这些观察结果。
 - [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、打包、多系统测试、Bandit、依赖审计、CodeQL 与完整历史 secret scan，Actions 固定到 commit SHA。
 
-[pyproject.toml](pyproject.toml) 中可查看配置的分支覆盖率下限。绿色 badge 只代表对应工作流和 commit 的结果，不代表所有 PowerPoint 格式或翻译质量都已被证明。
+[pyproject.toml](pyproject.toml) 中可查看配置的含分支统计综合覆盖率下限。绿色 badge 只代表对应工作流和 commit 的结果，不代表所有 PowerPoint 格式或翻译质量都已被证明。
 
 ### Benchmark 状态
 

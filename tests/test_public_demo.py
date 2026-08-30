@@ -21,7 +21,7 @@ DEMO_PATH = Path(__file__).parents[1] / "examples" / "pptrans-demo.en.pptx"
 CURATED_DEMO_PATH = Path(__file__).parents[1] / "examples" / "pptrans-demo.zh-CN.pptx"
 NATIVE_QA_PATH = Path(__file__).parents[1] / "docs" / "qa" / "2026-08-28-windows-libreoffice.json"
 CURATED_QA_PATH = Path(__file__).parents[1] / "docs" / "qa" / "2026-08-28-curated-zh-cn.json"
-NATIVE_QA_CANONICAL_SHA256 = "43ad1b27fe86d4b564023e8dab83084e851f78c387229f2d72c8c59a2d29e05b"
+NATIVE_QA_CANONICAL_SHA256 = "7aa9860f3ae5a9e3ddd7e21094f02826011b9428ea8b8ee865feb20f75e03bab"
 CURATED_QA_CANONICAL_SHA256 = "46895de50b54548d1c1d7b07105560ead059dcd3c5d770ccfb10b8e351e0838a"
 
 
@@ -88,6 +88,26 @@ def test_native_qa_record_is_pinned_to_the_committed_demo() -> None:
     assert all(
         slide["source_png_sha256"] == slide["identity_png_sha256"] for slide in record["slides"]
     )
+    assert record["overflow_review"] == {
+        "result": "passed",
+        "observed_at_utc": "2026-08-30T15:19:04.8383813Z",
+        "input_path": "examples/pptrans-demo.en.pptx",
+        "input_bytes": len(demo_bytes),
+        "input_sha256": demo_sha256,
+        "method": (
+            "Presentations skill slides_test.py enlarged the PPTX with 100 px padded margins, "
+            "rendered through @oai/artifact-tool 2.8.52, and checked every margin for "
+            "non-padding pixels."
+        ),
+        "command": (
+            "python <presentations-skill>/container_tools/slides_test.py "
+            "examples/pptrans-demo.en.pptx --width 1600 --height 900 --pad_px 100"
+        ),
+        "renderer": "@oai/artifact-tool 2.8.52 importPptx/export",
+        "width": 1600,
+        "height": 900,
+        "pad_px": 100,
+    }
     assert record["visual_review"]["reviewed_slide_count"] == 3
     assert record["cleanup"] == {
         "private_render_workspace_present_after_success": False,

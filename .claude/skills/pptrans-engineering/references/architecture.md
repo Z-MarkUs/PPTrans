@@ -10,7 +10,7 @@ The v2 flow is:
 4. `pptrans.application.deck.write_translated_deck` rejects the source as an output, checks the source hash, and creates a neighboring temporary `.pptx`.
 5. `apply_patch_set` resolves every locator against the unchanged source, updates only validated DrawingML text nodes, checks the changed XML's structural fingerprint, and copy-writes the package while preserving member metadata and order.
 6. `pptrans.ooxml.verify.verify_output` checks ZIP integrity, package member names and order, byte identity of unrelated parts, structural fingerprints of target parts, and every expected translated span.
-7. Only after verification does the application service fsync and atomically replace the requested output path. Failure removes the staged file and leaves the source untouched.
+7. Only after verification does the application service fsync and publish. Default publication creates an atomic no-clobber hard link; explicit overwrite atomically replaces the destination. Success is returned only after bounded cleanup retires the private stage. If post-publication cleanup is exhausted, PPTrans rolls back only a final path that retains the staged-file identity, preserves foreign replacements, and reports any residual path explicitly. The source remains untouched.
 
 ## Ownership map
 

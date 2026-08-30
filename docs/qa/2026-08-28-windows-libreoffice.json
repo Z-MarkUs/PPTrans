@@ -72,6 +72,19 @@
       "pixel_equal": true
     }
   ],
+  "overflow_review": {
+    "result": "passed",
+    "observed_at_utc": "2026-08-30T15:19:04.8383813Z",
+    "input_path": "examples/pptrans-demo.en.pptx",
+    "input_bytes": 18687,
+    "input_sha256": "dd36b4f92edf915942d4300aeebd1854a049acc521dfc29e78b286c774d8e9d8",
+    "method": "Presentations skill slides_test.py enlarged the PPTX with 100 px padded margins, rendered through @oai/artifact-tool 2.8.52, and checked every margin for non-padding pixels.",
+    "command": "python <presentations-skill>/container_tools/slides_test.py examples/pptrans-demo.en.pptx --width 1600 --height 900 --pad_px 100",
+    "renderer": "@oai/artifact-tool 2.8.52 importPptx/export",
+    "width": 1600,
+    "height": 900,
+    "pad_px": 100
+  },
   "cleanup": {
     "private_render_workspace_present_after_success": false,
     "publication_staging_present_after_success": false,
@@ -82,7 +95,6 @@
     "clipping_detected": false,
     "overlap_detected": false,
     "off_slide_content_detected": false,
-    "automated_overflow_check": "passed",
     "notes": "Every source render was inspected at original resolution. The identity render was pixel-equal to its matching source render."
   },
   "scope": [

@@ -13,7 +13,15 @@ REQUIRED_SUFFIXES = {
     "pptrans/py.typed",
 }
 SDIST_REQUIRED_SUFFIXES = {
+    ".agents/skills/pptrans-engineering/agents/openai.yaml",
+    ".agents/skills/pptrans-engineering/references/architecture.md",
+    ".agents/skills/pptrans-engineering/references/release.md",
+    ".agents/skills/pptrans-engineering/references/verification.md",
     ".agents/skills/pptrans-engineering/SKILL.md",
+    ".claude/skills/pptrans-engineering/agents/openai.yaml",
+    ".claude/skills/pptrans-engineering/references/architecture.md",
+    ".claude/skills/pptrans-engineering/references/release.md",
+    ".claude/skills/pptrans-engineering/references/verification.md",
     ".claude/skills/pptrans-engineering/SKILL.md",
     "README.zh-CN.md",
     "benchmarks/README.md",

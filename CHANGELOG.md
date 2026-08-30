@@ -42,6 +42,8 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Tests use the installed `src` package directly instead of a legacy root-path import shim.
 - LibreOffice rendering now treats private-workspace cleanup as a commit barrier: validated PNGs move to separate same-filesystem staging, bounded transient-error retries retire the source/PDF/profile/raster workspace before publication, and late publication-stage cleanup failure rolls back owned final links.
 - PyMuPDF discovery and loading now use its canonical `pymupdf` module name instead of the collision-prone legacy `fitz` alias.
+- Engineering guidance now distinguishes focused tests from the full coverage gate, includes strict typing and security checks consistently, and separates disposable package validation from releasable artifacts; CI directly covers every classified Python minor, and the source-distribution gate requires complete mirrored agent-skill bundles.
+- The identity-demo QA record now pins its padded-canvas harness command, renderer, dimensions, padding, input hash, and rerun timestamp instead of recording only a bare pass result.
 
 ### Security
 

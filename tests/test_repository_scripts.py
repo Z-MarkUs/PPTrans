@@ -12,6 +12,17 @@ import pytest
 from test_ooxml_helpers import create_complex_deck
 
 REPO_ROOT = Path(__file__).parents[1]
+EXPECTED_PACKAGED_SKILL_RESOURCES = {
+    f"{root}/skills/pptrans-engineering/{resource}"
+    for root in (".agents", ".claude")
+    for resource in (
+        "SKILL.md",
+        "agents/openai.yaml",
+        "references/architecture.md",
+        "references/release.md",
+        "references/verification.md",
+    )
+}
 
 
 def _load_script(name: str) -> ModuleType:
@@ -22,6 +33,12 @@ def _load_script(name: str) -> ModuleType:
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def test_source_distribution_policy_requires_complete_agent_skills() -> None:
+    checker = _load_script("check_wheel.py")
+
+    assert EXPECTED_PACKAGED_SKILL_RESOURCES <= checker.SDIST_REQUIRED_SUFFIXES
 
 
 def test_benchmark_output_guards_source_aliases_and_existing_files(tmp_path: Path) -> None:

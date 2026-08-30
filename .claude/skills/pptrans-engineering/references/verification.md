@@ -4,6 +4,12 @@
 
 Start with the narrowest test that exercises the changed contract. Use a deterministic provider whose output is deliberately short, long, multiline, and Unicode so layout paths are exercised without network variability. Write all decks and intermediate files under pytest's `tmp_path` or another disposable system directory.
 
+The repository-wide pytest configuration enforces the full-suite coverage floor. While iterating, bypass that aggregate measurement explicitly rather than weakening it:
+
+```bash
+python -m pytest -q --no-cov tests/path.py::test_name
+```
+
 For a preservation or layout defect, first create the smallest self-authored deck that reproduces it. Assert package membership, unchanged-member hashes, target-part structural fingerprints, locators, spans, and translated values before adding a rendered-image regression. Pixel comparisons are useful for detecting a change, but they do not identify whether translation, font substitution, or renderer drift caused it.
 
 ## Offline completion gate
@@ -13,7 +19,9 @@ Run:
 ```bash
 python -m ruff check .
 python -m ruff format --check .
+python -m mypy src/pptrans
 python -m pytest -q
+python -m bandit -q -r src/pptrans
 python scripts/sync_agent_skills.py --check
 python scripts/validate_agent_skills.py
 ```
@@ -30,4 +38,4 @@ Mock SDK clients at the adapter boundary. Cover successful parsing, missing cred
 
 ## Package checks
 
-Build both wheel and source distribution, run `twine check`, install the wheel in a fresh temporary environment, and run `pptrans --help`. Verify that package metadata, `pptrans.__version__`, tag, changelog, and release title agree. Inspect wheel contents so tests, secrets, temporary decks, and provider payloads are not shipped, and confirm packages are discovered only from `src/pptrans`.
+Disposable local wheel and source-distribution builds are permitted before provenance resolution when needed to validate packaging. Create them in a disposable checkout or output directory, never upload or attach them, never describe them as release candidates, and remove them after inspection. Run `twine check`, install the wheel in a fresh temporary environment, and run `pptrans --help`. Verify package metadata and `pptrans.__version__`; only at the release gate also verify that the tag, changelog, and release title agree. Inspect wheel contents so tests, secrets, temporary decks, and provider payloads are not shipped, and confirm packages are discovered only from `src/pptrans`.

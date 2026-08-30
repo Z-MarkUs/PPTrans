@@ -2,6 +2,8 @@
 
 These gates define the evidence required for PPTrans changes. Run the smallest relevant checks while iterating, then complete every gate affected by the change. A green command is evidence only for behavior it actually exercises.
 
+The default pytest configuration enforces repository-wide coverage. For a focused iteration run, retain the test behavior while disabling only that aggregate measurement, for example `python -m pytest -q --no-cov tests/path.py::test_name`; restore the full command for completion.
+
 ## 1. Offline change gate
 
 Run for every code or test change:
@@ -9,7 +11,9 @@ Run for every code or test change:
 ```bash
 python -m ruff check .
 python -m ruff format --check .
+python -m mypy src/pptrans
 python -m pytest -q
+python -m bandit -q -r src/pptrans
 python scripts/sync_agent_skills.py --check
 python scripts/validate_agent_skills.py
 ```
@@ -44,7 +48,9 @@ When a live test is authorized, use a synthetic deck, record the provider and mo
 
 ## 4. Package gate
 
-Before a release candidate:
+Package-affecting changes may use disposable local builds before provenance resolution. Create them in a disposable checkout or output directory, inspect and install them locally, then remove them; do not upload, attach, or describe them as release-candidate artifacts. Releasable artifacts remain subject to the release gate.
+
+After provenance passes, build a release candidate from the tagged commit:
 
 ```bash
 python -m build

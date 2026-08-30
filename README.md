@@ -13,7 +13,7 @@
 - **Integrity:** binds work to the source SHA-256 and stable unit/span addresses, patches a staged copy, verifies planned and untouched content, then publishes atomically.
 - **Untrusted-AI boundary:** OpenAI and Anthropic results must satisfy strict schemas and exact IDs; partial, reordered, duplicated, or invented output fails closed.
 - **Privacy and security:** defensive ZIP/XML/resource limits; only selected text and context reach the explicitly chosen provider—not the deck binary, media, or raw XML.
-- **Evidence:** 398 passing tests, 91.80% branch coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging checks, and security scanning.
+- **Evidence:** 399 passing tests, 91.80% combined branch-aware coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging checks, and security scanning.
 - **Runnable proof:** a synthetic 3-slide / 41-unit / 45-span demo, a real changed-text zh-CN output, and scoped LibreOffice acceptance evidence.
 
 ### Before / after: the text really changes
@@ -143,7 +143,7 @@ The repository's quality claims are scoped to checks that actually run:
 - [Public-demo tests](tests/test_public_demo.py) pin byte-reproducible decks, exact changed members, and the complete contents of both scoped [identity](docs/qa/2026-08-28-windows-libreoffice.json) and [changed-text](docs/qa/2026-08-28-curated-zh-cn.json) native records. The native renders and visual judgments are recorded manual acceptance evidence; the test suite does not recreate those observations.
 - [CI and security workflows](.github/workflows/) configure linting, strict typing, coverage, packaging, multi-OS tests, Bandit, dependency audit, CodeQL, and full-history secret scanning with SHA-pinned actions.
 
-The configured branch-coverage floor is visible in [pyproject.toml](pyproject.toml). A green badge is useful evidence for its workflow and commit only; it is not proof of universal formatting preservation or translation quality.
+The configured combined branch-aware coverage floor is visible in [pyproject.toml](pyproject.toml). A green badge is useful evidence for its workflow and commit only; it is not proof of universal formatting preservation or translation quality.
 
 ### Benchmark status
 

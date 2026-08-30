@@ -8,7 +8,7 @@ Read `NOTICE.md` before release work. Repository history records inherited upstr
 
 ## Version and artifact discipline
 
-Use one authoritative package version and derive runtime reporting from it. Before tagging, confirm the changelog, package metadata, installed version, tag, and release title agree. Build artifacts only from the tagged commit after the offline, integration, package, documentation, and provenance gates pass.
+Use one authoritative package version and derive runtime reporting from it. Before tagging, confirm the changelog, package metadata, installed version, tag, and release title agree. Disposable local builds used only for package validation are allowed before provenance resolution under the controls in `verification.md`; they are not releasable artifacts. Build artifacts intended for upload or attachment only from the tagged commit after the offline, integration, package, documentation, and provenance gates pass.
 
 Prefer trusted publishing and short-lived credentials. Never place tokens in files, commands that print them, build logs, release notes, or artifacts. Attach only platform binaries that were actually smoke-tested; otherwise publish the verified wheel and source distribution without implying unsupported installers exist.
 
