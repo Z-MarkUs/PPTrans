@@ -12,7 +12,7 @@
 - **Automation gate:** `--fail-on-warnings` can stop a run on recognized unsupported slide content before a provider is constructed or an output is published.
 - **No-spend preview:** `translate --dry-run` reports a deck-text-free, zero-memory-hit provider-work upper bound without loading credentials, an SDK, translation memory, an output path, or the network.
 - **Privacy and security:** defensive ZIP/XML/resource limits; only selected text and context reach the explicitly chosen provider—not the deck binary, media, or raw XML.
-- **Evidence:** 518 passing tests, 92.00% combined branch-aware coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging and documentation-integrity gates, and security scanning.
+- **Evidence:** 539 passing tests, 92.12% combined branch-aware coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging and documentation-integrity gates, and security scanning.
 - **Runnable proof:** a synthetic 3-slide / 41-unit / 45-span demo, a real changed-text zh-CN output, and scoped LibreOffice acceptance evidence.
 
 ### Before / after: the text really changes
@@ -161,7 +161,7 @@ The configured combined branch-aware coverage floor is visible in [pyproject.tom
 
 ### Benchmark status
 
-On Windows 11 with Python 3.12.13, the committed synthetic deck completed the deterministic `inspect → identity orchestration → patch → verify` core in a **58.163 ms median** and **59.927 ms p95** over 30 measured iterations after 3 warmups. The run came from clean commit `c45856c`, used the exact-rebuild 87,523-byte fixture with 3 slides / 41 units / 45 spans, and records its full SHA, environment, normalized reproduction command, every measured sample, and recomputable summaries in the [raw benchmark result](benchmarks/results/2026-08-31-auditable-stored-ooxml-windows-python312.json).
+On Windows 11 with Python 3.12.13, the committed synthetic deck completed the deterministic `inspect → identity orchestration → patch → verify` core in a **58.770 ms median** and **60.972 ms p95** over 30 measured iterations after 3 warmups. The run came from clean commit `7cb4a1f`, used the current exact-rebuild 87,226-byte fixture with 3 slides / 41 units / 45 spans, and records its full SHA, environment, normalized reproduction command, every measured sample, and recomputable summaries in the [raw benchmark result](benchmarks/results/2026-08-31-honest-showcase-ooxml-windows-python312.json).
 
 This is a narrow local core benchmark, not a provider, network, translation-memory, LibreOffice, rendering, cost, or translation-quality result, and it does not establish maximum practical deck size or cross-machine performance. See the [benchmark method](benchmarks/README.md) and [quality gates](docs/QUALITY_GATES.md).
 

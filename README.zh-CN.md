@@ -12,7 +12,7 @@
 - **自动化门禁：** `--fail-on-warnings` 可在发现已识别的不支持内容时停止运行，且不会构造 provider 或发布输出。
 - **零支出预览：** `translate --dry-run` 在不加载凭证、付费 SDK、翻译记忆、输出路径或网络的前提下，给出不含 deck 文本的零记忆命中服务商工作量。
 - **隐私与安全：** 对 ZIP、XML 和资源使用量设置防御上限；只向明确选择的服务商发送必要文本与上下文，不发送 deck 二进制、媒体或原始 XML。
-- **证据：** 最近一次本地审计为 518 项测试通过、含分支统计的综合覆盖率 92.00%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
+- **证据：** 最近一次本地审计为 539 项测试通过、含分支统计的综合覆盖率 92.12%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
 - **可运行证明：** 3 张幻灯片 / 41 个单元 / 45 个片段的合成 demo、真实改字的简体中文输出，以及有明确边界的 LibreOffice 验收证据。
 
 ### 前后对比：文本确实发生变化
@@ -162,7 +162,7 @@ PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。Anthrop
 
 ### Benchmark 状态
 
-在 Windows 11 与 Python 3.12.13 上，仓库中的合成 deck 完成确定性的 `inspect → identity 编排 → patch → verify` 核心流程时，3 次预热后 30 次计时的**中位数为 58.163 ms**、**p95 为 59.927 ms**。该结果来自干净 commit `c45856c`，使用精确重建的 87,523-byte fixture，包含 3 张幻灯片、41 个单元和 45 个片段；完整 SHA、环境、规范化复现命令、全部计时样本与可重算汇总见[原始 benchmark 结果](benchmarks/results/2026-08-31-auditable-stored-ooxml-windows-python312.json)。
+在 Windows 11 与 Python 3.12.13 上，仓库中的合成 deck 完成确定性的 `inspect → identity 编排 → patch → verify` 核心流程时，3 次预热后 30 次计时的**中位数为 58.770 ms**、**p95 为 60.972 ms**。该结果来自干净 commit `7cb4a1f`，使用当前精确重建的 87,226-byte fixture，包含 3 张幻灯片、41 个单元和 45 个片段；完整 SHA、环境、规范化复现命令、全部计时样本与可重算汇总见[原始 benchmark 结果](benchmarks/results/2026-08-31-honest-showcase-ooxml-windows-python312.json)。
 
 这是范围很窄的本机核心 benchmark，不包含服务商、网络、翻译记忆、LibreOffice、渲染、成本或翻译质量，也不能证明最大实用 deck 大小或其他机器上的性能。详见 [benchmark 方法](benchmarks/README.md)与[质量门禁](docs/QUALITY_GATES.md)。
 
