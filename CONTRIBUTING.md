@@ -16,7 +16,7 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev,review]"
 ```
 
-The `review` extra installs the PDF rasterizer used by the optional LibreOffice rendering foundation. LibreOffice itself is a separate system dependency. Translation and the default test suite do not require PowerPoint, LibreOffice, network access, or provider credentials. Pytest blocks in-process Python socket creation by default; this is not OS-level egress control and is not inherited by subprocesses, so subprocess tests must remain explicitly offline too.
+The `dev` extra deliberately installs both paid-provider SDKs so their adapter contracts are tested; normal users can keep the offline core small and opt into only `.[openai]` or `.[anthropic]`. The `review` extra installs the PDF rasterizer used by the optional LibreOffice rendering foundation. LibreOffice itself is a separate system dependency. Translation and the default test suite do not require PowerPoint, LibreOffice, network access, or provider credentials. Pytest blocks in-process Python socket creation by default; this is not OS-level egress control and is not inherited by subprocesses, so subprocess tests must remain explicitly offline too.
 
 Run a read-only environment check with:
 
@@ -72,7 +72,7 @@ For a complete code change, run:
 ```bash
 python -m ruff check .
 python -m ruff format --check .
-python -m mypy src/pptrans
+python -m mypy src/pptrans tests/typecheck_provider_exports.py
 python -m pytest -q
 python -m bandit -q -r src/pptrans
 python scripts/check_doc_links.py

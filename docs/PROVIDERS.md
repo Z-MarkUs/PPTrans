@@ -12,6 +12,24 @@ PPTrans v2 exposes a small provider-neutral contract and three current adapters.
 
 DeepSeek and Grok existed in the legacy project but do not implement the v2 exact-ID adapter contract. They are not current v2 providers.
 
+## Installation boundary
+
+The base installation supports inspection and the offline `identity` transaction without installing or importing either paid-provider SDK:
+
+```bash
+python -m pip install -e .
+```
+
+Install only the provider adapter you intend to use:
+
+```bash
+python -m pip install -e ".[openai]"
+# or
+python -m pip install -e ".[anthropic]"
+```
+
+The `dev` extra deliberately includes both SDKs so the complete adapter suite can run offline with injected clients. A missing selected SDK fails with install guidance before client construction. `pptrans doctor --provider openai` or `--provider anthropic` checks both the selected SDK package and credential presence without making a network request.
+
 ## CLI configuration
 
 Create a local dotenv file only if desired:
@@ -55,7 +73,7 @@ pptrans translate deck.pptx \
 
 The identity output should preserve every package-part payload because it proposes unchanged text. It does not test translation quality or a cloud SDK.
 
-Use `pptrans doctor --provider openai` or `--provider anthropic` to check local dependency and credential presence without a network call. The command reports only whether the relevant variable is set; it does not print or validate the key with the provider.
+The provider-specific doctor check reports the installed SDK version and only whether the relevant environment variable is set; it does not print the key or validate it with the provider.
 
 ## Exact request and response contract
 

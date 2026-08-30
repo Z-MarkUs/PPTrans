@@ -11,7 +11,7 @@ Run for every code or test change:
 ```bash
 python -m ruff check .
 python -m ruff format --check .
-python -m mypy src/pptrans
+python -m mypy src/pptrans tests/typecheck_provider_exports.py
 python -m pytest -q
 python -m bandit -q -r src/pptrans
 python scripts/check_doc_links.py
@@ -80,7 +80,7 @@ Security-tool updates must pin the bytes that execute, not only a wrapper action
 
 Hard-coded scanner binaries are outside Dependabot's update scope. Review the Gitleaks pin at least quarterly and whenever upstream publishes a release; adopt only a release whose official archive checksum verifies and whose runtime control detects the synthetic fixture. The 2026-08-31 audit refreshed the verified pin to v8.30.0 and rescanned the complete local Git history cleanly.
 
-The public demo has its own source and QA records in [DEMO.md](DEMO.md). A replacement must remain synthetic, be built into a disposable path, have metadata normalized, preserve the asserted slide/unit/span counts, pass the offline identity transaction and independent reopen, and receive visual review of every generated slide plus layout output. The curated changed-text target must also rebuild byte for byte, change only its asserted slide XML members, pass structural/text verification, render every target slide in the recorded office runtime, and run the padded-canvas harness. Record that harness's exact script, renderer, dimensions, padding, and result; a bare `"passed"` field is insufficient. A rendered preview is presentation evidence only; it does not establish PowerPoint pixel identity or translation quality.
+The showcase demo has its own source and QA records in [DEMO.md](DEMO.md). A replacement must remain synthetic, be built into a disposable path, have metadata normalized, preserve the asserted slide/unit/span counts, pass the offline identity transaction and independent reopen, and receive visual review of every generated slide plus layout output. The curated changed-text target must also rebuild byte for byte, change only its asserted slide XML members, pass structural/text verification, render every target slide in the recorded office runtime, and run the padded-canvas harness. Record that harness's exact script, renderer, dimensions, padding, and result; a bare `"passed"` field is insufficient. A rendered preview is presentation evidence only; it does not establish PowerPoint pixel identity or translation quality.
 
 The current narrow result and method are committed under [`benchmarks/`](../benchmarks/). Regenerate into a new no-clobber result path from a clean tree; never overwrite old evidence or broaden the claim beyond the systems actually measured.
 

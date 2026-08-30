@@ -20,7 +20,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - An optional LibreOffice-to-PDF-to-PNG rendering adapter with resource ceilings, explicit hidden-slide export, whole-deck page-count checks, staged image publication, and isolated-profile execution.
 - Provider-neutral review schemas, deterministic score evaluation, privacy policy helpers, review budgets, and allowlisted repair-plan schemas.
 - Cross-platform CI configuration, package smoke checks, dependency/security scanning, repository guidance, and Codex/Claude Code engineering skills.
-- A self-authored three-slide public demo deck, committed Artifact Tool authoring source, deterministic metadata normalization, rendered QA preview, source-distribution fixture checks, a deterministic core benchmark harness, and English/Chinese recruiter-facing documentation.
+- A self-authored three-slide showcase demo deck, committed Artifact Tool authoring source, deterministic metadata normalization, rendered QA preview, source-distribution fixture checks, a deterministic core benchmark harness, and English/Chinese recruiter-facing documentation.
 - A clean-tree raw deterministic-core benchmark result with commit, fixture, environment, command, and distribution timings.
 - A machine-readable Windows/LibreOffice native acceptance record for the synthetic source and byte-identical identity output, including exact tool versions, hashes, per-slide pixel comparison, visual/overflow review, and cleanup checks.
 - A deterministic, author-reviewed EN → zh-CN showcase output that exercises real changed-text patching through the exact-ID pipeline, with six before/after previews and a second machine-readable LibreOffice acceptance record.
@@ -32,6 +32,7 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Provider output must include every requested unit and translatable span exactly once and in request order; partial, extra, duplicate, or reordered results fail closed.
 - Output must be a distinct `.pptx`; the source can never be the destination, and an existing destination requires explicit overwrite permission.
 - Model selection has no paid-provider default. OpenAI and Anthropic require an explicit model and credential.
+- OpenAI and Anthropic SDKs are provider-specific extras loaded only after selection; the base install supports inspection and the complete identity transaction, a fresh-wheel CI check proves both paid SDKs are absent, and static-only public class contracts preserve downstream constructor typing without runtime imports.
 - Translation memory is persistent, local SQLite by default, rejects symbolic-link leaves, requests private modes for newly created POSIX paths, requires `DELETE` journaling, and can be disabled with `--no-memory`.
 - Provider clients pin official endpoints, reject ambient SDK routing overrides, construct default HTTP clients with `trust_env=False`, and load dotenv files only when the user selects one explicitly.
 - CLI preflight now validates complete archive payload CRCs, source/destination/configuration/cache path separation, and destination writability before provider construction.

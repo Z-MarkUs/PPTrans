@@ -28,4 +28,4 @@ Read only the references relevant to the current request. Inspect the current co
 
 ## Complete the change
 
-Run focused checks while iterating and the applicable repository gates before finishing. Report what passed, what was skipped, and why. A release or external repository mutation still requires explicit user authorization and the provenance gate in `NOTICE.md` to be resolved.
+Run focused checks while iterating and the applicable repository gates before finishing. Report what passed, what was skipped, and why. Every external repository mutation requires explicit user authorization; publishing a release additionally requires the provenance gate in `NOTICE.md` to be resolved.

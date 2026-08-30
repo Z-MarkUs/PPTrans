@@ -28,7 +28,8 @@ class _MessagesClient(Protocol):
 
 
 class _AnthropicClient(Protocol):
-    messages: _MessagesClient
+    @property
+    def messages(self) -> _MessagesClient: ...
 
 
 def _token_value(usage: object | None, name: str) -> int | None:

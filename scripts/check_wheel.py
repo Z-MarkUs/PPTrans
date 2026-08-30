@@ -45,9 +45,11 @@ SDIST_REQUIRED_SUFFIXES = {
     "scripts/build_demo.mjs",
     "scripts/check_doc_links.py",
     "scripts/check_installed_version.py",
+    "scripts/check_minimal_install.py",
     "scripts/check_release_policy.py",
     "scripts/render_demo_comparison.mjs",
     "tests/test_public_demo.py",
+    "tests/typecheck_provider_exports.py",
 }
 FORBIDDEN_FRAGMENTS = {
     ".env",

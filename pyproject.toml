@@ -36,9 +36,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "anthropic>=0.40,<2",
     "lxml>=5.3,<7",
-    "openai>=2,<4",
     "Pillow>=10.4,<13",
     "platformdirs>=4.3,<5",
     "pydantic>=2.9,<3",
@@ -49,16 +47,24 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+anthropic = [
+    "anthropic>=0.40,<2",
+]
+openai = [
+    "openai>=2,<4",
+]
 review = [
     "PyMuPDF>=1.24,<2",
 ]
 dev = [
+    "anthropic>=0.40,<2",
     "bandit>=1.8,<2",
     "build>=1.2,<2",
     "hypothesis>=6.120,<7",
     "lxml-stubs>=0.5,<1",
     "markdown-it-py>=4.2,<5",
     "mypy>=1.14,<2",
+    "openai>=2,<4",
     "pip-audit>=2.8,<3",
     "pre-commit>=4,<5",
     "pytest>=8.3,<10",

@@ -3,16 +3,90 @@
 from __future__ import annotations
 
 import os
-from typing import Literal
+from importlib import import_module
+from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
 from pptrans.application.errors import ProviderConfigurationError
 from pptrans.ports.translator import Translator
 
-from .anthropic import AnthropicTranslator
 from .identity import IdentityTranslator
-from .openai import OpenAITranslator
 
 ProviderName = Literal["anthropic", "identity", "openai"]
+PaidProviderName = Literal["anthropic", "openai"]
+
+_PROVIDER_CLASSES: dict[PaidProviderName, str] = {
+    "anthropic": "AnthropicTranslator",
+    "openai": "OpenAITranslator",
+}
+
+
+class _ProviderConstructor(Protocol):
+    def __call__(self, *, model: str, api_key: str) -> Translator: ...
+
+
+if TYPE_CHECKING:
+    from pptrans.ports.translator import TranslationBatchRequest, TranslationBatchResult
+
+    class _OpenAIResponsesClient(Protocol):
+        def create(self, **kwargs: Any) -> object: ...
+
+    class _OpenAIClient(Protocol):
+        @property
+        def responses(self) -> _OpenAIResponsesClient: ...
+
+    class _AnthropicMessagesClient(Protocol):
+        def create(self, **kwargs: Any) -> object: ...
+
+    class _AnthropicClient(Protocol):
+        @property
+        def messages(self) -> _AnthropicMessagesClient: ...
+
+    class OpenAITranslator:
+        provider: Literal["openai"]
+        model: str
+
+        def __init__(
+            self,
+            *,
+            model: str,
+            api_key: str | None = None,
+            timeout: float = 120.0,
+            max_output_tokens: int = 16_000,
+            client: _OpenAIClient | None = None,
+        ) -> None: ...
+
+        def translate(self, request: TranslationBatchRequest) -> TranslationBatchResult: ...
+
+    class AnthropicTranslator:
+        provider: Literal["anthropic"]
+        model: str
+
+        def __init__(
+            self,
+            *,
+            model: str,
+            api_key: str | None = None,
+            timeout: float = 120.0,
+            max_output_tokens: int = 16_000,
+            client: _AnthropicClient | None = None,
+        ) -> None: ...
+
+        def translate(self, request: TranslationBatchRequest) -> TranslationBatchResult: ...
+
+
+def _load_provider_constructor(provider: PaidProviderName) -> _ProviderConstructor:
+    """Load a paid adapter only after its provider is explicitly selected."""
+
+    try:
+        module = import_module(f"{__name__}.{provider}")
+    except ModuleNotFoundError as exc:
+        if exc.name == provider:
+            raise ProviderConfigurationError(
+                f"Provider {provider!r} requires its optional SDK. Install "
+                f'`pptrans[{provider}]` or `-e ".[{provider}]"` from a source checkout.'
+            ) from exc
+        raise
+    return cast(_ProviderConstructor, getattr(module, _PROVIDER_CLASSES[provider]))
 
 
 def create_translator(
@@ -38,15 +112,24 @@ def create_translator(
         raise ProviderConfigurationError(
             f"Set {environment_name} or pass a key through the Python API."
         )
-    if provider == "openai":
-        return OpenAITranslator(model=model, api_key=resolved_key.strip())
-    return AnthropicTranslator(model=model, api_key=resolved_key.strip())
+    constructor = _load_provider_constructor(provider)
+    return constructor(model=model, api_key=resolved_key.strip())
+
+
+def __getattr__(name: str) -> object:
+    """Preserve lazy public class imports without loading both paid SDKs."""
+
+    for provider, class_name in _PROVIDER_CLASSES.items():
+        if name == class_name:
+            return _load_provider_constructor(provider)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 __all__ = [
     "AnthropicTranslator",
     "IdentityTranslator",
     "OpenAITranslator",
+    "PaidProviderName",
     "ProviderName",
     "create_translator",
 ]

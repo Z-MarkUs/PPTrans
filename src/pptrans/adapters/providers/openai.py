@@ -28,7 +28,8 @@ class _ResponsesClient(Protocol):
 
 
 class _OpenAIClient(Protocol):
-    responses: _ResponsesClient
+    @property
+    def responses(self) -> _ResponsesClient: ...
 
 
 def _token_value(usage: object | None, name: str) -> int | None:

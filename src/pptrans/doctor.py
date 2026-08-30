@@ -60,6 +60,7 @@ def run_doctor(provider: str | None = None) -> tuple[DoctorCheck, ...]:
     ]
 
     if provider in {"openai", "anthropic"}:
+        checks.append(_package_check(provider))
         variable = "OPENAI_API_KEY" if provider == "openai" else "ANTHROPIC_API_KEY"
         configured = bool((os.getenv(variable) or "").strip())
         checks.append(

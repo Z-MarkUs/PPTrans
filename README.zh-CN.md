@@ -11,7 +11,7 @@
 - **不可信 AI 边界：** OpenAI 与 Anthropic 结果必须满足严格 schema 与精确 ID；缺失、乱序、重复或伪造输出都会失败关闭。
 - **自动化门禁：** `--fail-on-warnings` 可在发现已识别的不支持内容时停止运行，且不会构造 provider 或发布输出。
 - **隐私与安全：** 对 ZIP、XML 和资源使用量设置防御上限；只向明确选择的服务商发送必要文本与上下文，不发送 deck 二进制、媒体或原始 XML。
-- **证据：** 最近一次本地审计为 455 项测试通过、含分支统计的综合覆盖率 91.95%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
+- **证据：** 最近一次本地审计为 463 项测试通过、含分支统计的综合覆盖率 91.99%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
 - **可运行证明：** 3 张幻灯片 / 41 个单元 / 45 个片段的合成 demo、真实改字的简体中文输出，以及有明确边界的 LibreOffice 验收证据。
 
 ### 前后对比：文本确实发生变化
@@ -24,7 +24,7 @@
 
 ## 我的角色与贡献
 
-PPTrans 由 Hehan Zhao 维护。v2 中，我确定了产品方向与安全标准，并主导当前端到端重构：防御式 OOXML 检查、稳定 ID 服务商契约、事务式补丁/验证/发布、确定性测试与 CI，以及公开 demo。我不会把整个仓库历史描述为 clean-room 原创；导入上游的来源问题已记录在 [NOTICE.md](NOTICE.md)，并且仍阻止新版本发布。
+PPTrans 由 Hehan Zhao 维护。v2 中，我确定了产品方向与安全标准，并主导当前端到端重构：防御式 OOXML 检查、稳定 ID 服务商契约、事务式补丁/验证/发布、确定性测试与 CI，以及展示 demo。我不会把整个仓库历史描述为 clean-room 原创；导入上游的来源问题已记录在 [NOTICE.md](NOTICE.md)，并且仍阻止新版本发布。
 
 ## 版本状态
 
@@ -92,14 +92,16 @@ source .venv/bin/activate
 .\.venv\Scripts\Activate.ps1
 ```
 
-安装开发环境、检查运行条件，并在默认不显示文本的情况下检查仓库内的 demo：
+安装离线核心、检查运行条件，并在默认不显示文本的情况下检查仓库内的 demo：
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
+python -m pip install -e .
 pptrans doctor
 pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --fail-on-warnings
 ```
+
+使用基础安装时，缺少 `python-pptx` 和 LibreOffice 会显示为可选警告（`Required: no`）；它们分别用于 fixture 制作和视觉复核，并非核心运行失败，因此 `doctor` 仍返回 0。
 
 检查警告默认不会阻止命令继续执行。这里的 `--fail-on-warnings` 会在 PPTrans 报告不支持内容时让 `inspect` 返回状态码 1；同一选项用于 `translate` 时，会在输出预检、构造 provider、访问翻译记忆或发布之前停止。它不能保证识别所有未支持的 PowerPoint 功能，也不能证明视觉版面适配。
 
@@ -107,19 +109,21 @@ pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --fail-on-
 
 ```bash
 pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --fail-on-warnings --output pptrans-demo.identity.pptx --json
+python scripts/build_curated_demo.py examples/pptrans-demo.en.pptx pptrans-demo.curated.zh-CN.pptx
 ```
 
-`identity` 是用于证明离线事务的透传服务商；人工复核的简体中文 fixture 用于证明真实改字。两者都由集成测试和有明确边界的原生记录固定，详见[完整 demo 与 QA 说明](docs/DEMO.md)。
+`identity` 是用于证明离线事务的透传服务商；其 `provider_calls` 数值统计本地适配器批次，而非网络调用。第二条命令把完整、人工复核的映射送入同一编排与写入流程，用 JSON 列出改动的幻灯片部件和验证过的文本跨度，从而证明真实改字。重复运行时请改用新输出名，或显式加入 `--overwrite`。两条路径都由集成测试和有明确边界的原生记录固定，详见[完整 demo 与 QA 说明](docs/DEMO.md)。
 
 ## 使用真实服务商翻译
 
-导出服务商凭证或显式传入 `--env-file`；PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。
+只安装准备使用的适配器，再导出服务商凭证或显式传入 `--env-file`。PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。
 
 ```bash
+python -m pip install -e ".[openai]"
 pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <明确的模型名称> --env-file .env --glossary examples/glossary.example.yaml --fail-on-warnings --output pptrans-demo.zh-CN.pptx
 ```
 
-Anthropic 使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`。`--no-memory` 关闭本地留存，`--style`、`--glossary` 与 `--json` 提供主要控制项。付费工作会预先检查单元数、调用数、源文本/上下文和序列化请求上限。严格警告选项只会阻止 PPTrans 实际发出的诊断，并不是完整的功能支持检查；完整 CLI、路由与成本边界见[服务商文档](docs/PROVIDERS.md)。
+Anthropic 通过 `.[anthropic]` 安装，并使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`；离线核心和 identity 适配器都不会导入任何付费 SDK。`--no-memory` 关闭本地留存，`--style`、`--glossary` 与 `--json` 提供主要控制项。付费工作会预先检查单元数、调用数、源文本/上下文和序列化请求上限。严格警告选项只会阻止 PPTrans 实际发出的诊断，并不是完整的功能支持检查；完整 CLI、路由与成本边界见[服务商文档](docs/PROVIDERS.md)。
 
 ### 服务商契约与隐私
 
@@ -138,7 +142,7 @@ Anthropic 使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`。`--no-memory` 
 - [核心、安全与属性测试](tests/)覆盖丰富 OOXML fixture、恶意包、过期源、计划外变化，以及 9,346 个 Unicode/顺序/路径/变异生成样例。
 - [服务商契约测试](tests/test_provider_adapters.py)注入 SDK client，在不联网的情况下检查严格 schema 与安全错误映射。
 - [审查基础安全测试](tests/test_security_review_foundation.py)扫描 v2 包中的动态执行调用，并验证 renderer/图片边界。
-- [公开 demo 测试](tests/test_public_demo.py)固定逐字节可重建 deck、精确变化成员，以及 [identity](docs/qa/2026-08-28-windows-libreoffice.json) 与[改字](docs/qa/2026-08-28-curated-zh-cn.json)两份有边界原生记录的完整内容。原生渲染与视觉判断属于已记录的人工验收证据；测试套件不会重新生成这些观察结果。
+- [展示 demo 测试](tests/test_public_demo.py)固定逐字节可重建 deck、精确变化成员，以及 [identity](docs/qa/2026-08-28-windows-libreoffice.json) 与[改字](docs/qa/2026-08-28-curated-zh-cn.json)两份有边界原生记录的完整内容。原生渲染与视觉判断属于已记录的人工验收证据；测试套件不会重新生成这些观察结果。
 - [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、文档完整性、打包、有超时边界的多系统测试、隔离运行且覆盖全部依赖集合的每周审计、CodeQL 与完整历史 secret scan；Actions 固定到 commit SHA，scanner 压缩包也固定并校验 SHA-256。来源问题未解决时，版本 tag 的打包 gate 会失败关闭；线上仓库仍必须用 tag rules 限制版本 tag 的创建。
 
 [pyproject.toml](pyproject.toml) 中可查看配置的含分支统计综合覆盖率下限。成功的工作流只代表其对应的 workflow 与 commit，不代表所有 PowerPoint 格式或翻译质量都已被证明。只有在经过审计的 v2 工作流公开且通过后，才会恢复公开 badge。
@@ -187,7 +191,7 @@ src/pptrans/
 - [威胁模型](docs/THREAT_MODEL.md)
 - [安全策略](SECURITY.md)
 - [质量门禁](docs/QUALITY_GATES.md)
-- [公开 demo 源文件与 QA](docs/DEMO.md)
+- [展示 demo 源文件与 QA](docs/DEMO.md)
 - [贡献指南](CONTRIBUTING.md)
 - [未发布变更日志](CHANGELOG.md)
 - [来源与许可说明](NOTICE.md)

@@ -11,7 +11,7 @@
 - **Untrusted-AI boundary:** OpenAI and Anthropic results must satisfy strict schemas and exact IDs; partial, reordered, duplicated, or invented output fails closed.
 - **Automation gate:** `--fail-on-warnings` can stop a run on recognized unsupported slide content before a provider is constructed or an output is published.
 - **Privacy and security:** defensive ZIP/XML/resource limits; only selected text and context reach the explicitly chosen provider—not the deck binary, media, or raw XML.
-- **Evidence:** 455 passing tests, 91.95% combined branch-aware coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging and documentation-integrity gates, and security scanning.
+- **Evidence:** 463 passing tests, 91.99% combined branch-aware coverage in the latest local audit, 9,346 generated property examples, cross-platform CI configuration, packaging and documentation-integrity gates, and security scanning.
 - **Runnable proof:** a synthetic 3-slide / 41-unit / 45-span demo, a real changed-text zh-CN output, and scoped LibreOffice acceptance evidence.
 
 ### Before / after: the text really changes
@@ -24,7 +24,7 @@ Download the [English source deck](examples/pptrans-demo.en.pptx) and the [verif
 
 ## My role and contributions
 
-PPTrans is maintained by Hehan Zhao. For v2, I defined the product direction and safety bar and led the current end-to-end re-architecture: defensive OOXML inspection, stable-ID provider contracts, transactional patch/verify/publish behavior, deterministic tests and CI, and the public demo. I do not present the repository history as clean-room work; imported-upstream provenance remains documented in [NOTICE.md](NOTICE.md) and currently blocks another release.
+PPTrans is maintained by Hehan Zhao. For v2, I defined the product direction and safety bar and led the current end-to-end re-architecture: defensive OOXML inspection, stable-ID provider contracts, transactional patch/verify/publish behavior, deterministic tests and CI, and the showcase demo. I do not present the repository history as clean-room work; imported-upstream provenance remains documented in [NOTICE.md](NOTICE.md) and currently blocks another release.
 
 ## Version status
 
@@ -92,14 +92,16 @@ source .venv/bin/activate
 .\.venv\Scripts\Activate.ps1
 ```
 
-Install the development environment, check runtime readiness, and inspect the committed demo without exposing its text:
+Install the offline core, check runtime readiness, and inspect the committed demo without exposing its text:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
+python -m pip install -e .
 pptrans doctor
 pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --fail-on-warnings
 ```
+
+On the base install, missing `python-pptx` and LibreOffice appear as optional (`Required: no`) warnings; they are fixture-authoring and visual-review capabilities, not core runtime failures, so `doctor` still exits 0.
 
 Inspection warnings are non-fatal by default. Here, `--fail-on-warnings` makes `inspect` return status 1 if PPTrans reports unsupported content. The same option on `translate` stops before output preflight, provider construction, translation-memory access, or publication. It does not guarantee that every unsupported PowerPoint feature is detected or prove visual fit.
 
@@ -107,19 +109,21 @@ Then exercise the complete transaction offline:
 
 ```bash
 pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --fail-on-warnings --output pptrans-demo.identity.pptx --json
+python scripts/build_curated_demo.py examples/pptrans-demo.en.pptx pptrans-demo.curated.zh-CN.pptx
 ```
 
-`identity` is a no-op provider for proving the offline transaction; the curated zh-CN fixture proves actual changed text. Both are pinned by integration tests and scoped native records. See the [complete demo and QA notes](docs/DEMO.md).
+`identity` is a no-op provider for proving the offline transaction; its `provider_calls` value counts local adapter batches, not network calls. The second command routes a complete, author-reviewed mapping through the same orchestration and writer to prove actual changed text; its JSON lists the changed slide parts and verified span count. Choose another output name or add `--overwrite` when rerunning either command. Both paths are pinned by integration tests and scoped native records. See the [complete demo and QA notes](docs/DEMO.md).
 
 ## Translate with a provider
 
-Export the provider credential or pass an explicit `--env-file`; PPTrans never searches for dotenv files or chooses a paid model implicitly.
+Install only the adapter you intend to use, then export its credential or pass an explicit `--env-file`. PPTrans never searches for dotenv files or chooses a paid model implicitly.
 
 ```bash
+python -m pip install -e ".[openai]"
 pptrans translate examples/pptrans-demo.en.pptx --source en --target zh-CN --provider openai --model <explicit-model-name> --env-file .env --glossary examples/glossary.example.yaml --fail-on-warnings --output pptrans-demo.zh-CN.pptx
 ```
 
-Anthropic uses `--provider anthropic` and `ANTHROPIC_API_KEY`. `--no-memory` disables local retention; `--style`, `--glossary`, and `--json` expose the main controls. Paid work is preflighted against unit, call, source/context, and serialized-request ceilings. The strict warning option blocks only diagnostics PPTrans actually emits; it is not an exhaustive feature-support check. See [provider integration](docs/PROVIDERS.md) for the complete CLI, routing, and cost boundaries.
+Anthropic installs with `.[anthropic]` and uses `--provider anthropic` plus `ANTHROPIC_API_KEY`. The offline core and identity adapter import neither paid SDK. `--no-memory` disables local retention; `--style`, `--glossary`, and `--json` expose the main controls. Paid work is preflighted against unit, call, source/context, and serialized-request ceilings. The strict warning option blocks only diagnostics PPTrans actually emits; it is not an exhaustive feature-support check. See [provider integration](docs/PROVIDERS.md) for the complete CLI, routing, and cost boundaries.
 
 ### Provider contract and privacy
 
@@ -191,7 +195,7 @@ src/pptrans/
 - [Threat model](docs/THREAT_MODEL.md)
 - [Security policy](SECURITY.md)
 - [Quality gates](docs/QUALITY_GATES.md)
-- [Public demo source and QA](docs/DEMO.md)
+- [Showcase demo source and QA](docs/DEMO.md)
 - [Contributing](CONTRIBUTING.md)
 - [Unreleased changelog](CHANGELOG.md)
 - [Provenance and licensing notice](NOTICE.md)

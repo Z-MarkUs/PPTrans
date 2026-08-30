@@ -1,4 +1,4 @@
-# Public demo source and QA
+# Showcase demo source and QA
 
 [`examples/pptrans-demo.en.pptx`](../examples/pptrans-demo.en.pptx) is a three-slide synthetic fixture for exercising the v2 pipeline without private presentation data, a network call, or an API key. It has two deliberately separate evidence paths:
 

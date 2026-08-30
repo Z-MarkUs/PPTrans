@@ -193,7 +193,10 @@ def preflight_output(
     if output.exists() and output.is_dir():
         raise IsADirectoryError(output)
     if output.exists() and not overwrite:
-        raise FileExistsError(f"Output already exists: {output}")
+        raise FileExistsError(
+            f"Output already exists: {output}. Choose another destination or explicitly enable "
+            "overwrite."
+        )
     if file_sha256(source) != plan.input_sha256:
         raise SourceChangedError("The source PPTX changed after inspection.")
 

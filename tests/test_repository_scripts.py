@@ -54,6 +54,15 @@ def test_distribution_checker_accepts_a_disposable_output_directory(
     assert checker.main(["--dist-dir", str(tmp_path)]) == 0
 
 
+def test_minimal_install_checker_detects_optional_provider_sdks() -> None:
+    checker = _load_script("check_minimal_install.py")
+
+    assert checker.provider_sdk_presence_failures(lambda _module_name: None) == ()
+    assert checker.provider_sdk_presence_failures(
+        lambda module_name: object() if module_name == "openai" else None
+    ) == ("base install unexpectedly exposes optional provider SDK: openai",)
+
+
 def test_installed_version_checker_requires_runtime_metadata_and_exact_tag_agreement() -> None:
     checker = _load_script("check_installed_version.py")
 

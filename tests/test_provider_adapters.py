@@ -578,16 +578,15 @@ def test_factory_requires_nonblank_credentials(
 
 
 @pytest.mark.parametrize(
-    ("provider_name", "environment_name", "class_name"),
+    ("provider_name", "environment_name"),
     [
-        ("openai", "OPENAI_API_KEY", "OpenAITranslator"),
-        ("anthropic", "ANTHROPIC_API_KEY", "AnthropicTranslator"),
+        ("openai", "OPENAI_API_KEY"),
+        ("anthropic", "ANTHROPIC_API_KEY"),
     ],
 )
 def test_factory_uses_explicit_key_before_environment(
     provider_name: providers.ProviderName,
     environment_name: str,
-    class_name: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     received: dict[str, object] = {}
@@ -598,7 +597,7 @@ def test_factory_uses_explicit_key_before_environment(
         return sentinel
 
     monkeypatch.setenv(environment_name, "environment-key")
-    monkeypatch.setattr(providers, class_name, construct)
+    monkeypatch.setattr(providers, "_load_provider_constructor", lambda _provider: construct)
 
     result = providers.create_translator(
         provider_name,
@@ -608,6 +607,69 @@ def test_factory_uses_explicit_key_before_environment(
 
     assert result is sentinel
     assert received == {"model": " test-model ", "api_key": "explicit-key"}
+
+
+@pytest.mark.parametrize("provider_name", ["openai", "anthropic"])
+def test_factory_reports_the_exact_missing_optional_sdk(
+    provider_name: providers.PaidProviderName,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def missing_sdk(_module_name: str) -> object:
+        raise ModuleNotFoundError(
+            f"No module named {provider_name!r}",
+            name=provider_name,
+        )
+
+    monkeypatch.setattr(providers, "import_module", missing_sdk)
+
+    with pytest.raises(ProviderConfigurationError) as caught:
+        providers.create_translator(
+            provider_name,
+            model="test-model",
+            api_key="opaque-test-key",
+        )
+
+    message = str(caught.value)
+    assert f"pptrans[{provider_name}]" in message
+    assert f".[{provider_name}]" in message
+
+
+def test_provider_loader_does_not_hide_an_unrelated_import_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def missing_transitive_dependency(_module_name: str) -> object:
+        raise ModuleNotFoundError("No module named 'httpx'", name="httpx")
+
+    monkeypatch.setattr(providers, "import_module", missing_transitive_dependency)
+
+    with pytest.raises(ModuleNotFoundError, match="httpx"):
+        providers.create_translator(
+            "openai",
+            model="test-model",
+            api_key="opaque-test-key",
+        )
+
+
+@pytest.mark.parametrize(
+    ("class_name", "expected"),
+    [
+        ("OpenAITranslator", OpenAITranslator),
+        ("AnthropicTranslator", AnthropicTranslator),
+    ],
+)
+def test_provider_module_preserves_lazy_public_class_imports(
+    class_name: str,
+    expected: type[object],
+) -> None:
+    assert providers.__getattr__(class_name) is expected
+
+
+def test_provider_module_rejects_unknown_lazy_attributes() -> None:
+    def read_unknown_attribute() -> object:
+        return providers.NotAProvider
+
+    with pytest.raises(AttributeError, match="NotAProvider"):
+        read_unknown_attribute()
 
 
 def test_factory_rejects_an_unsupported_provider() -> None:

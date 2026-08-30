@@ -25,7 +25,12 @@ class _Renderer:
 
 
 def _fixed_version(distribution: str) -> str:
-    return {"lxml": "5.3.1", "python-pptx": "1.0.2"}[distribution]
+    return {
+        "anthropic": "0.40.0",
+        "lxml": "5.3.1",
+        "openai": "2.0.0",
+        "python-pptx": "1.0.2",
+    }[distribution]
 
 
 def test_doctor_check_serializes_all_fields_without_secrets() -> None:
@@ -65,6 +70,8 @@ def test_run_doctor_checks_credentials_without_network_or_secret_disclosure(
     assert by_name["lxml"].status == "pass"
     assert by_name["python-pptx"].status == "pass"
     assert by_name["python-pptx"].required is False
+    assert by_name[provider].status == "pass"
+    assert by_name[provider].required is True
     assert by_name[f"{provider}_credential"].status == "pass"
     assert environment_name in by_name[f"{provider}_credential"].detail
     assert credential_value not in repr(checks)
@@ -127,6 +134,8 @@ def test_run_doctor_marks_missing_requirements_and_unsupported_python(
     assert by_name["lxml"].status == "fail"
     assert by_name["python-pptx"].status == "warn"
     assert by_name["python-pptx"].required is False
+    assert by_name["openai"].status == "fail"
+    assert by_name["openai"].required is True
     assert by_name["openai_credential"].status == "fail"
     assert by_name["openai_credential"].detail == "OPENAI_API_KEY is not set"
     assert by_name["libreoffice_review"].status == "warn"
@@ -196,6 +205,24 @@ def test_doctor_json_emits_results_then_returns_one_for_required_failure(
 
     assert result.exit_code == 1
     assert json.loads(result.stdout) == [check.as_dict() for check in checks]
+
+
+def test_doctor_human_output_distinguishes_optional_checks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    checks = (
+        DoctorCheck(name="python", status="pass", detail="3.12.0", required=True),
+        DoctorCheck(name="renderer", status="warn", detail="not installed", required=False),
+    )
+    monkeypatch.setattr(cli, "load_environment", lambda _path: False)
+    monkeypatch.setattr(cli, "run_doctor", lambda _provider: checks)
+
+    result = CliRunner().invoke(cli.app, ["doctor"])
+
+    assert result.exit_code == 0, result.output
+    assert "Required" in result.output
+    assert "yes" in result.output
+    assert "no" in result.output
 
 
 def test_explicit_dotenv_preserves_exported_values_and_loads_missing_values(

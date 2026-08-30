@@ -465,7 +465,11 @@ def translate_command(
 def doctor_command(
     provider: Annotated[
         ProviderChoice | None,
-        typer.Option("--provider", case_sensitive=False, help="Also check this credential."),
+        typer.Option(
+            "--provider",
+            case_sensitive=False,
+            help="Also check this provider's SDK and credential, when applicable.",
+        ),
     ] = None,
     dotenv_path: Annotated[
         Path | None,
@@ -486,11 +490,13 @@ def doctor_command(
         table = Table(title="PPTrans doctor")
         table.add_column("Check")
         table.add_column("Status")
+        table.add_column("Required")
         table.add_column("Detail")
         for check in checks:
             table.add_row(
                 Text(_terminal_string(check.name)),
                 Text(_terminal_string(check.status.upper())),
+                Text("yes" if check.required else "no"),
                 Text(_terminal_string(check.detail)),
             )
         console.print(table)
