@@ -14,12 +14,15 @@ python -m ruff format --check .
 python -m mypy src/pptrans
 python -m pytest -q
 python -m bandit -q -r src/pptrans
+python scripts/check_doc_links.py
 python scripts/sync_agent_skills.py --check
 python scripts/validate_agent_skills.py
 pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --json --fail-on-warnings
 ```
 
 Default tests must use deterministic fake providers and temporary directories. Pytest blocks in-process Python socket creation by default. This is not OS-level egress control and is not inherited by subprocesses, so subprocess fixtures and commands must be kept explicitly offline too. Tests must not require provider credentials, Microsoft PowerPoint, or private presentations. A live test must be a separate, explicitly authorized invocation that deliberately overrides the in-process socket block and any applicable external egress controls.
+
+The documentation gate parses every tracked Markdown file without network access. It validates Git-index membership and exact casing, repository boundaries, heading and code-line fragments, informative image alt text, and local raster/SVG decodability. HTTP, HTTPS, mail, and telephone destinations are counted but deliberately not requested; external availability is a separate, non-blocking observation.
 
 The supported CPython range is 3.10 through 3.13. CI exercises both endpoints on Linux, macOS, and Windows, plus Python 3.11 on Linux; do not broaden the compatibility claim beyond that configured range.
 
@@ -75,6 +78,8 @@ Remove or label claims whose evidence is absent, stale, model-specific, or narro
 
 Security-tool updates must pin the bytes that execute, not only a wrapper action. Keep the Gitleaks version and archive SHA-256 together in the workflow, take the hash from the matching official release checksum list, verify it before extraction, and retain a runtime-generated detection control so a broken scanner cannot silently report success.
 
+Hard-coded scanner binaries are outside Dependabot's update scope. Review the Gitleaks pin at least quarterly and whenever upstream publishes a release; adopt only a release whose official archive checksum verifies and whose runtime control detects the synthetic fixture. The 2026-08-31 audit refreshed the verified pin to v8.30.0 and rescanned the complete local Git history cleanly.
+
 The public demo has its own source and QA records in [DEMO.md](DEMO.md). A replacement must remain synthetic, be built into a disposable path, have metadata normalized, preserve the asserted slide/unit/span counts, pass the offline identity transaction and independent reopen, and receive visual review of every generated slide plus layout output. The curated changed-text target must also rebuild byte for byte, change only its asserted slide XML members, pass structural/text verification, render every target slide in the recorded office runtime, and run the padded-canvas harness. Record that harness's exact script, renderer, dimensions, padding, and result; a bare `"passed"` field is insufficient. A rendered preview is presentation evidence only; it does not establish PowerPoint pixel identity or translation quality.
 
 The current narrow result and method are committed under [`benchmarks/`](../benchmarks/). Regenerate into a new no-clobber result path from a clean tree; never overwrite old evidence or broaden the claim beyond the systems actually measured.
@@ -82,3 +87,9 @@ The current narrow result and method are committed under [`benchmarks/`](../benc
 ## 6. Release gate
 
 A release requires all applicable gates above, a clean versioned changelog entry, synchronized package/tag versions, verified artifacts, and no unresolved secret-scanning findings. `NOTICE.md` currently records unresolved upstream licensing; do not publish another package or release until written permission or a compatible upstream license is documented.
+
+CI intentionally fails the package gate for every versioned tag created from this guarded tree while that provenance status remains unresolved. This is a reactive artifact safeguard, not control over Git ref creation: public deployment must also use repository rules that restrict version-tag creation, because a tag created from an older revision can carry an older workflow. Clearing the policy requires documented evidence plus an explicit update to `scripts/check_release_policy.py`; creating a matching tag is not sufficient. Security CI also covers versioned tags, and its isolated weekly schedule reruns the audit across runtime, development, and review dependencies between code changes. GitHub may disable scheduled workflows after prolonged public-repository inactivity, so maintainers must monitor and re-enable that host-side schedule rather than treat it as permanent unattended monitoring.
+
+The 2026-08-31 read-only audit of `origin/main` also found legacy `release: created` workflows for PyPI publication and application builds. A release targeting a reachable historical revision can load those historical workflow files and cannot be retroactively protected by this branch's policy script. Before any live repository update or release, disable or revoke the legacy publication path and its credential, restrict version-tag and release creation in repository settings, and verify the deployed default branch contains only the reviewed workflows. These are live-host controls; a source-tree check cannot attest that they are enabled.
+
+Live merge policy is another host-side prerequisite. GitHub can give a Dependabot-authored squash commit a read-only workflow token, which prevents a default-branch CodeQL run from uploading results even when the workflow requests `security-events: write`. If CodeQL is required after Dependabot merges, use the documented create-a-merge-commit strategy and verify that policy on the live repository; the pull-request CodeQL run remains the repository-owned pre-merge gate.

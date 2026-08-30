@@ -43,7 +43,9 @@ SDIST_REQUIRED_SUFFIXES = {
     "examples/pptrans-demo.zh-CN.pptx",
     "scripts/build_curated_demo.py",
     "scripts/build_demo.mjs",
+    "scripts/check_doc_links.py",
     "scripts/check_installed_version.py",
+    "scripts/check_release_policy.py",
     "scripts/render_demo_comparison.mjs",
     "tests/test_public_demo.py",
 }

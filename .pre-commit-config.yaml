@@ -16,3 +16,9 @@ repos:
         entry: python scripts/validate_agent_skills.py
         language: system
         pass_filenames: false
+      - id: documentation-links
+        name: Validate tracked documentation links
+        entry: python scripts/check_doc_links.py
+        language: system
+        pass_filenames: false
+        always_run: true

@@ -1,0 +1,76 @@
+name: Bug report
+description: Report a reproducible PPTrans defect using synthetic, non-sensitive data.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve PPTrans. Do not attach customer presentations, credentials,
+        provider payloads, translation-memory databases, or other private data. For a possible
+        vulnerability, stop here and follow the repository's Security policy instead.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Run `pptrans --version` or provide the exact Git commit.
+      placeholder: 2.0.0a1 or d6aa757
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Include operating system, CPython version, and installation method.
+      placeholder: Windows 11, CPython 3.12.13, editable source install
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Affected stage
+      options:
+        - inspect
+        - provider translation
+        - translation memory
+        - OOXML patch or verification
+        - output publication
+        - optional rendering or review
+        - packaging, documentation, or tooling
+        - unsure
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: State what happened and include the complete redacted error message.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: State the result you expected and why.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal synthetic reproduction
+      description: Provide deterministic steps and a self-authored synthetic deck or generator.
+      placeholder: |
+        1. Create a synthetic deck containing ...
+        2. Run `pptrans ...`
+        3. Observe ...
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Data-safety confirmation
+      options:
+        - label: I have not included credentials, private decks, provider payloads, or cache data.
+          required: true
+        - label: I searched existing issues for the same defect.
+          required: true

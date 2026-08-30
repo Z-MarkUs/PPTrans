@@ -11,7 +11,7 @@
 - **不可信 AI 边界：** OpenAI 与 Anthropic 结果必须满足严格 schema 与精确 ID；缺失、乱序、重复或伪造输出都会失败关闭。
 - **自动化门禁：** `--fail-on-warnings` 可在发现已识别的不支持内容时停止运行，且不会构造 provider 或发布输出。
 - **隐私与安全：** 对 ZIP、XML 和资源使用量设置防御上限；只向明确选择的服务商发送必要文本与上下文，不发送 deck 二进制、媒体或原始 XML。
-- **证据：** 最近一次本地审计为 413 项测试通过、含分支统计的综合覆盖率 91.95%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包检查与安全扫描。
+- **证据：** 最近一次本地审计为 455 项测试通过、含分支统计的综合覆盖率 91.95%，另有 9,346 个属性生成样例、跨平台 CI 配置、打包与文档完整性门禁，以及安全扫描。
 - **可运行证明：** 3 张幻灯片 / 41 个单元 / 45 个片段的合成 demo、真实改字的简体中文输出，以及有明确边界的 LibreOffice 验收证据。
 
 ### 前后对比：文本确实发生变化
@@ -139,7 +139,7 @@ Anthropic 使用 `--provider anthropic` 与 `ANTHROPIC_API_KEY`。`--no-memory` 
 - [服务商契约测试](tests/test_provider_adapters.py)注入 SDK client，在不联网的情况下检查严格 schema 与安全错误映射。
 - [审查基础安全测试](tests/test_security_review_foundation.py)扫描 v2 包中的动态执行调用，并验证 renderer/图片边界。
 - [公开 demo 测试](tests/test_public_demo.py)固定逐字节可重建 deck、精确变化成员，以及 [identity](docs/qa/2026-08-28-windows-libreoffice.json) 与[改字](docs/qa/2026-08-28-curated-zh-cn.json)两份有边界原生记录的完整内容。原生渲染与视觉判断属于已记录的人工验收证据；测试套件不会重新生成这些观察结果。
-- [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、打包、多系统测试、Bandit、依赖审计、CodeQL 与完整历史 secret scan；Actions 固定到 commit SHA，scanner 压缩包也固定并校验 SHA-256。
+- [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、文档完整性、打包、有超时边界的多系统测试、隔离运行且覆盖全部依赖集合的每周审计、CodeQL 与完整历史 secret scan；Actions 固定到 commit SHA，scanner 压缩包也固定并校验 SHA-256。来源问题未解决时，版本 tag 的打包 gate 会失败关闭；线上仓库仍必须用 tag rules 限制版本 tag 的创建。
 
 [pyproject.toml](pyproject.toml) 中可查看配置的含分支统计综合覆盖率下限。成功的工作流只代表其对应的 workflow 与 commit，不代表所有 PowerPoint 格式或翻译质量都已被证明。只有在经过审计的 v2 工作流公开且通过后，才会恢复公开 badge。
 

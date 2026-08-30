@@ -3,6 +3,7 @@ name: Security
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
   schedule:
     - cron: "23 3 * * 1"
@@ -10,16 +11,23 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
       security-events: write
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Initialize CodeQL
         uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
@@ -30,15 +38,17 @@ jobs:
   secrets:
     name: Secret history scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Check out full history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install checksum-verified Gitleaks
         env:
-          GITLEAKS_VERSION: 8.24.3
-          GITLEAKS_ARCHIVE_SHA256: 9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c
+          GITLEAKS_VERSION: 8.30.0
+          GITLEAKS_ARCHIVE_SHA256: 79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e
         shell: bash
         run: |
           set -euo pipefail
@@ -72,3 +82,25 @@ jobs:
           fi
       - name: Scan all Git history with Gitleaks
         run: gitleaks git --redact --no-banner --verbose --log-opts="--all" .
+
+  dependencies:
+    name: Scheduled dependency audit
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install all auditable optional dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,review]"
+      - name: Audit installed dependencies
+        run: python -m pip_audit --skip-editable

@@ -6,10 +6,9 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      python-runtime:
-        dependency-type: production
-      python-development:
-        dependency-type: development
+      python-dependencies:
+        patterns:
+          - "*"
   - package-ecosystem: github-actions
     directory: /
     schedule:

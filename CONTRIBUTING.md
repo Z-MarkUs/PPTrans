@@ -75,6 +75,7 @@ python -m ruff format --check .
 python -m mypy src/pptrans
 python -m pytest -q
 python -m bandit -q -r src/pptrans
+python scripts/check_doc_links.py
 python scripts/sync_agent_skills.py --check
 python scripts/validate_agent_skills.py
 ```

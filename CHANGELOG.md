@@ -48,6 +48,11 @@ This alpha is active development, not a release candidate. Publication is blocke
 - CI now exercises the provider adapters against the declared minimum OpenAI and Anthropic SDK versions, in addition to the normally resolved dependency set.
 - Package validation accepts a disposable distribution directory, smoke-tests installed-wheel runtime/metadata agreement, checks exact `v{version}` agreement on tag builds, and does not upload blocked distribution artifacts.
 - Deterministic core benchmark evidence was refreshed from a clean post-hardening commit while retaining the earlier raw result as immutable history.
+- A repository-owned offline documentation gate now verifies every tracked Markdown destination, fragment, exact-cased path, and local image; CI and pre-commit run it automatically.
+- CI now bounds every job, avoids persisting checkout credentials, prevents duplicate feature-branch push runs, isolates scheduled runs from push cancellation, audits runtime/development/review dependencies weekly while host scheduling remains active, and runs CodeQL plus full-history secret scanning for versioned tags.
+- Version-tag package CI now fails closed for tags created from the guarded tree while the recorded upstream provenance gate remains unresolved; release guidance also records the required live tag rules and legacy-workflow/credential shutdown that repository files cannot enforce retroactively.
+- A privacy-oriented required bug form with blank-issue bypass disabled, plus a compact evidence-focused pull-request template, operationalizes the repository's contribution and security guidance.
+- The checksum-pinned Gitleaks binary was refreshed to v8.30.0 after its detection control and full-history scan passed; maintenance guidance now records a manual scanner-review cadence because Dependabot cannot update a downloaded binary pin.
 - The identity-demo QA record now pins its padded-canvas harness command, renderer, dimensions, padding, input hash, and rerun timestamp instead of recording only a bare pass result.
 
 ### Security

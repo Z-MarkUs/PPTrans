@@ -22,12 +22,15 @@ python -m ruff format --check .
 python -m mypy src/pptrans
 python -m pytest -q
 python -m bandit -q -r src/pptrans
+python scripts/check_doc_links.py
 python scripts/sync_agent_skills.py --check
 python scripts/validate_agent_skills.py
 pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --json --fail-on-warnings
 ```
 
 Pytest blocks in-process Python socket creation by default. This is not OS-level egress control and is not inherited by subprocesses, so subprocess commands must remain explicitly offline. Any authorized live-provider test is a separate invocation with an explicit network opt-in and applicable external controls. Follow `docs/QUALITY_GATES.md` for integration, packaging, benchmark, and release evidence. Do not lower a gate merely to make an unrelated change pass; distinguish an existing failure from a regression with command output and a focused test.
+
+The documentation checker validates tracked internal destinations, fragments, exact path casing, repository boundaries, and local image evidence without requesting external URLs. Run it after any path, heading, README, demo asset, or documentation change.
 
 For security workflow changes, pin the bytes that execute rather than trusting a wrapper action's hidden downloads. A Gitleaks update must carry the matching official archive checksum, verify it before extraction, and keep the synthetic detection control green.
 

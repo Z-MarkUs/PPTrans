@@ -66,6 +66,17 @@ def test_installed_version_checker_requires_runtime_metadata_and_exact_tag_agree
     )
 
 
+def test_release_policy_machine_enforces_the_recorded_provenance_gate(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    checker = _load_script("check_release_policy.py")
+
+    assert checker.release_policy_failures("cleared") == ()
+    assert checker.release_policy_failures() == (checker.BLOCK_MESSAGE,)
+    assert checker.main(["--tag", "v2.0.0a1"]) == 1
+    assert "v2.0.0a1: release blocked" in capsys.readouterr().err
+
+
 def test_benchmark_output_guards_source_aliases_and_existing_files(tmp_path: Path) -> None:
     benchmark = _load_script("benchmark_core.py")
     source = tmp_path / "source.pptx"
