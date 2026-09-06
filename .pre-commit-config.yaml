@@ -1,0 +1,36 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff lint
+        entry: python -m ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: Ruff format
+        entry: python -m ruff format
+        language: system
+        types: [python]
+      - id: agent-skills
+        name: Validate mirrored agent skills
+        entry: python scripts/validate_agent_skills.py
+        language: system
+        pass_filenames: false
+      - id: documentation-links
+        name: Validate tracked documentation links
+        entry: python scripts/check_doc_links.py
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: public-demo-rebuild
+        name: Verify exact demo rebuild
+        entry: python scripts/rebuild_demo.py --check
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: recruiter-case-study
+        name: Verify recruiter case study
+        entry: python scripts/build_case_study.py --check
+        language: system
+        pass_filenames: false
+        always_run: true

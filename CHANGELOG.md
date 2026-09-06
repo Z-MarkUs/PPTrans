@@ -1,0 +1,101 @@
+# Changelog
+
+This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and uses semantic-version labels. PPTrans v2 has not been released.
+
+## [2.0.0a1] - Unreleased
+
+This alpha is active development, not a release candidate. The attributed v2 source may be published publicly, but a versioned tag, GitHub release, or package-index upload remains blocked until separately authorized and the normal release checklist and live-host workflow migration are complete.
+
+### Added
+
+- A `src/pptrans` architecture with immutable deck plans, stable nested shape locators, source digests, exact text-span IDs, and typed domain errors.
+- Defensive `.pptx` package validation for unsafe member paths, duplicate members, symbolic links, encryption, digital signatures, required parts, configurable expansion limits, and semantic slide/XML/unit/span/character/diagnostic ceilings.
+- Recursive inspection of slide-local shape text, nested groups, and DrawingML table cells without rebuilding slide objects.
+- Exact-ID translation contracts, strict Pydantic response schemas, and deterministic batch validation.
+- OpenAI Responses API and Anthropic Messages API translation adapters that require an explicit model, plus an offline identity adapter for pipeline verification.
+- A local SQLite translation memory keyed by semantic translation inputs and a prompt/schema-derived contract fingerprint rather than deck filename.
+- Strict JSON/YAML glossary loading, CLI `inspect`, `translate`, and `doctor` commands, and machine-readable output modes.
+- A side-effect-free `translate --dry-run` mode and immutable public `ProviderWorkEstimate` that expose deck-text-free, zero-memory-hit provider units, logical calls, source/context characters, and serialized request sizes before credentials, SDKs, memory, output handling, or any provider/API request.
+- An opt-in `--fail-on-warnings` policy for inspection and translation, with actionable warning codes and slide/shape locations; strict translation stops before provider construction and output publication.
+- Post-write verification of package inventory, unrelated member bytes, target-slide structure, planned text values, and unplanned text nodes.
+- An optional LibreOffice-to-PDF-to-PNG rendering adapter with resource ceilings, explicit hidden-slide export, whole-deck page-count checks, staged image publication, and isolated-profile execution.
+- Provider-neutral review schemas, deterministic score evaluation, privacy policy helpers, review budgets, and allowlisted repair-plan schemas.
+- Cross-platform CI configuration, package smoke checks, dependency/security scanning, repository guidance, and separate Codex/Claude Code engineering and safe deck-operation skills.
+- Author-written synthetic slide content and a reviewed translation mapping for a three-slide showcase deck, plus inspectable canonical OOXML package source, a standard-library-only exact rebuild, source-distribution fixture checks, a deterministic core benchmark harness, and English/Chinese recruiter-facing documentation.
+- Clean-tree raw deterministic-core benchmark results with commit, fixture, environment, normalized reproduction command, and distribution timings, including per-iteration samples for the current exact-rebuild `ZIP_STORED` fixture.
+- A machine-readable Windows/LibreOffice native acceptance record for the synthetic source and byte-identical identity output, including exact tool versions, hashes, per-slide pixel comparison, visual/overflow review, and cleanup checks.
+- A deterministic, author-reviewed EN → zh-CN showcase output that exercises real changed-text patching through the exact-ID pipeline, with six before/after previews and a second machine-readable LibreOffice acceptance record.
+- Six exact, hash-pinned native LibreOffice source/target PNGs plus a local replay command that rebuilds the identity transaction, rerenders all nine pages with the recorded build, and emits a deterministic evidence manifest.
+- A current exact-rebuild acceptance record linking both hash-pinned builders, the hash-pinned native replay script, the canonical 29-member source tree, deterministic source and curated packages, prior-package payload lineage, exact native renders, and original-resolution visual review.
+- Deterministic property-based stress tests covering XML character handling, Unicode round trips, exact provider result ordering, relationship target containment, and byte-mutated presentation input.
+- A deterministic, one-page recruiter engineering case study with a machine-readable scoped claim ledger, structural PDF validation, exact rebuild gate, and original-resolution visual QA workflow.
+
+### Changed
+
+- Translation now patches existing DrawingML `a:t` nodes in a staged OOXML package instead of reconstructing presentations through the PowerPoint object model.
+- Provider output must include every requested unit and translatable span exactly once and in request order; partial, extra, duplicate, or reordered results fail closed.
+- Output must be a distinct `.pptx`; the source can never be the destination, and an existing destination requires explicit overwrite permission.
+- Model selection has no paid-provider default. OpenAI and Anthropic require an explicit model and credential.
+- OpenAI and Anthropic SDKs are provider-specific extras loaded only after selection; the base install supports inspection and the complete identity transaction, a fresh-wheel CI check proves both paid SDKs are absent, and static-only public class contracts preserve downstream constructor typing without runtime imports.
+- Translation memory is persistent, local SQLite by default, rejects symbolic-link leaves, requests private modes for newly created POSIX paths, requires `DELETE` journaling, and can be disabled with `--no-memory`.
+- Provider clients pin official endpoints, reject ambient SDK routing overrides, construct default HTTP clients with `trust_env=False`, and load dotenv files only when the user selects one explicitly.
+- CLI preflight now validates complete archive payload CRCs, source/destination/configuration/cache path separation, and destination writability before provider construction.
+- Presentation discovery rejects duplicate relationship IDs and repeated relationship/slide-part references before provider construction.
+- CLI provider preflight defaults to at most 2,000 units, 100 logical calls, 2,000,000 source/context characters, 5,000,000 serialized characters across all batches, and 1,000,000 characters per request.
+- Default publication uses an atomic no-clobber path; destination replacement requires explicit overwrite permission.
+- Low-level patch/rewrite APIs are no-clobber by default, reject source aliases, and refuse symbolic-link destinations even with explicit overwrite.
+- Deck publication now treats private staging cleanup as a commit barrier: transient Windows unlink failures receive bounded retries, exhausted cleanup rolls back only identity-matching final links, and foreign replacements plus any residual paths are reported without deletion.
+- Tests use the installed `src` package directly instead of a legacy root-path import shim.
+- LibreOffice rendering now treats private-workspace cleanup as a commit barrier: validated PNGs move to separate same-filesystem staging, bounded transient-error retries retire the source/PDF/profile/raster workspace before publication, and late publication-stage cleanup failure rolls back owned final links.
+- PyMuPDF discovery and loading now use its canonical `pymupdf` module name instead of the collision-prone legacy `fitz` alias.
+- Engineering guidance now distinguishes focused tests from the full coverage gate, includes strict typing and security checks consistently, and separates disposable package validation from releasable artifacts; CI directly covers every classified Python minor, and the source-distribution gate requires complete mirrored agent-skill bundles.
+- Supported Python is explicitly bounded to CPython 3.10 through 3.13, and the default pytest configuration blocks in-process Python socket creation; subprocess and OS-level egress remain separately controlled boundaries.
+- CI now exercises the provider adapters against the declared minimum OpenAI and Anthropic SDK versions, in addition to the normally resolved dependency set.
+- Provider wire-contract tests now pass through the real OpenAI and Anthropic SDK serializers and response models using in-memory HTTP transports, with exact endpoint/schema/retention assertions and no captured credentials or network calls.
+- Paid-provider injected-client protocols now type-check both the real SDK clients and narrow deterministic doubles without weakening the runtime adapter boundary.
+- Package validation accepts a disposable distribution directory, smoke-tests installed-wheel runtime/metadata agreement, checks exact `v{version}` agreement on tag builds, and does not upload blocked distribution artifacts.
+- Deterministic core benchmark evidence was refreshed from a clean commit with recomputable per-iteration samples while retaining earlier aggregate-only results as immutable history.
+- A repository-owned offline documentation gate now verifies every tracked Markdown destination, fragment, exact-cased path, and local image; CI and pre-commit run it automatically.
+- CI now bounds every job, avoids persisting checkout credentials, prevents duplicate feature-branch push runs, isolates scheduled runs from push cancellation, audits runtime/development/review dependencies weekly while host scheduling remains active, and runs CodeQL plus full-history secret scanning for versioned tags.
+- Version-tag package CI now fails closed while v2 is prerelease work without separately recorded release authorization; release guidance also records the required checklist, live tag rules, and legacy-workflow/credential migration that repository files cannot enforce retroactively.
+- A privacy-oriented required bug form with blank-issue bypass disabled, plus a compact evidence-focused pull-request template, operationalizes the repository's contribution and security guidance.
+- The checksum-pinned Gitleaks binary was refreshed to v8.30.0 after its detection control and full-history scan passed; maintenance guidance now records a manual scanner-review cadence because Dependabot cannot update a downloaded binary pin.
+- The identity-demo QA record now pins its padded-canvas harness command, renderer, dimensions, padding, input hash, and rerun timestamp instead of recording only a bare pass result.
+- The showcase packages now use fixed `ZIP_STORED` members so byte identity does not depend on a zlib implementation; CI rebuilds the English fixture across the supported operating-system/Python matrix, and the curated target remains byte-reproducible through PPTrans itself.
+- The showcase cover now identifies v2 as an unreleased alpha build, with exact native renders and deterministic package hashes refreshed to match.
+- Agent-skill synchronization, validation, discovery checks, tests, and source-distribution inventory now cover both the engineering and operator skills as one fail-closed inventory.
+
+### Security
+
+- Model output is data only. The v2 package contains no dynamic execution path for model-generated code.
+- XML parsing disables DTD loading, entity resolution, and network access.
+- Source hashes and structural verification prevent stale or structurally destructive patches from being published as successful output.
+- Direct verification validates patch-set schema, unique unit/locator identities, ordered spans, source digests, and target-part existence, then reports only patches it actually traversed.
+- LibreOffice is invoked without a shell and without likely credential-bearing environment variables; rendered images are validated and bounded.
+- Rendering hashes, slide-counts, converts, and rasterizes one private per-run input snapshot, reducing local source-path replacement races.
+- Renderer rollback records staged file identities, so cleanup removes only final hard links still owned by the failed transaction and preserves paths replaced by another process.
+- Provider exceptions are mapped to concise PPTrans errors so request content is not copied into user-facing error messages.
+- Duplicate glossary validation now identifies the error without echoing the private source term; dry-run tests also guard paid-SDK imports, socket creation, budget failure, and every credential, memory, and output boundary.
+- Provider text must be nonblank, stay within a bounded expansion, and preserve high-confidence URLs, emails, placeholders, and digit sequences.
+- XML parts have a dedicated 32 MiB expansion ceiling, while safer archive/member/compression defaults bound opaque payload processing.
+- Human-facing CLI values escape every Unicode `Cc` control character as visible `\uXXXX` text, while machine modes emit compact ASCII-escaped JSON directly without Rich styling or ANSI color.
+- Post-write verification rejects altered `xml:space` semantics on changed text nodes even though whitespace attributes are masked by the structural fingerprint.
+- The Anthropic adapter accepts exactly one named tool-use content block and rejects otherwise-correct output accompanied by text or another tool call; offline adapter tests cover authentication and rate-limit SDK failures without leaking response details.
+- Secret-history CI downloads a fixed Gitleaks archive, verifies its pinned SHA-256 before extraction, proves the scanner detects a runtime-generated control fixture, and scans all fetched history without delegating installation to a dynamically downloading action.
+
+### Removed from the v2 surface
+
+- Legacy `.ppt` translation.
+- The legacy root `main.py` compatibility launcher; the packaged `pptrans` entry point is authoritative.
+- Implicit paid-provider model defaults.
+- Legacy DeepSeek and Grok adapters pending a new adapter that satisfies the v2 exact-ID contract.
+- The legacy dynamic-code repair/sandbox path.
+- The private-runtime demo authoring/render scripts and seven redundant WebP previews; the standard-library rebuild and native LibreOffice PNGs are now the canonical source and visual evidence paths.
+
+### Known gaps before release
+
+- The review modules are not yet wired into an end-to-end multimodal provider, CLI review command, or repair executor.
+- The committed benchmark covers only local deterministic core processing; provider latency/cost, translation quality, rendering, and maximum practical deck size remain unbenchmarked.
+- A versioned release still requires separate authorization, completion of the release checklist, and migration of the legacy live-host release workflow and credentials.
+
+Earlier repository changes predate this structured changelog. Consult Git history and prior GitHub release notes for legacy-version history; v2 guarantees must not be projected onto those releases.

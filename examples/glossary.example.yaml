@@ -1,0 +1,6 @@
+terms:
+  - source: gross margin
+    target: 毛利率
+    note: Use the finance term, not a literal rendering.
+  - source: active users
+    target: 活跃用户

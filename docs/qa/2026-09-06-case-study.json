@@ -1,0 +1,125 @@
+{
+  "schema_version": "pptrans.case-study-qa/v1",
+  "review_date": "2026-09-06",
+  "evidence_revision": "63a0e95b2187c4ad8ac247d98429a2be51f0725d",
+  "artifact": {
+    "path": "output/pdf/PPTrans-Engineering-Case-Study.pdf",
+    "bytes": 164207,
+    "sha256": "8da4e2134f168b94559ebeff2c51ecf4267b0717a46a76d22e0261a26a3ca6d3",
+    "pages": 1,
+    "media_box_points": [
+      595.2756,
+      841.8898
+    ],
+    "format": "A4 portrait",
+    "encrypted": false,
+    "annotations": false,
+    "form": false,
+    "javascript": false,
+    "attachments": false,
+    "external_links": false
+  },
+  "source": {
+    "builder": {
+      "path": "scripts/build_case_study.py",
+      "bytes": 55576,
+      "sha256": "cd14b3ac0eec00bfea14a9fb80b6c42ace6279e20749b04467c408dae6c6b57b"
+    },
+    "claim_ledger": {
+      "path": "docs/portfolio/pptrans-engineering-case-study.json",
+      "bytes": 5692,
+      "sha256": "16ad6256c12d883051710b2825bee597f81f85d655f316647095941b391ba04d"
+    },
+    "local_test_audit": {
+      "path": "docs/qa/2026-08-31-local-test-audit.json",
+      "bytes": 1684,
+      "sha256": "d41bbbc2885a291b50328ff180dcfe30df1b5b84580a600d3baaaaa8f23ef358"
+    },
+    "benchmark_result": {
+      "path": "benchmarks/results/2026-08-31-honest-showcase-ooxml-windows-python312.json",
+      "bytes": 1375,
+      "sha256": "f8ca92c6501b9dd88a8f4a6226c48fe461fe81472d3af548810b36d680b6b466"
+    },
+    "ci_workflow": {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 7117,
+      "sha256": "798255206cc27354b06767f0f59db3a24223326ca81c30ce5f09a72da0f1c8ad"
+    },
+    "command": ".venv\\Scripts\\python.exe scripts/build_case_study.py",
+    "check_command": ".venv\\Scripts\\python.exe scripts/build_case_study.py --check",
+    "byte_identical_rebuild": true
+  },
+  "toolchain": {
+    "operating_system": "Windows 11",
+    "python": "3.12.14",
+    "reportlab": "4.4.9",
+    "pypdf": "6.16.2",
+    "poppler_pdftoppm": "26.07.0"
+  },
+  "structural_review": {
+    "strict_parse": "passed",
+    "root_keys": [
+      "/PageMode",
+      "/Pages",
+      "/Type"
+    ],
+    "selectable_text_characters": 2891,
+    "selectable_text_sha256": "9473293e019bb16858649fe41bce2d51120ce772f41404ee9dc67d4871fc10fd",
+    "required_status_and_evidence_text": "passed",
+    "public_source_status_present": true,
+    "plain_repository_locator_present": true,
+    "stable_package_release_absent": true,
+    "absolute_local_paths_absent": true,
+    "interactive_links_absent": true,
+    "unsafe_action_tokens_absent": true
+  },
+  "raster_review": {
+    "command": "pdftoppm -png -r 200 -singlefile output/pdf/PPTrans-Engineering-Case-Study.pdf tmp/pdfs/pptrans-case-study-2026-09-06",
+    "dpi": 200,
+    "pixels": [
+      1654,
+      2339
+    ],
+    "mode": "RGB",
+    "png_bytes": 541568,
+    "png_sha256": "0497522bef0458d91310745dc5da7eaf120503584c46c81ffcab705d50de7aaa",
+    "renderer_warnings": [
+      "No display font for Symbol",
+      "No display font for ArialUnicode"
+    ],
+    "warning_result": "non-fatal; the complete raster was produced at the expected dimensions and passed visual inspection",
+    "committed": false
+  },
+  "visual_review": {
+    "reviewed_pages": [
+      1
+    ],
+    "reviewed_at_raster_dimensions": [
+      1654,
+      2339
+    ],
+    "fit_page_preview_dimensions": [
+      1334,
+      1888
+    ],
+    "original_resolution_crop_tiles": {
+      "count": 4,
+      "tile_pixels": [
+        827,
+        1170
+      ]
+    },
+    "clipping": "none found",
+    "unintended_overlap": "none found",
+    "broken_wrapping": "none found",
+    "off_page_content": "none found",
+    "legibility": "passed in the complete-page preview and across four original-resolution crop tiles",
+    "header_status_badge": "fully visible; includes V2 PUBLIC SOURCE / PRE-RELEASE",
+    "repository_locator": "fully visible as plain text; no PDF link annotation or URI action",
+    "status_and_provenance": "fully visible; states public-source pre-release status, retained lineage, and absence of a stable package release",
+    "embedded_dated_labels": "the unchanged dated native demo renders retain their original local-showcase slide labels; the current publication status is stated by the surrounding PDF header and provenance panel",
+    "source_target_images": "sharp, aligned, fully visible, and unchanged from the hash-pinned native-render inputs",
+    "result": "passed"
+  },
+  "scope": "This validates one deterministic recruiter-facing PDF and its complete 200 DPI render. The page presents v2 as a public-source pre-release engineering showcase and states that no stable package release exists yet. It retains upstream lineage and makes no clean-room or unrelated-project claim. It does not prove provider translation quality, establish Microsoft PowerPoint pixel identity, guarantee automatic layout fit, or measure universal compatibility or maximum practical deck size."
+}

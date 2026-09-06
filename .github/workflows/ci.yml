@@ -1,0 +1,195 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUTF8: "1"
+
+jobs:
+  quality:
+    name: Quality and offline tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Enforce the provenance release gate
+        if: github.ref_type == 'tag'
+        env:
+          PPTRANS_RELEASE_TAG: ${{ github.ref_name }}
+        run: python scripts/check_release_policy.py --tag "${PPTRANS_RELEASE_TAG}"
+      - name: Install development environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,review]"
+      - name: Validate internal documentation links
+        run: python scripts/check_doc_links.py
+      - name: Lint
+        run: python -m ruff check .
+      - name: Check formatting
+        run: python -m ruff format --check .
+      - name: Type-check
+        run: >-
+          python -m mypy src/pptrans
+          tests/typecheck_provider_exports.py
+          tests/test_provider_sdk_wire_contracts.py
+          scripts/benchmark_core.py
+          scripts/build_case_study.py
+          scripts/check_wheel.py
+          scripts/rebuild_demo.py
+          scripts/reproduce_native_demo.py
+      - name: Verify exact demo rebuild
+        run: python scripts/rebuild_demo.py --check
+      - name: Verify recruiter case study
+        run: python scripts/build_case_study.py --check
+      - name: Test with branch coverage
+        run: python -m pytest -q --cov-report=xml
+      - name: Audit Python source
+        run: python -m bandit -q -r src/pptrans
+      - name: Audit installed dependencies
+        run: python -m pip_audit --skip-editable
+      - name: Validate agent skills
+        run: |
+          python scripts/sync_agent_skills.py --check
+          python scripts/validate_agent_skills.py
+      - name: Enforce warning-free demo inspection
+        run: >-
+          pptrans inspect examples/pptrans-demo.en.pptx
+          --source en
+          --target en
+          --json
+          --fail-on-warnings
+      - name: Upload coverage evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: error
+
+  compatibility:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.10", "3.13"]
+        include:
+          - os: ubuntu-latest
+            python: "3.11"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install test environment
+        run: python -m pip install -e ".[dev,review]"
+      - name: Verify exact demo rebuild
+        run: python scripts/rebuild_demo.py --check
+      - name: Verify recruiter case study
+        run: python scripts/build_case_study.py --check
+      - name: Run deterministic suite
+        run: python -m pytest -q --no-cov
+      - name: Exercise the documented offline path
+        run: |
+          pptrans doctor
+          pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --fail-on-warnings
+          pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --fail-on-warnings --output compatibility.identity.pptx --json
+      - name: Smoke-test benchmark tooling on Python 3.10
+        if: matrix.python == '3.10'
+        run: >-
+          python scripts/benchmark_core.py
+          --input examples/pptrans-demo.en.pptx
+          --warmups 0
+          --iterations 1
+
+  provider-sdk-minimums:
+    name: Minimum provider SDKs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install declared minimum provider SDKs
+        run: >-
+          python -m pip install -e ".[dev]"
+          "openai==2.0.0"
+          "anthropic==0.40.0"
+      - name: Exercise both provider adapters
+        run: >-
+          python -m pytest -q --no-cov
+          tests/test_provider_adapters.py
+          tests/test_provider_sdk_wire_contracts.py
+
+  package:
+    name: Build and smoke-test distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [quality, compatibility, provider-sdk-minimums]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install build and artifact-validation tools
+        run: python -m pip install build twine -e ".[dev]"
+      - name: Build distributions
+        run: python -m build
+      - name: Validate metadata and wheel contents
+        run: |
+          python -m twine check dist/*
+          python scripts/check_wheel.py
+      - name: Smoke-test installed wheel
+        run: |
+          python -m venv wheel-smoke
+          wheel-smoke/bin/python -m pip install dist/*.whl
+          wheel-smoke/bin/python -m pip check
+          wheel-smoke/bin/python scripts/check_minimal_install.py
+          wheel-smoke/bin/pptrans --version
+          wheel-smoke/bin/pptrans --help
+          wheel-smoke/bin/pptrans doctor
+          wheel-smoke/bin/python scripts/check_installed_version.py
+          wheel-smoke/bin/pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --json --fail-on-warnings
+          wheel-smoke/bin/pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --fail-on-warnings --output wheel-smoke/identity.pptx --json
+      - name: Verify release tag version
+        if: github.ref_type == 'tag'
+        env:
+          PPTRANS_RELEASE_TAG: ${{ github.ref_name }}
+        run: wheel-smoke/bin/python scripts/check_installed_version.py

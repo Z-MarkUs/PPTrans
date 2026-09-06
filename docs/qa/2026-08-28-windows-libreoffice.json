@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-08-27T19:16:09.9309957Z",
+  "local_test_date": "2026-08-28",
+  "tested_commit": "37733faf71e660737177ff991be2a8437c9a6858",
+  "platform": {
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "architecture": "X64",
+    "python": "3.12.13"
+  },
+  "pipeline": {
+    "provider": "identity",
+    "translation_memory": false,
+    "source_language": "en",
+    "target_language": "en",
+    "command": "pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --output pptrans-demo.identity.pptx --json",
+    "verified_patches": 41,
+    "verified_spans": 45
+  },
+  "renderer": {
+    "backend": "libreoffice",
+    "libreoffice_version": "26.8.0.3",
+    "libreoffice_build": "bce0998afefdbc355585ca324285661a2170ba77",
+    "distribution": "LibreOffice_26.8.0.3_Machine_X64_msi_zh-CN.msi",
+    "distribution_sha256": "4aa6c6e1895f4055104effcb556bd3362d20c6ad707c149543304f395ef9db95",
+    "installation_mode": "administrative extraction into a disposable audit directory; no system installation",
+    "pymupdf_version": "1.28.2",
+    "dpi": 144,
+    "render_api": "LibreOfficeRenderer(executable=soffice).render(RenderRequest(deck, output_dir, dpi=144, timeout_seconds=180))"
+  },
+  "presentations": {
+    "source": {
+      "path": "examples/pptrans-demo.en.pptx",
+      "bytes": 18687,
+      "sha256": "dd36b4f92edf915942d4300aeebd1854a049acc521dfc29e78b286c774d8e9d8"
+    },
+    "identity_output": {
+      "bytes": 18687,
+      "sha256": "dd36b4f92edf915942d4300aeebd1854a049acc521dfc29e78b286c774d8e9d8",
+      "byte_identical_to_source": true
+    }
+  },
+  "slides": [
+    {
+      "slide_number": 1,
+      "width": 1921,
+      "height": 1080,
+      "source_png_bytes": 68092,
+      "source_png_sha256": "c5442ade6848d1eb07edf89d41080a452349850a6e6af5653e048d83bacf2c30",
+      "identity_png_bytes": 68092,
+      "identity_png_sha256": "c5442ade6848d1eb07edf89d41080a452349850a6e6af5653e048d83bacf2c30",
+      "pixel_equal": true
+    },
+    {
+      "slide_number": 2,
+      "width": 1921,
+      "height": 1080,
+      "source_png_bytes": 77877,
+      "source_png_sha256": "3809cbcb6605a37f9400191f8fa0c62c2be629201c1d1c74b2ebade589a3371b",
+      "identity_png_bytes": 77877,
+      "identity_png_sha256": "3809cbcb6605a37f9400191f8fa0c62c2be629201c1d1c74b2ebade589a3371b",
+      "pixel_equal": true
+    },
+    {
+      "slide_number": 3,
+      "width": 1921,
+      "height": 1080,
+      "source_png_bytes": 96606,
+      "source_png_sha256": "50148e0c59c73a6cbb466f590aa1a53ca1531a434c8be3a60e2dfb49f88436de",
+      "identity_png_bytes": 96606,
+      "identity_png_sha256": "50148e0c59c73a6cbb466f590aa1a53ca1531a434c8be3a60e2dfb49f88436de",
+      "pixel_equal": true
+    }
+  ],
+  "overflow_review": {
+    "result": "passed",
+    "observed_at_utc": "2026-08-30T15:19:04.8383813Z",
+    "input_path": "examples/pptrans-demo.en.pptx",
+    "input_bytes": 18687,
+    "input_sha256": "dd36b4f92edf915942d4300aeebd1854a049acc521dfc29e78b286c774d8e9d8",
+    "method": "Presentations skill slides_test.py enlarged the PPTX with 100 px padded margins, rendered through @oai/artifact-tool 2.8.52, and checked every margin for non-padding pixels.",
+    "command": "python <presentations-skill>/container_tools/slides_test.py examples/pptrans-demo.en.pptx --width 1600 --height 900 --pad_px 100",
+    "renderer": "@oai/artifact-tool 2.8.52 importPptx/export",
+    "width": 1600,
+    "height": 900,
+    "pad_px": 100
+  },
+  "cleanup": {
+    "private_render_workspace_present_after_success": false,
+    "publication_staging_present_after_success": false,
+    "libreoffice_process_present_after_success": false
+  },
+  "visual_review": {
+    "reviewed_slide_count": 3,
+    "clipping_detected": false,
+    "overlap_detected": false,
+    "off_slide_content_detected": false,
+    "notes": "Every source render was inspected at original resolution. The identity render was pixel-equal to its matching source render."
+  },
+  "scope": [
+    "This is one synthetic deck on one Windows and LibreOffice configuration.",
+    "Identity output does not measure translation quality or longer-text layout fit.",
+    "LibreOffice pixel equality does not establish pixel identity with Microsoft PowerPoint."
+  ]
+}

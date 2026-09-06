@@ -1,0 +1,7 @@
+# Provenance and attribution notice
+
+PPTrans's Git history includes source imported in commit `2591035bd0dfa504d408722783234f1d4fca8388` from [tristan-mcinnis/PPT-Translator-Formatting-Intact-with-LLMs](https://github.com/tristan-mcinnis/PPT-Translator-Formatting-Intact-with-LLMs). The upstream README identified that project as MIT-licensed before its first source commit and again in the exact snapshot imported here. PPTrans preserves that origin, its Git history, and attribution to the upstream contributors.
+
+PPTrans v2 is a substantial re-architecture maintained by Hehan Zhao. It replaces the legacy package with the `src/pptrans` implementation: defensive OOXML inspection, stable translation addresses, strict provider contracts, source-guarded text-node patching, post-write verification, deterministic tests, and supporting developer tooling. A 2026-08-28 file-level audit found no exact upstream blob or substantive match at Git's conventional 50% similarity threshold in the current v2 source tree, wheel, or source distribution.
+
+That rewrite evidence does not erase the project's lineage, and PPTrans is not presented as a clean-room or unrelated project. The current source is distributed under the MIT License in [LICENSE](LICENSE), which retains copyright notices for both PPT Translator contributors and Hehan Zhao. PPTrans v2 is public pre-release source; no stable v2 package or release has been published.

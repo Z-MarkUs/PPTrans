@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-08-30T19:58:34.1177156Z",
+  "local_test_date": "2026-08-31",
+  "platform": {
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "architecture": "AMD64",
+    "python": "3.12.13"
+  },
+  "exact_rebuild": {
+    "command": "python scripts/rebuild_demo.py --check",
+    "builder_path": "scripts/rebuild_demo.py",
+    "builder_bytes": 21348,
+    "builder_sha256": "5ccab7bfb657e42c4f3a5964b4c9dfc152420b222aba831836cb418967ab9d25",
+    "source_directory": "examples/pptrans-demo.source",
+    "manifest_path": "examples/pptrans-demo.source/manifest.json",
+    "manifest_bytes": 5366,
+    "manifest_sha256": "57e663d26b0229a605ac40f0e87c04e462cdf2b67fdabce69fe96b2ef66cce2b",
+    "entry_count": 29,
+    "archive_compression": "ZIP_STORED",
+    "fixed_timestamp": "2026-08-28T00:34:00",
+    "standard_library_only": true,
+    "byte_identical_across_two_local_rebuilds": true,
+    "local_windows_python_matrix": [
+      {
+        "python": "3.10.11",
+        "distribution": "python-3.10.11-embed-amd64.zip",
+        "distribution_url": "https://www.python.org/ftp/python/3.10.11/python-3.10.11-embed-amd64.zip",
+        "distribution_sha256": "608619f8619075629c9c69f361352a0da6ed7e62f83a0e19c63e0ea32eb7629d",
+        "result_bytes": 87226,
+        "result_sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee",
+        "byte_identical": true
+      },
+      {
+        "python": "3.12.13",
+        "distribution": "workspace interpreter",
+        "result_bytes": 87226,
+        "result_sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee",
+        "byte_identical": true
+      },
+      {
+        "python": "3.13.15",
+        "distribution": "python-3.13.15-embed-amd64.zip",
+        "distribution_url": "https://www.python.org/ftp/python/3.13.15/python-3.13.15-embed-amd64.zip",
+        "distribution_sha256": "d1f04d990aee1253d8569e8e5104e30fa9f5fa830899f14843448872d936a2cf",
+        "result_bytes": 87226,
+        "result_sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee",
+        "byte_identical": true
+      }
+    ]
+  },
+  "lineage": {
+    "uncompressed_member_order_equal_to_prior_packages": true,
+    "uncompressed_member_payloads_equal_to_prior_packages": false,
+    "intentional_current_member_changes": [
+      "ppt/slides/slide1.xml",
+      "ppt/slides/_rels/slide1.xml.rels"
+    ],
+    "prior_source": {
+      "path": "examples/pptrans-demo.en.pptx",
+      "bytes": 18687,
+      "sha256": "dd36b4f92edf915942d4300aeebd1854a049acc521dfc29e78b286c774d8e9d8"
+    },
+    "prior_curated_target": {
+      "path": "examples/pptrans-demo.zh-CN.pptx",
+      "bytes": 18813,
+      "byte_identical_to_source": false,
+      "sha256": "bef11b42cddc9c8bfc4e9137995d592e0d910b3b88bbd556e48a9593ae14bb1f"
+    },
+    "scope": "This proves exact standard-library package reconstruction. The current source intentionally replaces the legacy public-repository hyperlink with an unreleased-local-showcase label; it is not a claim of independent semantic reauthoring, public branch availability, or licensing clearance."
+  },
+  "pipeline": {
+    "identity": {
+      "provider": "identity",
+      "network_access": false,
+      "translation_memory": false,
+      "source_language": "en",
+      "target_language": "en",
+      "verified_patches": 41,
+      "verified_spans": 45,
+      "provider_calls": 2
+    },
+    "curated_target": {
+      "provider": "curated-demo",
+      "model": "author-reviewed-zh-CN-v1",
+      "network_access": false,
+      "translation_memory": false,
+      "source_language": "en",
+      "target_language": "zh-CN",
+      "command": "python scripts/build_curated_demo.py examples/pptrans-demo.en.pptx examples/pptrans-demo.zh-CN.pptx --overwrite",
+      "builder_path": "scripts/build_curated_demo.py",
+      "builder_bytes": 6522,
+      "builder_sha256": "1d4819ce97ad006f06edb6a5f5e88d3c2a5c533fa7eabbad442232df38207000",
+      "provider_calls": 2,
+      "verified_patches": 41,
+      "verified_spans": 45,
+      "changed_parts": [
+        "ppt/slides/slide1.xml",
+        "ppt/slides/slide2.xml",
+        "ppt/slides/slide3.xml"
+      ]
+    }
+  },
+  "package_verification": {
+    "source_rebuild_byte_identical": true,
+    "curated_target_rebuild_byte_identical": true,
+    "zip_member_order_equal": true,
+    "all_members_stored": true,
+    "only_planned_slide_members_changed": true,
+    "unchanged_members_byte_identical": true,
+    "changed_slide_structure_verified": true,
+    "planned_and_unplanned_text_nodes_verified": true
+  },
+  "renderer": {
+    "backend": "libreoffice",
+    "libreoffice_version": "26.8.0.3",
+    "libreoffice_build": "bce0998afefdbc355585ca324285661a2170ba77",
+    "distribution": "LibreOffice_26.8.0.3_Win_x86-64.msi",
+    "distribution_sha256": "4aa6c6e1895f4055104effcb556bd3362d20c6ad707c149543304f395ef9db95",
+    "installation_mode": "administrative extraction into a disposable audit directory; no system installation",
+    "pymupdf_version": "1.28.2",
+    "dpi": 144,
+    "render_api": "LibreOfficeRenderer(executable=soffice).render(RenderRequest(deck, output_dir, dpi=144, timeout_seconds=180))",
+    "replay_script_path": "scripts/reproduce_native_demo.py",
+    "replay_script_bytes": 15637,
+    "replay_script_sha256": "772c3e223d8a6c5ea56f334fa2cd645fce98e9ccdbcfc7eccb37eb7abce0fdd0"
+  },
+  "presentations": {
+    "source": {
+      "path": "examples/pptrans-demo.en.pptx",
+      "bytes": 87226,
+      "sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee"
+    },
+    "identity_output": {
+      "bytes": 87226,
+      "sha256": "371d759efcd10c8384dde009e55b4c3ac103d4064a146dc7f46c0261bef396ee",
+      "byte_identical_to_source": true
+    },
+    "curated_target": {
+      "path": "examples/pptrans-demo.zh-CN.pptx",
+      "bytes": 86580,
+      "sha256": "d39dde859ca4231e9cfddbe9477bf345149bf7dac2fbc0c5774eb8c6682c4f46",
+      "byte_identical_to_source": false
+    }
+  },
+  "slides": [
+    {
+      "slide_number": 1,
+      "width": 1921,
+      "height": 1080,
+      "source_png_bytes": 67545,
+      "source_png_sha256": "6ed37590f53ade82115238d7ae73e8fb36c4364b1f0095a82601c3f671d97ee4",
+      "identity_png_bytes": 67545,
+      "identity_png_sha256": "6ed37590f53ade82115238d7ae73e8fb36c4364b1f0095a82601c3f671d97ee4",
+      "target_png_bytes": 71543,
+      "target_png_sha256": "a18d913d42595f8d7b14a90df09beb221618ea3a8f17133fc4b606f627b70ac1",
+      "identity_pixel_equal": true,
+      "target_dimensions_equal": true
+    },
+    {
+      "slide_number": 2,
+      "width": 1921,
+      "height": 1080,
+      "source_png_bytes": 77877,
+      "source_png_sha256": "3809cbcb6605a37f9400191f8fa0c62c2be629201c1d1c74b2ebade589a3371b",
+      "identity_png_bytes": 77877,
+      "identity_png_sha256": "3809cbcb6605a37f9400191f8fa0c62c2be629201c1d1c74b2ebade589a3371b",
+      "target_png_bytes": 87294,
+      "target_png_sha256": "3ad5688372f6c71e98d0784ddf5cc1923a6b7e242a2d1b41dd6925933b487b29",
+      "identity_pixel_equal": true,
+      "target_dimensions_equal": true
+    },
+    {
+      "slide_number": 3,
+      "width": 1921,
+      "height": 1080,
+      "source_png_bytes": 96606,
+      "source_png_sha256": "50148e0c59c73a6cbb466f590aa1a53ca1531a434c8be3a60e2dfb49f88436de",
+      "identity_png_bytes": 96606,
+      "identity_png_sha256": "50148e0c59c73a6cbb466f590aa1a53ca1531a434c8be3a60e2dfb49f88436de",
+      "target_png_bytes": 100623,
+      "target_png_sha256": "b2236a0bf2d87702e31bbec7f3fe96ea93c962e3cdad1a16318f140a9086acf8",
+      "identity_pixel_equal": true,
+      "target_dimensions_equal": true
+    }
+  ],
+  "cleanup": {
+    "private_render_workspace_present_after_success": false,
+    "publication_staging_present_after_success": false,
+    "libreoffice_process_present_after_success": false
+  },
+  "visual_review": {
+    "reviewed_slide_count": 6,
+    "reviewed_renderer": "LibreOffice",
+    "reviewed_at_original_resolution": true,
+    "clipping_detected": false,
+    "overlap_detected": false,
+    "off_slide_content_detected": false,
+    "notes": "Every source and curated-target PNG was inspected at 1921 x 1080 after the exact package rebuild; identity renders were pixel-equal to source. The revised slide-1 local-showcase labels are fully visible, and slides 2-3 remain byte-identical to the previously reviewed native PNGs."
+  },
+  "scope": [
+    "The target strings are a fixed, author-reviewed fixture mapping, not output from a paid or production translation provider.",
+    "This is one synthetic deck on one Windows and LibreOffice configuration.",
+    "The review does not measure translation quality on arbitrary text or longer-text layout fit.",
+    "LibreOffice acceptance does not establish pixel identity with Microsoft PowerPoint."
+  ]
+}

@@ -1,53 +1,196 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pptrans"
-version = "1.1.1"
-description = "Translate PowerPoint presentations using modern LLM providers with vision-based review"
+dynamic = ["version"]
+description = "Translate editable PowerPoint text with glossary-aware LLMs and verifiable OOXML preservation"
 readme = "README.md"
-requires-python = ">=3.10"
-license-files = ["LICENSE"]
+requires-python = ">=3.10,<3.14"
+license = "MIT"
+license-files = ["LICENSE", "NOTICE.md"]
 authors = [
-    {name = "Hehan Zhao", email = "80203549+Z-MarkUs@users.noreply.github.com"}
+    {name = "Hehan Zhao", email = "80203549+Z-MarkUs@users.noreply.github.com"},
 ]
-keywords = ["powerpoint", "translation", "llm", "ppt", "pptx", "multimodal"]
+keywords = [
+    "powerpoint",
+    "pptx",
+    "translation",
+    "localization",
+    "llm",
+    "document-automation",
+    "translation-memory",
+]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Office/Business",
     "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
 ]
-
 dependencies = [
-    "openai>=1.0.0",
-    "anthropic>=0.18.0",
-    "python-pptx>=0.6.21",
-    "python-dotenv>=1.0.0",
-    "pyyaml>=6.0",
-    "aiohttp>=3.9.0",
-    "Pillow>=10.0.0",
+    "lxml>=5.3,<7",
+    "Pillow>=10.4,<13",
+    "platformdirs>=4.3,<5",
+    "pydantic>=2.9,<3",
+    "python-dotenv>=1,<2",
+    "PyYAML>=6,<7",
+    "rich>=13.9,<15",
+    "typer>=0.15,<1",
 ]
 
 [project.optional-dependencies]
+anthropic = [
+    "anthropic>=0.40,<2",
+]
+openai = [
+    "openai>=2,<4",
+]
+review = [
+    "PyMuPDF>=1.24,<2",
+]
 dev = [
-    "pytest>=7.0.0",
-    "black>=23.0.0",
-    "ruff>=0.1.0",
+    "anthropic>=0.40,<2",
+    "bandit>=1.8,<2",
+    "build>=1.2,<2",
+    "hypothesis>=6.120,<7",
+    "lxml-stubs>=0.5,<1",
+    "markdown-it-py>=4.2,<5",
+    "mypy>=1.14,<2",
+    "openai>=2,<4",
+    "pip-audit>=2.8,<3",
+    "pre-commit>=4,<5",
+    "pytest>=8.3,<10",
+    "pytest-cov>=6,<8",
+    "pytest-socket>=0.8,<1",
+    "python-pptx>=1.0.2,<2",
+    "pypdf>=6.10,<7",
+    "reportlab==4.4.9",
+    "ruff>=0.9,<1",
+    "twine>=6,<7",
+    "types-PyYAML>=6.0.12,<7",
 ]
 
 [project.scripts]
-pptrans = "ppt_translator.cli:main"
+pptrans = "pptrans.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Z-MarkUs/PPTrans"
+Documentation = "https://github.com/Z-MarkUs/PPTrans#readme"
+Issues = "https://github.com/Z-MarkUs/PPTrans/issues"
+Source = "https://github.com/Z-MarkUs/PPTrans"
 
 [tool.setuptools]
-packages = ["ppt_translator", "ppt_translator.providers"]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pptrans.__version__"}
 
 [tool.setuptools.package-data]
-ppt_translator = ["py.typed"]
+pptrans = ["py.typed"]
 
+[tool.pytest.ini_options]
+addopts = [
+    "--strict-config",
+    "--strict-markers",
+    "--disable-socket",
+    "--cov=pptrans",
+    "--cov-branch",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-fail-under=90",
+]
+testpaths = ["tests"]
+xfail_strict = true
+
+[tool.coverage.run]
+branch = true
+source = ["pptrans"]
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+]
+show_missing = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["work", "dist", "build"]
+
+[tool.ruff.lint]
+select = [
+    "A",
+    "ASYNC",
+    "B",
+    "BLE",
+    "C4",
+    "DTZ",
+    "E",
+    "F",
+    "FA",
+    "FBT",
+    "FLY",
+    "FURB",
+    "I",
+    "ICN",
+    "LOG",
+    "N",
+    "PERF",
+    "PIE",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    "PTH",
+    "RUF",
+    "S",
+    "SIM",
+    "T20",
+    "TRY",
+    "UP",
+]
+ignore = [
+    "PLR0913",
+    "S101",
+    "TRY003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["PLR2004", "S101"]
+"scripts/**/*.py" = ["PLR0911", "T201"]
+"scripts/build_curated_demo.py" = ["RUF001"]
+"src/pptrans/cli.py" = ["FBT002", "PLR0917"]
+
+[tool.ruff.format]
+docstring-code-format = true
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unreachable = true
+pretty = true
+show_error_codes = true
+packages = ["pptrans"]
+
+[[tool.mypy.overrides]]
+module = ["pptx.*", "pymupdf.*"]
+ignore_missing_imports = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101"]

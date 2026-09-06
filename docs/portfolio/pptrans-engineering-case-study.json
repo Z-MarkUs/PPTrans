@@ -1,0 +1,154 @@
+{
+  "schema_version": "pptrans.engineering-case-study/v1",
+  "artifact": "output/pdf/PPTrans-Engineering-Case-Study.pdf",
+  "builder": "scripts/build_case_study.py",
+  "evidence_snapshot_date": "2026-08-31",
+  "verification_commit": "63a0e95b2187c4ad8ac247d98429a2be51f0725d",
+  "availability": {
+    "v2": "public-source pre-release engineering showcase",
+    "repository": "github.com/Z-MarkUs/PPTrans",
+    "package_release": "no stable package release yet",
+    "lineage": "substantial v2 re-architecture with repository history and upstream attribution retained; not represented as clean-room work or as unrelated to its predecessor"
+  },
+  "evidence": {
+    "tests": {
+      "display": "541",
+      "value": 541,
+      "source": "docs/qa/2026-08-31-local-test-audit.json",
+      "source_locations": [
+        "/test_run/passed"
+      ],
+      "scope": "passing tests in the complete local audit at verification_commit"
+    },
+    "coverage": {
+      "display": "92.12%",
+      "value_percent": 92.12,
+      "source": "docs/qa/2026-08-31-local-test-audit.json",
+      "source_locations": [
+        "/test_run/coverage_branch_aware_percent"
+      ],
+      "scope": "combined branch-aware coverage in the same complete local audit"
+    },
+    "property_examples": {
+      "display": "9,346",
+      "value": 9346,
+      "source": "docs/qa/2026-08-31-local-test-audit.json",
+      "source_locations": [
+        "/property_examples/total"
+      ],
+      "scope": "generated Unicode, order, path, and mutation examples configured in the deterministic property suite"
+    },
+    "demo": {
+      "display": "3 / 41 / 45",
+      "slides": 3,
+      "translation_units": 41,
+      "translated_spans": 45,
+      "source": "docs/qa/2026-08-31-exact-rebuild.json",
+      "source_locations": [
+        "/pipeline/curated_target"
+      ],
+      "scope": "current exact-rebuild synthetic fixture"
+    },
+    "changed_members": {
+      "display": "3",
+      "value": 3,
+      "source": "docs/qa/2026-08-31-exact-rebuild.json",
+      "source_locations": [
+        "/pipeline/curated_target/changed_parts"
+      ],
+      "scope": "curated zh-CN target changes exactly the three slide XML members; all other package members are byte-identical"
+    },
+    "benchmark": {
+      "display": "58.770 / 60.972 ms",
+      "median_ms": 58.77,
+      "p95_ms": 60.972,
+      "source": "benchmarks/results/2026-08-31-honest-showcase-ooxml-windows-python312.json",
+      "source_locations": [
+        "/median_ms",
+        "/p95_ms"
+      ],
+      "scope": "Windows 11, Python 3.12.13, deterministic local OOXML core, 3 warmups and 30 measured iterations"
+    },
+    "preview_units": {
+      "display": "41",
+      "value": 41,
+      "source": "docs/qa/2026-08-31-local-test-audit.json",
+      "source_locations": [
+        "/provider_preview/provider_units"
+      ],
+      "scope": "zero-memory-hit provider-work upper bound for the synthetic fixture"
+    },
+    "preview_calls": {
+      "display": "2",
+      "value": 2,
+      "source": "docs/qa/2026-08-31-local-test-audit.json",
+      "source_locations": [
+        "/provider_preview/provider_calls"
+      ],
+      "scope": "zero-memory-hit logical-call upper bound for the synthetic fixture"
+    },
+    "preview_source_context_chars": {
+      "display": "2,799",
+      "value": 2799,
+      "source": "docs/qa/2026-08-31-local-test-audit.json",
+      "source_locations": [
+        "/provider_preview/source_context_characters"
+      ],
+      "scope": "source and context character count, not tokens"
+    },
+    "preview_request_chars": {
+      "display": "8,867",
+      "value": 8867,
+      "source": "docs/qa/2026-08-31-local-test-audit.json",
+      "source_locations": [
+        "/provider_preview/request_characters"
+      ],
+      "scope": "total serialized request characters in the zero-hit plan, not price or latency"
+    },
+    "preview_largest_request_chars": {
+      "display": "5,903",
+      "value": 5903,
+      "source": "docs/qa/2026-08-31-local-test-audit.json",
+      "source_locations": [
+        "/provider_preview/largest_request_characters"
+      ],
+      "scope": "largest serialized request in the zero-hit plan"
+    },
+    "supported_python": {
+      "display": "3.10-3.13",
+      "minimum": "3.10",
+      "maximum": "3.13",
+      "source": ".github/workflows/ci.yml",
+      "source_locations": [
+        "jobs.compatibility.strategy.matrix",
+        "jobs.compatibility.steps[name=Set up Python].uses",
+        "jobs.compatibility.steps[name=Set up Python].with.python-version",
+        "jobs.quality.steps[name=Set up Python].uses",
+        "jobs.quality.steps[name=Set up Python].with.python-version"
+      ],
+      "scope": "configured CI compatibility matrix; the complete local suite audit covers Python 3.12.13 only, and no stable package release exists yet"
+    }
+  },
+  "visual_inputs": {
+    "source_render": {
+      "path": "docs/assets/pptrans-demo-libreoffice-en-slide-01.png",
+      "sha256": "6ed37590f53ade82115238d7ae73e8fb36c4364b1f0095a82601c3f671d97ee4"
+    },
+    "target_render": {
+      "path": "docs/assets/pptrans-demo-libreoffice-zh-CN-slide-01.png",
+      "sha256": "a18d913d42595f8d7b14a90df09beb221618ea3a8f17133fc4b606f627b70ac1"
+    },
+    "renderer": "LibreOffice 26.8.0.3",
+    "scope": "author-reviewed synthetic fixture; not Microsoft PowerPoint pixel identity or provider translation quality"
+  },
+  "claim_sources": [
+    ".github/workflows/ci.yml",
+    "README.md",
+    "pyproject.toml",
+    "docs/DEMO.md",
+    "docs/qa/2026-08-31-local-test-audit.json",
+    "docs/qa/2026-08-31-exact-rebuild.json",
+    "benchmarks/results/2026-08-31-honest-showcase-ooxml-windows-python312.json",
+    "NOTICE.md"
+  ]
+}

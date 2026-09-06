@@ -1,2 +1,17 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# The public OOXML source hashes exact UTF-8/LF payloads on every platform.
+examples/pptrans-demo.source/** text eol=lf
+scripts/rebuild_demo.py text eol=lf
+scripts/build_curated_demo.py text eol=lf
+scripts/reproduce_native_demo.py text eol=lf
+scripts/build_case_study.py text eol=lf
+docs/portfolio/pptrans-engineering-case-study.json text eol=lf
+docs/qa/*.json text eol=lf
+benchmarks/results/*.json text eol=lf
+.github/workflows/ci.yml text eol=lf
+
+# Never let checkout newline rules inspect or rewrite binary artifacts.
+*.pptx binary
+*.pdf binary

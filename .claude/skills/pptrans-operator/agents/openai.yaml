@@ -1,0 +1,7 @@
+interface:
+  display_name: "PPTrans Operator"
+  short_description: "Inspect and translate PPTX decks safely"
+  brand_color: "#6D5EF7"
+  default_prompt: "Use $pptrans-operator to inspect or translate a PPTX safely."
+policy:
+  allow_implicit_invocation: true
