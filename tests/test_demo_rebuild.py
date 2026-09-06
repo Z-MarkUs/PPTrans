@@ -130,8 +130,9 @@ def test_public_rebuild_preserves_existing_output_when_verified_stage_is_swapped
     def verify_then_swap_stage(path: Path, manifest: object) -> None:
         verify(path, manifest)
         if path != output:
-            path.unlink()
-            path.write_bytes(b"foreign-stage")
+            replacement = path.with_name(f"{path.name}.foreign")
+            replacement.write_bytes(b"foreign-stage")
+            replacement.replace(path)
 
     monkeypatch.setattr(builder, "_verify_built_package", verify_then_swap_stage)
 
@@ -156,8 +157,9 @@ def test_public_rebuild_detects_foreign_swap_after_published_verification(
     def verify_then_swap_published(path: Path, manifest: object) -> None:
         verify(path, manifest)
         if path == output:
-            path.unlink()
-            path.write_bytes(b"foreign-after-verify")
+            replacement = path.with_name(f"{path.name}.foreign")
+            replacement.write_bytes(b"foreign-after-verify")
+            replacement.replace(path)
 
     monkeypatch.setattr(builder, "_verify_built_package", verify_then_swap_published)
 

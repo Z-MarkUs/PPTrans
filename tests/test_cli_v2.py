@@ -12,6 +12,7 @@ from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.util import Inches, Pt
+from rich.text import Text
 from typer.testing import CliRunner, Result
 
 from pptrans import __version__
@@ -112,7 +113,7 @@ def test_help_and_version(runner: CliRunner) -> None:
 
     translate_help = runner.invoke(app, ["translate", "--help"])
     assert translate_help.exit_code == 0, translate_help.output
-    assert "--dry-run" in translate_help.stdout
+    assert "--dry-run" in Text.from_ansi(translate_help.stdout).plain
 
     version_result = runner.invoke(app, ["--version"])
     assert version_result.exit_code == 0, version_result.output

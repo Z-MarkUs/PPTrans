@@ -437,8 +437,10 @@ def test_checker_rejects_symlink_traversal_when_supported(tmp_path: Path) -> Non
 
     result = checker.check_repository(root, _tracked("source.md", "linked.md"))
 
-    assert len(result.errors) == 1
-    assert "link resolves outside the repository" in result.errors[0]
+    assert result.errors == (
+        "linked.md: tracked Markdown source is missing or linked",
+        "source.md:1: link resolves outside the repository: 'linked.md'",
+    )
 
 
 def test_checker_rejects_misleading_path_like_labels_and_sorts_failures(tmp_path: Path) -> None:

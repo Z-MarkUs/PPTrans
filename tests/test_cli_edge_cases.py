@@ -175,7 +175,10 @@ def test_untrusted_error_path_does_not_execute_rich_markup(tmp_path: Path) -> No
     )
 
     assert result.exit_code == 2
-    assert "[bold]missing.pptx" in result.output
+    rendered = result.output
+    assert "\x1b" not in rendered
+    assert "\x9b" not in rendered
+    assert "[bold]missing.pptx" in "".join(rendered.split())
 
 
 def test_human_translation_uses_sanitized_default_output_and_glossary(tmp_path: Path) -> None:
