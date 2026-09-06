@@ -11,7 +11,7 @@ Build changes that keep editable PowerPoint output reliable, provider behavior e
 
 - For OOXML inspection, stable locators, text patching, preservation verification, tables, groups, rendering, or provider boundaries, read [architecture](references/architecture.md).
 - For tests, fixture design, benchmarks, package checks, or completion evidence, read [verification](references/verification.md).
-- For versioning, publishing, release notes, provenance, or GitHub release preparation, read [release guidance](references/release.md).
+- For versioning, publishing, release notes, attribution, or GitHub release preparation, read [release guidance](references/release.md).
 
 Read only the references relevant to the current request. Inspect the current code before relying on a reference when implementation details may have changed.
 
@@ -28,4 +28,4 @@ Read only the references relevant to the current request. Inspect the current co
 
 ## Complete the change
 
-Run focused checks while iterating and the applicable repository gates before finishing. Report what passed, what was skipped, and why. Every external repository mutation requires explicit user authorization; publishing a release additionally requires the provenance gate in `NOTICE.md` to be resolved.
+Run focused checks while iterating and the applicable repository gates before finishing. Report what passed, what was skipped, and why. Every external repository mutation requires explicit user authorization. Authorization to publish a public source branch does not authorize a versioned tag, GitHub release, package-index upload, or live-host settings change; each release action also requires the completed release checklist and host-workflow migration.

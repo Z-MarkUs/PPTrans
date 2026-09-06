@@ -27,8 +27,8 @@ SHA256_HEX_LENGTH = 64
 DEMO_FIXED_TIMESTAMP = [2026, 8, 28, 0, 34, 0]
 CURRENT_QA_SUFFIX = "docs/qa/2026-08-31-exact-rebuild.json"
 CURRENT_QA_CANONICAL_SHA256 = "462eef3c18c1cd00dfbf4e7a6521791564c4962fb7fc88bdb84eeff7a436270b"
-CASE_STUDY_QA_SUFFIX = "docs/qa/2026-08-31-case-study.json"
-CASE_STUDY_QA_CANONICAL_SHA256 = "9d1005a1a014a7162590a33894a1ffc7e5218bb9ac6e2106210218422eb5315f"
+CASE_STUDY_QA_SUFFIX = "docs/qa/2026-09-06-case-study.json"
+CASE_STUDY_QA_CANONICAL_SHA256 = "c8367e0254f6b90e70cd70e9b6761197d8dfbe30ec64e5721e2d286234d2098a"
 CASE_STUDY_PDF_SUFFIX = "output/pdf/PPTrans-Engineering-Case-Study.pdf"
 CASE_STUDY_PACKAGED_INPUTS = {
     ".github/workflows/ci.yml",
@@ -94,6 +94,7 @@ SDIST_REQUIRED_SUFFIXES = {
     "docs/qa/2026-08-28-curated-zh-cn.json",
     "docs/qa/2026-08-28-windows-libreoffice.json",
     "docs/qa/2026-08-31-case-study.json",
+    CASE_STUDY_QA_SUFFIX,
     "docs/qa/2026-08-31-local-test-audit.json",
     CURRENT_QA_SUFFIX,
     "examples/pptrans-demo.source/manifest.json",

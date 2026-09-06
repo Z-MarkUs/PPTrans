@@ -4,7 +4,7 @@
 
 [English](README.md) | 简体中文
 
-**求职附件：** [PPTrans 单页工程案例 PDF](output/pdf/PPTrans-Engineering-Case-Study.pdf)将个人职责、架构、可视化证明、量化证据与边界压缩为适合招聘方快速阅读的 A4 页面。它明确标为未发布、未公开的本地 v2 展示版，不含指向旧版公开 `main` 分支的链接；所有数字来自带适用范围的[证据账本](docs/portfolio/pptrans-engineering-case-study.json)。[案例说明](docs/portfolio/README.md)提供评估入口，以及从干净环境开始的准确安装与重建命令。
+**求职附件：** [PPTrans 单页工程案例 PDF](output/pdf/PPTrans-Engineering-Case-Study.pdf)将个人职责、架构、可视化证明、量化证据与边界压缩为适合招聘方快速阅读的 A4 页面。它将 v2 呈现为预发布工程展示版；所有数字来自带适用范围的[证据账本](docs/portfolio/pptrans-engineering-case-study.json)。[案例说明](docs/portfolio/README.md)提供评估入口，以及从干净环境开始的准确安装与重建命令。
 
 ## 60 秒概览
 
@@ -24,21 +24,21 @@
 | --- | --- |
 | ![LibreOffice 原生渲染的英文 demo 封面：“Translate PowerPoint. Preserve the PowerPoint.”](docs/assets/pptrans-demo-libreoffice-en-slide-01.png) | ![LibreOffice 原生渲染的简体中文 demo 封面：“翻译 PowerPoint。保留 PowerPoint 结构。”，版式保持一致](docs/assets/pptrans-demo-libreoffice-zh-CN-slide-01.png) |
 
-可下载[英文源 deck](examples/pptrans-demo.en.pptx)与[已验证的简体中文输出](examples/pptrans-demo.zh-CN.pptx)，检查英文 deck 的[规范 OOXML 源文件](examples/pptrans-demo.source/manifest.json)，或运行只依赖 Python 标准库的[精确重建脚本](scripts/rebuild_demo.py)。演示文稿封面特意标明 `PPTrans v2 • 未发布的本地展示版`，且不包含指向旧版公开 `main` 分支的链接；本页证据只对应这棵本地 v2 源码树。上图是 LibreOffice 26.8.0.3 的精确原生渲染，不是制作工具预览。目标文本是人工复核的固定测试数据，并通过真实的精确 ID 补丁、验证与发布流水线；这证明 OOXML 确实改字且结构受到保护，不代表生产服务商的翻译质量。六张原生前后对比图、固定哈希、适用边界与[本地重放脚本](scripts/reproduce_native_demo.py)见 [demo 说明](docs/DEMO.md)。
+可下载[英文源 deck](examples/pptrans-demo.en.pptx)与[已验证的简体中文输出](examples/pptrans-demo.zh-CN.pptx)，检查英文 deck 的[规范 OOXML 源文件](examples/pptrans-demo.source/manifest.json)，或运行只依赖 Python 标准库的[精确重建脚本](scripts/rebuild_demo.py)。演示文稿封面将 v2 标为预发布展示版；请结合本仓库公开源码及有明确范围的证据进行评估。上图是 LibreOffice 26.8.0.3 的精确原生渲染，不是制作工具预览。目标文本是人工复核的固定测试数据，并通过真实的精确 ID 补丁、验证与发布流水线；这证明 OOXML 确实改字且结构受到保护，不代表生产服务商的翻译质量。六张原生前后对比图、固定哈希、适用边界与[本地重放脚本](scripts/reproduce_native_demo.py)见 [demo 说明](docs/DEMO.md)。
 
 ## 我的角色与贡献
 
-PPTrans 由 Hehan Zhao 维护。v2 中，我确定了产品方向与安全标准，并主导当前端到端重构：防御式 OOXML 检查、稳定 ID 服务商契约、事务式补丁/验证/发布、确定性测试与 CI，以及展示 demo。我不会把整个仓库历史描述为 clean-room 原创；导入上游的来源问题已记录在 [NOTICE.md](NOTICE.md)，并且仍阻止新版本发布。
+PPTrans 由 Hehan Zhao 维护。v2 中，我确定了产品方向与安全标准，并主导当前端到端重构：防御式 OOXML 检查、稳定 ID 服务商契约、事务式补丁/验证/发布、确定性测试与 CI，以及展示 demo。仓库在 [NOTICE.md](NOTICE.md) 中保留导入上游的历史与署名；我不会把 v2 描述为 clean-room 原创，也不会声称它与这段历史无关。
 
 ## 版本状态
 
 | 轨道 | 状态 | 含义 | 建议用途 |
 | --- | --- | --- | --- |
 | v1.1.x | 已发布的旧版本 | 早期实现，不代表 v2 的完整性架构 | 仅作历史参考 |
-| v2 / `2.0.0a1` | 未发布的展示版本 | 当前架构、测试、改字 demo 与原生 QA | 仅从源码评估；不是已发布软件包 |
+| v2 / `2.0.0a1` | 公开源码的预发布版本 | 当前架构、测试、改字 demo 与原生 QA | 从源码安装评估；尚无稳定 v2 软件包版本 |
 
 > [!IMPORTANT]
-> `2.0.0a1` 仍是未发布的开发版本，请从源码安装评估。由于 [NOTICE.md](NOTICE.md) 记录的来源与上游许可问题尚未解决，目前不得发布新软件包或新版本。
+> `2.0.0a1` 是公开供评估的开发预发布源码，并非稳定的 v2 软件包或正式版本；请直接从本仓库安装。
 
 ## 架构：可验证的文本补丁事务
 
@@ -78,7 +78,7 @@ flowchart LR
 
 ## 五分钟源码快速体验
 
-PPTrans v2 尚未发布；在来源门禁解决前，经过审计的 v2 源码树也尚未公开。以下命令假定你已经签出包含本 README 的 v2 源码树、安装了受支持的 CPython 3.10–3.13，并且终端位于仓库根目录。
+PPTrans v2 是公开的预发布源码，但尚未发布稳定的 v2 软件包或正式版本。以下命令假定你已经签出本仓库、安装了受支持的 CPython 3.10–3.13，并且终端位于仓库根目录。
 
 创建虚拟环境：
 
@@ -159,9 +159,9 @@ PPTrans 不会搜索 dotenv 文件，也不会暗中选择付费模型。Anthrop
 - [CLI 无副作用预览测试](tests/test_cli_v2.py)把凭证加载、付费 SDK 导入、服务商构造、socket、翻译记忆、输出预检与写入设为触发即失败的边界，并验证 `--dry-run` 的成功 payload 不显示源路径或幻灯片文本、预算失败会在服务商边界前停止、重复术语错误不会泄露私密词条、源文件保持不变且不生成目标文件；[demo 工作量测试](tests/test_public_demo.py)固定上述精确预览值。
 - [审查基础安全测试](tests/test_security_review_foundation.py)扫描 v2 包中的动态执行调用，并验证 renderer/图片边界。
 - [展示 demo 与仓库工具测试](tests/)从 29 个固定哈希的 OOXML 成员重建英文 deck，逐字节重建中文目标，固定两个构建脚本与原生重放脚本、精确变化成员与 ZIP 字段，并把每张原生 PNG 绑定到当前的[精确重建验收记录](docs/qa/2026-08-31-exact-rebuild.json)。[原生重放脚本](scripts/reproduce_native_demo.py)可用精确 LibreOffice build 重建 identity 输出和全部九张渲染；普通 CI 无需安装 LibreOffice，只验证已提交证据。
-- [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、文档完整性、打包、有超时边界的多系统测试、隔离运行且覆盖全部依赖集合的每周审计、CodeQL 与完整历史 secret scan；Actions 固定到 commit SHA，scanner 压缩包也固定并校验 SHA-256。来源问题未解决时，版本 tag 的打包 gate 会失败关闭；线上仓库仍必须用 tag rules 限制版本 tag 的创建。
+- [CI 与安全工作流](.github/workflows/)配置 lint、严格类型、覆盖率、文档完整性、打包、有超时边界的多系统测试、隔离运行且覆盖全部依赖集合的每周审计、CodeQL 与完整历史 secret scan；Actions 固定到 commit SHA，scanner 压缩包也固定并校验 SHA-256。公开源码并不等于发布稳定软件包；版本 tag 与发布产物仍受独立门禁和线上仓库控制约束。
 
-[pyproject.toml](pyproject.toml) 中可查看配置的含分支统计综合覆盖率下限。成功的工作流只代表其对应的 workflow 与 commit，不代表所有 PowerPoint 格式或翻译质量都已被证明。只有在经过审计的 v2 工作流公开且通过后，才会恢复公开 badge。
+[pyproject.toml](pyproject.toml) 中可查看配置的含分支统计综合覆盖率下限。成功的工作流只代表其对应的 workflow 与 commit，不代表所有 PowerPoint 格式或翻译质量都已被证明。公开 badge 应只反映已在公开 v2 源码上成功运行的工作流。
 
 ### Benchmark 状态
 
@@ -215,8 +215,8 @@ src/pptrans/
 - [未发布变更日志](CHANGELOG.md)
 - [来源与许可说明](NOTICE.md)
 
-## 贡献、来源与发布状态
+## 贡献、来源与版本状态
 
 贡献应使用合成 fixture、确定性 provider double，并运行适用的[质量门禁](docs/QUALITY_GATES.md)。请勿提交凭证、私人演示文稿、包含用户数据的服务商响应、生成的客户内容或翻译记忆库。
 
-Git 历史包含从上游导入的材料，而上游存在有力但不完整的 MIT 许可证据：上游在首个源码提交前已声明采用 MIT，并在本仓库实际导入的快照中重复该声明；但其引用的根目录许可证并不存在，完整 MIT 文本后来也只出现在嵌套的技能副本旁。当前工程工作不会抹去这段来源，也不能自动建立再分发权。在复用、打包或发布前必须阅读 [NOTICE.md](NOTICE.md)。该文件记录事实时间线，不构成法律意见。
+Git 历史包含从 [tristan-mcinnis/PPT-Translator-Formatting-Intact-with-LLMs](https://github.com/tristan-mcinnis/PPT-Translator-Formatting-Intact-with-LLMs) 导入的材料；该上游 README 将项目标为 MIT 许可。PPTrans v2 是一次大规模重新架构，但在用途、历史与署名上仍与该项目相连，不会被描述为 clean-room 或无关项目。公开源码依照 [MIT License](LICENSE) 分发，简明来源记录见 [NOTICE.md](NOTICE.md)。目前尚未发布稳定的 v2 软件包或正式版本。

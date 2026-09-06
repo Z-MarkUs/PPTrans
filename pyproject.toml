@@ -8,6 +8,7 @@ dynamic = ["version"]
 description = "Translate editable PowerPoint text with glossary-aware LLMs and verifiable OOXML preservation"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
+license = "MIT"
 license-files = ["LICENSE", "NOTICE.md"]
 authors = [
     {name = "Hehan Zhao", email = "80203549+Z-MarkUs@users.noreply.github.com"},

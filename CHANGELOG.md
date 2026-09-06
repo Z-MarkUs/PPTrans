@@ -4,7 +4,7 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and u
 
 ## [2.0.0a1] - Unreleased
 
-This alpha is active development, not a release candidate. Publication is blocked by the unresolved provenance and upstream-licensing gate in [NOTICE.md](NOTICE.md).
+This alpha is active development, not a release candidate. The attributed v2 source may be published publicly, but a versioned tag, GitHub release, or package-index upload remains blocked until separately authorized and the normal release checklist and live-host workflow migration are complete.
 
 ### Added
 
@@ -57,12 +57,12 @@ This alpha is active development, not a release candidate. Publication is blocke
 - Deterministic core benchmark evidence was refreshed from a clean commit with recomputable per-iteration samples while retaining earlier aggregate-only results as immutable history.
 - A repository-owned offline documentation gate now verifies every tracked Markdown destination, fragment, exact-cased path, and local image; CI and pre-commit run it automatically.
 - CI now bounds every job, avoids persisting checkout credentials, prevents duplicate feature-branch push runs, isolates scheduled runs from push cancellation, audits runtime/development/review dependencies weekly while host scheduling remains active, and runs CodeQL plus full-history secret scanning for versioned tags.
-- Version-tag package CI now fails closed for tags created from the guarded tree while the recorded upstream provenance gate remains unresolved; release guidance also records the required live tag rules and legacy-workflow/credential shutdown that repository files cannot enforce retroactively.
+- Version-tag package CI now fails closed while v2 is prerelease work without separately recorded release authorization; release guidance also records the required checklist, live tag rules, and legacy-workflow/credential migration that repository files cannot enforce retroactively.
 - A privacy-oriented required bug form with blank-issue bypass disabled, plus a compact evidence-focused pull-request template, operationalizes the repository's contribution and security guidance.
 - The checksum-pinned Gitleaks binary was refreshed to v8.30.0 after its detection control and full-history scan passed; maintenance guidance now records a manual scanner-review cadence because Dependabot cannot update a downloaded binary pin.
 - The identity-demo QA record now pins its padded-canvas harness command, renderer, dimensions, padding, input hash, and rerun timestamp instead of recording only a bare pass result.
 - The showcase packages now use fixed `ZIP_STORED` members so byte identity does not depend on a zlib implementation; CI rebuilds the English fixture across the supported operating-system/Python matrix, and the curated target remains byte-reproducible through PPTrans itself.
-- The showcase cover now identifies v2 as an unreleased local build and removes the hyperlink to the legacy public `main` branch, with exact native renders and deterministic package hashes refreshed to match.
+- The showcase cover now identifies v2 as an unreleased alpha build, with exact native renders and deterministic package hashes refreshed to match.
 - Agent-skill synchronization, validation, discovery checks, tests, and source-distribution inventory now cover both the engineering and operator skills as one fail-closed inventory.
 
 ### Security
@@ -96,6 +96,6 @@ This alpha is active development, not a release candidate. Publication is blocke
 
 - The review modules are not yet wired into an end-to-end multimodal provider, CLI review command, or repair executor.
 - The committed benchmark covers only local deterministic core processing; provider latency/cost, translation quality, rendering, and maximum practical deck size remain unbenchmarked.
-- The licensing issue in [NOTICE.md](NOTICE.md) must be resolved before package publication or another release.
+- A versioned release still requires separate authorization, completion of the release checklist, and migration of the legacy live-host release workflow and credentials.
 
 Earlier repository changes predate this structured changelog. Consult Git history and prior GitHub release notes for legacy-version history; v2 guarantees must not be projected onto those releases.

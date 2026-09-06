@@ -49,7 +49,7 @@ BENCHMARK_ITERATIONS = 30
 MAX_LEDGER_DISPLAY_CHARACTERS = 80
 PDF_POINT_TOLERANCE = 0.01
 PDF_ID_COMPONENT_COUNT = 2
-EXPECTED_PDF_SHA256 = "d1655b56fcffbe2c9c15673ff39a2bb4ead8d55ea4bdee6f6d10a558a30af641"
+EXPECTED_PDF_SHA256 = "8da4e2134f168b94559ebeff2c51ecf4267b0717a46a76d22e0261a26a3ca6d3"
 EXPECTED_PDF_ID_BYTES = bytes.fromhex("ec9437ccae69cc9984c7b2483e4a70e0")
 EXPECTED_SETUP_PYTHON_ACTION = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
 EXPECTED_CI_WORKFLOW_SHA256 = "798255206cc27354b06767f0f59db3a24223326ca81c30ce5f09a72da0f1c8ad"
@@ -822,7 +822,7 @@ def _draw_document(canvas: Canvas) -> None:  # noqa: PLR0915 - explicit one-page
     canvas.drawCentredString(
         PAGE_WIDTH - margin - status_badge_width / 2,
         806.2,
-        "V2 LOCAL / NON-PUBLIC / UNRELEASED",
+        "V2 PUBLIC SOURCE / PRE-RELEASE",
     )
 
     canvas.setFillColor(HexColor("#B9C9D8"))
@@ -1023,10 +1023,10 @@ def _draw_document(canvas: Canvas) -> None:  # noqa: PLR0915 - explicit one-page
     )
     _draw_paragraph(
         canvas,
-        "PPTrans v2 is an <b>unreleased, non-public local engineering showcase</b>. The "
-        "public main branch is legacy and is intentionally not linked here. Repository "
-        "history is not presented as clean-room work; another package or release remains "
-        "blocked pending upstream provenance/licensing clarification documented in NOTICE.md.",
+        "PPTrans v2 is a <b>public-source pre-release engineering showcase</b>. It is a "
+        "substantial re-architecture with repository history and upstream attribution "
+        "retained; it is not presented as clean-room work or as unrelated to its predecessor. "
+        "No stable package release has been published yet.",
         _style("status-body", size=7.5, leading=9.5, color=INK),
         margin + 13,
         footer_y + footer_height - 28,
@@ -1048,8 +1048,8 @@ def _draw_document(canvas: Canvas) -> None:  # noqa: PLR0915 - explicit one-page
     canvas.drawString(
         margin,
         29,
-        "Demo: examples/pptrans-demo.en.pptx -> examples/pptrans-demo.zh-CN.pptx | "
-        "Private v2 source available on request",
+        "Source: github.com/Z-MarkUs/PPTrans | Demo: examples/pptrans-demo.en.pptx -> "
+        "examples/pptrans-demo.zh-CN.pptx",
     )
     canvas.setFont("Helvetica", 6.6)
     canvas.drawString(
@@ -1256,10 +1256,12 @@ def _validate_pdf(payload: bytes) -> None:
     text = page.extract_text() or ""
     required_text = (
         "PPTrans",
-        "V2 LOCAL / NON-PUBLIC / UNRELEASED",
+        "V2 PUBLIC SOURCE / PRE-RELEASE",
         "examples/pptrans-demo.en.pptx",
         "examples/pptrans-demo.zh-CN.pptx",
-        "Private v2 source available on request",
+        "public-source pre-release engineering showcase",
+        "github.com/Z-MarkUs/PPTrans",
+        "No stable package release has been published yet",
         "WHAT I ENGINEERED",
         "NO-SPEND PROVIDER PREVIEW",
         "MEASURED EVIDENCE",
@@ -1273,7 +1275,7 @@ def _validate_pdf(payload: bytes) -> None:
     missing_text = [fragment for fragment in required_text if fragment not in text]
     if missing_text:
         raise ValueError(f"case-study PDF is missing selectable text: {missing_text}")
-    forbidden_text = ("http://", "https://", "file://", str(REPO_ROOT), "github.com/Z-MarkUs")
+    forbidden_text = ("http://", "https://", "file://", str(REPO_ROOT))
     present_text = [fragment for fragment in forbidden_text if fragment in text]
     if present_text:
         raise ValueError(f"case-study PDF exposes a forbidden destination: {present_text}")

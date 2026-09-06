@@ -2,7 +2,7 @@
 
 PPTrans v2 is being rebuilt around a narrow promise: translate editable `.pptx` text while changing as little of the OOXML package as possible. Contributions are welcome when they preserve that promise and make their evidence easy to review.
 
-Before contributing, read the [provenance notice](NOTICE.md). The upstream licensing question recorded there is unresolved, so package publication and release work remain gated even when the code is technically ready.
+Before contributing, read the attribution and provenance record in [NOTICE.md](NOTICE.md) and preserve the notices required by [LICENSE](LICENSE). Public source development is distinct from a versioned tag, GitHub release, or package-index publication; those release actions require separate authorization and the full release gate even when the code is technically ready.
 
 ## Set up a development environment
 
@@ -106,4 +106,4 @@ Include:
 - documentation changes;
 - migration or compatibility impact.
 
-Use [SECURITY.md](SECURITY.md) for vulnerabilities rather than opening a public issue with exploit details. Releases remain subject to the provenance gate in [NOTICE.md](NOTICE.md).
+Use [SECURITY.md](SECURITY.md) for vulnerabilities rather than opening a public issue with exploit details. A versioned release remains subject to separate authorization, the release checklist, and the live-host workflow migration described in [docs/QUALITY_GATES.md](docs/QUALITY_GATES.md).

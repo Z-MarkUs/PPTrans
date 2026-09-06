@@ -222,7 +222,7 @@ def _inspect_qa_fixture(checker: ModuleType, path: Path) -> tuple[str, ...]:
 
 def _case_study_sdist_fixture(tmp_path: Path, mutation: str | None = None) -> Path:
     fixture_root = tmp_path / f"case-study-fixture-{mutation or 'valid'}"
-    qa_relative = Path("docs/qa/2026-08-31-case-study.json")
+    qa_relative = Path("docs/qa/2026-09-06-case-study.json")
     qa_path = fixture_root / qa_relative
     qa_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(REPO_ROOT / qa_relative, qa_path)
@@ -1000,15 +1000,34 @@ def test_installed_version_checker_requires_runtime_metadata_and_exact_tag_agree
     )
 
 
-def test_release_policy_machine_enforces_the_recorded_provenance_gate(
+def test_release_policy_machine_enforces_prerelease_and_manual_release_gates(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     checker = _load_script("check_release_policy.py")
 
-    assert checker.release_policy_failures("cleared") == ()
-    assert checker.release_policy_failures() == (checker.BLOCK_MESSAGE,)
+    assert (
+        checker.release_policy_failures(
+            "release-ready",
+            manual_authorized=True,
+            checklist_complete=True,
+            host_workflow_migration_complete=True,
+        )
+        == ()
+    )
+    assert checker.release_policy_failures() == (
+        checker.PRERELEASE_MESSAGE,
+        checker.AUTHORIZATION_MESSAGE,
+        checker.CHECKLIST_MESSAGE,
+        checker.HOST_WORKFLOW_MESSAGE,
+    )
+    assert checker.release_policy_failures("release-ready") == (
+        checker.AUTHORIZATION_MESSAGE,
+        checker.CHECKLIST_MESSAGE,
+        checker.HOST_WORKFLOW_MESSAGE,
+    )
     assert checker.main(["--tag", "v2.0.0a1"]) == 1
-    assert "v2.0.0a1: release blocked" in capsys.readouterr().err
+    error = capsys.readouterr().err
+    assert "v2.0.0a1: release blocked: PPTrans v2 remains prerelease work" in error
 
 
 def test_benchmark_output_guards_source_aliases_and_existing_files(tmp_path: Path) -> None:

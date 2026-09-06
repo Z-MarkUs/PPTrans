@@ -98,4 +98,4 @@ Built-in paid-provider clients ignore ambient proxy and TLS-routing environment 
 
 ## Release status
 
-Version `2.0.0a1` is unreleased development work. It is not a release candidate, and the unresolved provenance/licensing gate in [NOTICE.md](../NOTICE.md) must be addressed before another package or release is published. See [CHANGELOG.md](../CHANGELOG.md) for the current alpha scope.
+Version `2.0.0a1` is prerelease development work, not a release candidate. Its attributed source may be public, but no versioned tag, GitHub release, or package-index publication is authorized until the separate release authorization, checklist, and live-host workflow migration gates are complete. See [NOTICE.md](../NOTICE.md) for attribution and [CHANGELOG.md](../CHANGELOG.md) for the current alpha scope.

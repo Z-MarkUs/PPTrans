@@ -5,9 +5,10 @@
   "evidence_snapshot_date": "2026-08-31",
   "verification_commit": "63a0e95b2187c4ad8ac247d98429a2be51f0725d",
   "availability": {
-    "v2": "unreleased, non-public local engineering showcase",
-    "public_main": "legacy implementation, not evidence for v2",
-    "release_gate": "blocked pending the upstream provenance/licensing clarification in NOTICE.md"
+    "v2": "public-source pre-release engineering showcase",
+    "repository": "github.com/Z-MarkUs/PPTrans",
+    "package_release": "no stable package release yet",
+    "lineage": "substantial v2 re-architecture with repository history and upstream attribution retained; not represented as clean-room work or as unrelated to its predecessor"
   },
   "evidence": {
     "tests": {
@@ -125,7 +126,7 @@
         "jobs.quality.steps[name=Set up Python].uses",
         "jobs.quality.steps[name=Set up Python].with.python-version"
       ],
-      "scope": "configured CI compatibility matrix; the complete local suite audit covers Python 3.12.13 only, and public v2 workflows are not yet published"
+      "scope": "configured CI compatibility matrix; the complete local suite audit covers Python 3.12.13 only, and no stable package release exists yet"
     }
   },
   "visual_inputs": {

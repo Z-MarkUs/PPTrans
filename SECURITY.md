@@ -2,7 +2,7 @@
 
 PPTrans processes ZIP/XML office documents, sends selected text to optional cloud providers, persists an optional local translation cache, and can invoke LibreOffice for optional slide rendering. Each boundary can carry sensitive or hostile data.
 
-The v2 code is currently `2.0.0a1` and unreleased. Security work targets the active v2 development branch. Published 1.x artifacts use the legacy architecture and should not be assumed to have the safeguards described in the v2 [threat model](docs/THREAT_MODEL.md).
+The public v2 source is currently `2.0.0a1` prerelease development work, not a versioned package or GitHub release. Security work targets the active v2 development branch. Published 1.x artifacts use the legacy architecture and should not be assumed to have the safeguards described in the v2 [threat model](docs/THREAT_MODEL.md).
 
 ## Report a vulnerability privately
 

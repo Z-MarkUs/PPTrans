@@ -4,7 +4,7 @@
 
 [简体中文](README.zh-CN.md)
 
-**Job-application attachment:** the [one-page PPTrans engineering case study](output/pdf/PPTrans-Engineering-Case-Study.pdf) compresses the role, architecture, visual proof, measured evidence, and limitations into a recruiter-ready A4 PDF. It is explicitly labeled as an unreleased, non-public local v2 showcase, contains no link to the legacy public `main` branch, and is reproducible from its [scoped claim ledger](docs/portfolio/pptrans-engineering-case-study.json). The [case-study guide](docs/portfolio/README.md) provides evaluator links and the exact clean setup and rebuild commands.
+**Job-application attachment:** the [one-page PPTrans engineering case study](output/pdf/PPTrans-Engineering-Case-Study.pdf) compresses the role, architecture, visual proof, measured evidence, and limitations into a recruiter-ready A4 PDF. It presents v2 as a pre-release engineering showcase and is reproducible from its [scoped claim ledger](docs/portfolio/pptrans-engineering-case-study.json). The [case-study guide](docs/portfolio/README.md) provides evaluator links and the exact clean setup and rebuild commands.
 
 ## 60-second overview
 
@@ -24,21 +24,21 @@
 | --- | --- |
 | ![Native LibreOffice render of the English demo cover: “Translate PowerPoint. Preserve the PowerPoint.”](docs/assets/pptrans-demo-libreoffice-en-slide-01.png) | ![Native LibreOffice render of the Simplified Chinese demo cover: “翻译 PowerPoint。保留 PowerPoint 结构。” with the same layout](docs/assets/pptrans-demo-libreoffice-zh-CN-slide-01.png) |
 
-Download the [English source deck](examples/pptrans-demo.en.pptx) and [verified zh-CN output](examples/pptrans-demo.zh-CN.pptx), inspect the English deck's [canonical OOXML source](examples/pptrans-demo.source/manifest.json), or run its standard-library-only [exact rebuild](scripts/rebuild_demo.py). The images above are exact native LibreOffice 26.8.0.3 renders, not authoring previews. The cover deliberately labels v2 as an unreleased local showcase and contains no repository hyperlink, so a recruiter cannot mistake the public legacy `main` branch for this audited tree. The target strings are author-reviewed fixture data routed through the real exact-ID patch/verify/publish pipeline; this demonstrates changed OOXML and preservation behavior, not production-provider translation quality. All six native before/after images, their pinned hashes, scope, and the [local replay command](scripts/reproduce_native_demo.py) are in the [demo notes](docs/DEMO.md).
+Download the [English source deck](examples/pptrans-demo.en.pptx) and [verified zh-CN output](examples/pptrans-demo.zh-CN.pptx), inspect the English deck's [canonical OOXML source](examples/pptrans-demo.source/manifest.json), or run its standard-library-only [exact rebuild](scripts/rebuild_demo.py). The images above are exact native LibreOffice 26.8.0.3 renders, not authoring previews. The cover identifies v2 as a pre-release showcase; evaluate it together with the public source and scoped evidence in this repository. The target strings are author-reviewed fixture data routed through the real exact-ID patch/verify/publish pipeline; this demonstrates changed OOXML and preservation behavior, not production-provider translation quality. All six native before/after images, their pinned hashes, scope, and the [local replay command](scripts/reproduce_native_demo.py) are in the [demo notes](docs/DEMO.md).
 
 ## My role and contributions
 
-PPTrans is maintained by Hehan Zhao. For v2, I defined the product direction and safety bar and led the current end-to-end re-architecture: defensive OOXML inspection, stable-ID provider contracts, transactional patch/verify/publish behavior, deterministic tests and CI, and the showcase demo. I do not present the repository history as clean-room work; imported-upstream provenance remains documented in [NOTICE.md](NOTICE.md) and currently blocks another release.
+PPTrans is maintained by Hehan Zhao. For v2, I defined the product direction and safety bar and led the current end-to-end re-architecture: defensive OOXML inspection, stable-ID provider contracts, transactional patch/verify/publish behavior, deterministic tests and CI, and the showcase demo. The repository retains its imported-upstream lineage and attribution in [NOTICE.md](NOTICE.md); I do not present v2 as clean-room work or as unrelated to that history.
 
 ## Version status
 
 | Track | Status | Meaning | Recommended use |
 | --- | --- | --- | --- |
 | v1.1.x | Published legacy release | Earlier implementation; it does not represent the v2 integrity architecture | Historical reference only |
-| v2 / `2.0.0a1` | Unreleased showcase work | Current architecture, tests, changed-text demo, and native QA | Evaluate from source; not a published package |
+| v2 / `2.0.0a1` | Public-source pre-release | Current architecture, tests, changed-text demo, and native QA | Install and evaluate from source; no stable v2 package release |
 
 > [!IMPORTANT]
-> `2.0.0a1` is unreleased development work. Install it from source for evaluation. Package publication and another release are blocked by the unresolved provenance/licensing issue documented in [NOTICE.md](NOTICE.md).
+> `2.0.0a1` is development pre-release source published for evaluation. It is not a stable v2 package or release; install it directly from this repository.
 
 ## Architecture: a verified text-patch transaction
 
@@ -78,7 +78,7 @@ Structural preservation does not prove visual fit. A valid translation can still
 
 ## Five-minute source quickstart
 
-PPTrans v2 is unreleased, and the audited v2 tree is not yet public while its provenance gate remains unresolved. These commands assume this v2 source tree is already checked out, a supported CPython 3.10–3.13 is installed, and your shell is at the repository root.
+PPTrans v2 is public pre-release source, but no stable v2 package or release has been published. These commands assume this repository is already checked out, a supported CPython 3.10–3.13 is installed, and your shell is at the repository root.
 
 Create a virtual environment:
 
@@ -159,9 +159,9 @@ The repository's quality claims are scoped to checks that actually run:
 - [CLI and application tests](tests/test_cli_v2.py) bind provider-budget validation to the same deterministic estimator used by `--dry-run`, assert exact per-call arithmetic, replace credential/provider-SDK-import/socket/memory/output boundaries with failing sentinels, exercise warning and budget failures, and prove that duplicate glossary errors redact private terms.
 - [Review-foundation tests](tests/test_security_review_foundation.py) scan the v2 package for dynamic execution calls and test renderer/image safety boundaries.
 - [Demo and repository-tool tests](tests/) reconstruct the English deck from 29 hash-pinned OOXML members, rebuild the curated target byte for byte, pin both builders and the native replay script, enforce exact changed members and ZIP fields, and bind every native PNG to the current [exact-rebuild acceptance record](docs/qa/2026-08-31-exact-rebuild.json). The [native replay script](scripts/reproduce_native_demo.py) rebuilds the identity output and all nine recorded renders with the exact LibreOffice build; ordinary CI verifies committed evidence without requiring LibreOffice.
-- [CI and security workflows](.github/workflows/) configure linting, strict typing, coverage, documentation integrity, packaging, bounded multi-OS tests, an isolated weekly audit of all dependency sets, CodeQL, and full-history secret scanning with SHA-pinned actions plus a checksum-pinned scanner archive. Version-tag package gates fail closed while provenance is unresolved; repository tag rules remain a required live-host control.
+- [CI and security workflows](.github/workflows/) configure linting, strict typing, coverage, documentation integrity, packaging, bounded multi-OS tests, an isolated weekly audit of all dependency sets, CodeQL, and full-history secret scanning with SHA-pinned actions plus a checksum-pinned scanner archive. Publishing source does not create a stable package release; version tags and release artifacts remain subject to their dedicated gates and live repository controls.
 
-The configured combined branch-aware coverage floor is visible in [pyproject.toml](pyproject.toml). A successful workflow is evidence for its exact workflow and commit only; it is not proof of universal formatting preservation or translation quality. Public badges will be restored only after the audited v2 workflows are published and pass on the public repository.
+The configured combined branch-aware coverage floor is visible in [pyproject.toml](pyproject.toml). A successful workflow is evidence for its exact workflow and commit only; it is not proof of universal formatting preservation or translation quality. Public badges should reflect only workflows that have run successfully on the published v2 source.
 
 ### Benchmark status
 
@@ -214,8 +214,8 @@ src/pptrans/
 - [Unreleased changelog](CHANGELOG.md)
 - [Provenance and licensing notice](NOTICE.md)
 
-## Contributing and release status
+## Contributing, provenance, and release status
 
 Contributions should use synthetic fixtures, deterministic provider doubles, and the applicable [quality gates](docs/QUALITY_GATES.md). Do not commit credentials, private presentations, provider payloads containing user data, generated customer content, or translation-memory databases.
 
-The Git history includes imported upstream material with strong but incomplete evidence of MIT licensing: upstream asserted MIT before its first source commit and repeated that assertion in the exact snapshot imported here, but the referenced root license was absent; a full MIT text appeared later only beside a nested skill copy. The current engineering work does not erase that provenance or establish redistribution rights. Read [NOTICE.md](NOTICE.md) before reusing, packaging, or releasing this repository; it records the factual timeline and is not legal advice.
+The Git history includes material imported from [tristan-mcinnis/PPT-Translator-Formatting-Intact-with-LLMs](https://github.com/tristan-mcinnis/PPT-Translator-Formatting-Intact-with-LLMs), whose README identified the project as MIT-licensed. PPTrans v2 is a substantial re-architecture, but it remains connected to that project by purpose, history, and attribution; it is not presented as clean-room or unrelated work. The public source is distributed under the [MIT License](LICENSE). See [NOTICE.md](NOTICE.md) for the concise provenance record. No stable v2 package or release has been published.

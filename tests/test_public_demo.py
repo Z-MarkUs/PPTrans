@@ -78,8 +78,8 @@ def test_public_demo_runs_end_to_end_without_network(tmp_path: Path) -> None:
     assert reopened.core_properties.subject.startswith("Synthetic fixture")
 
 
-def test_unreleased_demo_does_not_link_recruiters_to_legacy_public_main() -> None:
-    """Keep the recruiter-facing v2 visual aligned with its local-only status."""
+def test_pre_release_demo_status_and_link_boundary() -> None:
+    """Keep the dated recruiter visual scoped as a pre-release showcase."""
 
     for deck_path, expected_status in (
         (DEMO_PATH, SOURCE_SHOWCASE_STATUS),
@@ -94,7 +94,7 @@ def test_unreleased_demo_does_not_link_recruiters_to_legacy_public_main() -> Non
         assert "relationships/hyperlink" not in relationships
 
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
-    assert "audited v2 tree is not yet public" in readme
+    assert "The cover identifies v2 as a pre-release showcase" in readme
 
 
 def test_public_demo_provider_preview_is_exact_and_deck_text_free() -> None:

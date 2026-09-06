@@ -1,24 +1,46 @@
 #!/usr/bin/env python3
-"""Fail versioned-tag CI while PPTrans's provenance release gate is unresolved."""
+"""Fail versioned-tag CI until PPTrans's explicit release prerequisites are met."""
 
 from __future__ import annotations
 
 import argparse
 import sys
 
-PROVENANCE_STATUS = "unresolved"
-BLOCK_MESSAGE = (
-    "release blocked: NOTICE.md requires written upstream licensing clarification before "
-    "another package, versioned tag, or release is published"
+RELEASE_STATUS = "prerelease"
+MANUAL_RELEASE_AUTHORIZED = False
+RELEASE_CHECKLIST_COMPLETE = False
+HOST_WORKFLOW_MIGRATION_COMPLETE = False
+
+PRERELEASE_MESSAGE = "release blocked: PPTrans v2 remains prerelease work"
+AUTHORIZATION_MESSAGE = (
+    "release blocked: no separate maintainer authorization is recorded for a versioned tag, "
+    "GitHub release, or package-index publication"
+)
+CHECKLIST_MESSAGE = "release blocked: the versioned-release checklist is incomplete"
+HOST_WORKFLOW_MESSAGE = (
+    "release blocked: the live-host release workflow and credential migration is incomplete"
 )
 
 
-def release_policy_failures(status: str = PROVENANCE_STATUS) -> tuple[str, ...]:
-    """Return explicit release-policy failures for the repository's recorded status."""
+def release_policy_failures(
+    status: str = RELEASE_STATUS,
+    *,
+    manual_authorized: bool = MANUAL_RELEASE_AUTHORIZED,
+    checklist_complete: bool = RELEASE_CHECKLIST_COMPLETE,
+    host_workflow_migration_complete: bool = HOST_WORKFLOW_MIGRATION_COMPLETE,
+) -> tuple[str, ...]:
+    """Return blockers for versioned releases, not ordinary public source branches."""
 
-    if status != "cleared":
-        return (BLOCK_MESSAGE,)
-    return ()
+    failures: list[str] = []
+    if status != "release-ready":
+        failures.append(PRERELEASE_MESSAGE)
+    if not manual_authorized:
+        failures.append(AUTHORIZATION_MESSAGE)
+    if not checklist_complete:
+        failures.append(CHECKLIST_MESSAGE)
+    if not host_workflow_migration_complete:
+        failures.append(HOST_WORKFLOW_MESSAGE)
+    return tuple(failures)
 
 
 def main(argv: list[str] | None = None) -> int:
