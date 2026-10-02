@@ -1,6 +1,8 @@
 version: 2
 updates:
   - package-ecosystem: pip
+    # Preserve supported minimums when existing ranges allow newer releases.
+    versioning-strategy: increase-if-necessary
     directory: /
     schedule:
       interval: weekly
