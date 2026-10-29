@@ -44,7 +44,7 @@ def run_doctor(provider: str | None = None) -> tuple[DoctorCheck, ...]:
 
     python_version = sys.version_info[:2]
     implementation = sys.implementation.name
-    python_ok = implementation == "cpython" and (3, 10) <= python_version < (3, 14)
+    python_ok = implementation == "cpython" and (3, 11) <= python_version < (3, 14)
     checks = [
         DoctorCheck(
             name="python",

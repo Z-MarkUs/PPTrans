@@ -1,0 +1,132 @@
+{
+  "schema_version": "pptrans.case-study-qa/v1",
+  "review_date": "2026-10-29",
+  "evidence_revision": "63a0e95b2187c4ad8ac247d98429a2be51f0725d",
+  "evidence_revision_scope": "Unchanged dated metrics and native-render evidence. This review updates only the configured Python-support label; exact artifact and source hashes below identify the reviewed security-fix worktree bytes.",
+  "source_base_revision": "88d8ec7454d7899312884258a95391617ef73eb6",
+  "artifact": {
+    "path": "output/pdf/PPTrans-Engineering-Case-Study.pdf",
+    "bytes": 164206,
+    "sha256": "14a450efb770d4eb6951c261dfca405e47b4bd7ea2a2b42d452403ca1358d84a",
+    "pages": 1,
+    "media_box_points": [
+      595.2756,
+      841.8898
+    ],
+    "format": "A4 portrait",
+    "encrypted": false,
+    "annotations": false,
+    "form": false,
+    "javascript": false,
+    "attachments": false,
+    "external_links": false
+  },
+  "source": {
+    "builder": {
+      "path": "scripts/build_case_study.py",
+      "bytes": 55576,
+      "sha256": "0faaba1d3510fc2d0d16959b2991a3102f80e4721bfd1acf0e74c1a2ddc66a10"
+    },
+    "claim_ledger": {
+      "path": "docs/portfolio/pptrans-engineering-case-study.json",
+      "bytes": 5692,
+      "sha256": "2590da452e7e28332bccd995c93eb638113ce127da7a40393b49fa75a5f678a9"
+    },
+    "local_test_audit": {
+      "path": "docs/qa/2026-08-31-local-test-audit.json",
+      "bytes": 1684,
+      "sha256": "d41bbbc2885a291b50328ff180dcfe30df1b5b84580a600d3baaaaa8f23ef358"
+    },
+    "benchmark_result": {
+      "path": "benchmarks/results/2026-08-31-honest-showcase-ooxml-windows-python312.json",
+      "bytes": 1375,
+      "sha256": "f8ca92c6501b9dd88a8f4a6226c48fe461fe81472d3af548810b36d680b6b466"
+    },
+    "ci_workflow": {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 7117,
+      "sha256": "6b05692fe0a78f9d1d751d8676756c16e84f92f8047c0ffb13218356d0575f42"
+    },
+    "package_metadata": {
+      "path": "pyproject.toml",
+      "bytes": 4096,
+      "sha256": "43817052a0f42e6954c701711c441b85c7034723b8d267b611a62b3002e734e4"
+    },
+    "command": ".venv/bin/python scripts/build_case_study.py",
+    "check_command": ".venv/bin/python scripts/build_case_study.py --check",
+    "byte_identical_rebuild": true
+  },
+  "toolchain": {
+    "operating_system": "Linux",
+    "python": "3.12.14",
+    "reportlab": "5.0.1",
+    "pypdf": "6.21.4",
+    "pillow": "13.0.0",
+    "poppler_pdftoppm": "25.03.0"
+  },
+  "structural_review": {
+    "strict_parse": "passed",
+    "root_keys": [
+      "/PageMode",
+      "/Pages",
+      "/Type"
+    ],
+    "selectable_text_characters": 2891,
+    "selectable_text_sha256": "58c1d28a5a8f8d346134da5881f2d352ffd13b12cf2719c07b0d4012b5aac2b3",
+    "required_status_and_evidence_text": "passed",
+    "public_source_status_present": true,
+    "plain_repository_locator_present": true,
+    "stable_package_release_absent": true,
+    "absolute_local_paths_absent": true,
+    "interactive_links_absent": true,
+    "unsafe_action_tokens_absent": true,
+    "configured_python_support": "3.11-3.13"
+  },
+  "raster_review": {
+    "command": "FONTCONFIG_FILE=\"$PWD/tmp/pdfs/fontconfig-qa.conf\" /usr/bin/pdftoppm -png -r 200 -singlefile output/pdf/PPTrans-Engineering-Case-Study.pdf tmp/pdfs/pptrans-case-study-2026-10-29-qa",
+    "font_configuration": "Temporary configuration includes /etc/fonts/fonts.conf and adds a writable cache under tmp/pdfs/fontcache; no system configuration changed.",
+    "dpi": 200,
+    "pixels": [
+      1654,
+      2339
+    ],
+    "mode": "RGB",
+    "png_bytes": 541597,
+    "png_sha256": "586922385abc433685b51e647287decd6d28596c5fac11008e06c9893641f254",
+    "renderer_warnings": [],
+    "committed": false
+  },
+  "visual_review": {
+    "reviewed_pages": [
+      1
+    ],
+    "reviewed_at_raster_dimensions": [
+      1654,
+      2339
+    ],
+    "fit_page_preview_dimensions": [
+      1334,
+      1888
+    ],
+    "original_resolution_crop_tiles": {
+      "count": 4,
+      "tile_pixels": [
+        827,
+        1170
+      ],
+      "last_row_height": 1169
+    },
+    "clipping": "none found",
+    "unintended_overlap": "none found",
+    "broken_wrapping": "none found",
+    "off_page_content": "none found",
+    "legibility": "passed in the complete-page preview and across four original-resolution crop tiles",
+    "header_status_badge": "fully visible; includes V2 PUBLIC SOURCE / PRE-RELEASE",
+    "repository_locator": "fully visible as plain text; no PDF link annotation or URI action",
+    "status_and_provenance": "fully visible; retains public-source pre-release status, upstream lineage, and absence of a stable package release",
+    "configured_python_support": "3.11-3.13 is fully visible; other dated evidence labels remain unchanged",
+    "source_target_images": "sharp, aligned, fully visible, and unchanged from the hash-pinned native-render inputs",
+    "result": "passed"
+  },
+  "scope": "This validates one deterministic recruiter-facing PDF and its complete 200 DPI render after raising the configured Python floor to 3.11 for Pillow 13. The dated metric audit, native images, and benchmark evidence are unchanged and are not new compatibility results. The page retains its public-source pre-release boundary and upstream lineage. This does not establish provider translation quality, Microsoft PowerPoint pixel identity, automatic layout fit, universal compatibility, or maximum practical deck size."
+}

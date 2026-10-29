@@ -6,7 +6,7 @@ Before contributing, read the attribution and provenance record in [NOTICE.md](N
 
 ## Set up a development environment
 
-Use a supported CPython release from 3.10 through 3.13 in a virtual environment:
+Use a supported CPython release from 3.11 through 3.13 in a virtual environment:
 
 ```bash
 python -m venv .venv

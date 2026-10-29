@@ -104,9 +104,29 @@ def test_run_doctor_treats_blank_credentials_as_missing(
     assert credential.detail == f"{environment_name} is not set"
 
 
+@pytest.mark.parametrize("minor", [11, 12, 13])
+def test_run_doctor_accepts_supported_python_minors(
+    monkeypatch: pytest.MonkeyPatch,
+    minor: int,
+) -> None:
+    VersionInfo = namedtuple(
+        "VersionInfo",
+        ["major", "minor", "micro", "releaselevel", "serial"],
+    )
+    monkeypatch.setattr(doctor.sys, "version_info", VersionInfo(3, minor, 0, "final", 0))
+    monkeypatch.setattr(doctor, "version", _fixed_version)
+    monkeypatch.setattr(doctor, "LibreOfficeRenderer", _Renderer)
+
+    check = next(check for check in doctor.run_doctor() if check.name == "python")
+
+    assert check.status == "pass"
+    assert check.required is True
+    assert check.detail == f"cpython 3.{minor}.0"
+
+
 @pytest.mark.parametrize(
     "python_version",
-    [(3, 9, 19, "final", 0), (3, 14, 0, "final", 0)],
+    [(3, 10, 19, "final", 0), (3, 14, 0, "final", 0)],
     ids=["below-supported-range", "above-supported-range"],
 )
 def test_run_doctor_marks_missing_requirements_and_unsupported_python(
