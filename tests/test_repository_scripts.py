@@ -222,7 +222,7 @@ def _inspect_qa_fixture(checker: ModuleType, path: Path) -> tuple[str, ...]:
 
 def _case_study_sdist_fixture(tmp_path: Path, mutation: str | None = None) -> Path:
     fixture_root = tmp_path / f"case-study-fixture-{mutation or 'valid'}"
-    qa_relative = Path("docs/qa/2026-09-06-case-study.json")
+    qa_relative = Path("docs/qa/2026-10-29-case-study.json")
     qa_path = fixture_root / qa_relative
     qa_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(REPO_ROOT / qa_relative, qa_path)
@@ -564,12 +564,12 @@ def test_source_distribution_policy_requires_deterministic_showcase_artifacts(  
 
     workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     decoy_workflow = workflow.replace(
-        'python: ["3.10", "3.13"]',
-        'python: ["3.11", "3.12"] # python: ["3.10", "3.13"]',
+        'python: ["3.11", "3.13"]',
+        'python: ["3.11", "3.12"] # python: ["3.11", "3.13"]',
     )
     assert decoy_workflow != workflow
     with pytest.raises(ValueError, match="endpoints differ from the CI matrix"):
-        builder._validate_workflow_python_support(decoy_workflow, "3.10", "3.13")
+        builder._validate_workflow_python_support(decoy_workflow, "3.11", "3.13")
 
     fixed_python_workflow = workflow.replace(
         "python-version: ${{ matrix.python }}",
@@ -577,14 +577,14 @@ def test_source_distribution_policy_requires_deterministic_showcase_artifacts(  
     )
     assert fixed_python_workflow != workflow
     with pytest.raises(ValueError, match=r"bind one Python setup step to matrix\.python"):
-        builder._validate_workflow_python_support(fixed_python_workflow, "3.10", "3.13")
+        builder._validate_workflow_python_support(fixed_python_workflow, "3.11", "3.13")
 
     excluded_workflow = workflow.replace(
         "        include:\n",
         "        exclude:\n"
-        '          - {os: ubuntu-latest, python: "3.10"}\n'
-        '          - {os: windows-latest, python: "3.10"}\n'
-        '          - {os: macos-latest, python: "3.10"}\n'
+        '          - {os: ubuntu-latest, python: "3.11"}\n'
+        '          - {os: windows-latest, python: "3.11"}\n'
+        '          - {os: macos-latest, python: "3.11"}\n'
         '          - {os: ubuntu-latest, python: "3.13"}\n'
         '          - {os: windows-latest, python: "3.13"}\n'
         '          - {os: macos-latest, python: "3.13"}\n'
@@ -592,7 +592,7 @@ def test_source_distribution_policy_requires_deterministic_showcase_artifacts(  
     )
     assert excluded_workflow != workflow
     with pytest.raises(ValueError, match="must not define exclusions"):
-        builder._validate_workflow_python_support(excluded_workflow, "3.10", "3.13")
+        builder._validate_workflow_python_support(excluded_workflow, "3.11", "3.13")
 
     wrong_setup_action = workflow.replace(
         builder.EXPECTED_SETUP_PYTHON_ACTION,
@@ -600,7 +600,7 @@ def test_source_distribution_policy_requires_deterministic_showcase_artifacts(  
     )
     assert wrong_setup_action != workflow
     with pytest.raises(ValueError, match="exact unconditional setup-python step"):
-        builder._validate_workflow_python_support(wrong_setup_action, "3.10", "3.13")
+        builder._validate_workflow_python_support(wrong_setup_action, "3.11", "3.13")
 
     conditional_setup = workflow.replace(
         "      - name: Set up Python\n        uses: actions/setup-python@",
@@ -608,7 +608,7 @@ def test_source_distribution_policy_requires_deterministic_showcase_artifacts(  
     )
     assert conditional_setup != workflow
     with pytest.raises(ValueError, match="exact unconditional setup-python step"):
-        builder._validate_workflow_python_support(conditional_setup, "3.10", "3.13")
+        builder._validate_workflow_python_support(conditional_setup, "3.11", "3.13")
 
     disabled_compatibility = workflow.replace(
         "  compatibility:\n    name:",
@@ -616,7 +616,7 @@ def test_source_distribution_policy_requires_deterministic_showcase_artifacts(  
     )
     assert disabled_compatibility != workflow
     with pytest.raises(ValueError, match="exact authenticated contract"):
-        builder._validate_workflow_python_support(disabled_compatibility, "3.10", "3.13")
+        builder._validate_workflow_python_support(disabled_compatibility, "3.11", "3.13")
 
     disabled_test_step = workflow.replace(
         "      - name: Run deterministic suite\n        run:",
@@ -624,7 +624,7 @@ def test_source_distribution_policy_requires_deterministic_showcase_artifacts(  
     )
     assert disabled_test_step != workflow
     with pytest.raises(ValueError, match="exact authenticated contract"):
-        builder._validate_workflow_python_support(disabled_test_step, "3.10", "3.13")
+        builder._validate_workflow_python_support(disabled_test_step, "3.11", "3.13")
 
     original_read_json_object = builder._read_json_object
 

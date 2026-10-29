@@ -78,7 +78,7 @@ Structural preservation does not prove visual fit. A valid translation can still
 
 ## Five-minute source quickstart
 
-PPTrans v2 is public pre-release source, but no stable v2 package or release has been published. These commands assume this repository is already checked out, a supported CPython 3.10–3.13 is installed, and your shell is at the repository root.
+PPTrans v2 is public pre-release source, but no stable v2 package or release has been published. These commands assume this repository is already checked out, a supported CPython 3.11–3.13 is installed, and your shell is at the repository root.
 
 Create a virtual environment:
 

@@ -93,10 +93,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python: ["3.10", "3.13"]
+        python: ["3.11", "3.13"]
         include:
           - os: ubuntu-latest
-            python: "3.11"
+            python: "3.12"
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -120,8 +120,8 @@ jobs:
           pptrans doctor
           pptrans inspect examples/pptrans-demo.en.pptx --source en --target en --fail-on-warnings
           pptrans translate examples/pptrans-demo.en.pptx --source en --target en --provider identity --no-memory --fail-on-warnings --output compatibility.identity.pptx --json
-      - name: Smoke-test benchmark tooling on Python 3.10
-        if: matrix.python == '3.10'
+      - name: Smoke-test benchmark tooling on Python 3.11
+        if: matrix.python == '3.11'
         run: >-
           python scripts/benchmark_core.py
           --input examples/pptrans-demo.en.pptx

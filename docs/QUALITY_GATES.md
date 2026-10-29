@@ -27,7 +27,7 @@ Default tests must use deterministic provider doubles or real SDK clients backed
 
 The documentation gate parses every tracked Markdown file without network access. It validates Git-index membership and exact casing, repository boundaries, heading and code-line fragments, informative image alt text, and local raster/SVG decodability. HTTP, HTTPS, mail, and telephone destinations are counted but deliberately not requested; external availability is a separate, non-blocking observation.
 
-The supported CPython range is 3.10 through 3.13. CI exercises both endpoints on Linux, macOS, and Windows, plus Python 3.11 on Linux; do not broaden the compatibility claim beyond that configured range.
+The supported CPython range is 3.11 through 3.13. CI exercises both endpoints on Linux, macOS, and Windows, plus Python 3.12 on Linux; do not broaden the compatibility claim beyond that configured range.
 
 The provider-adapter suite also runs in an isolated CI job with the declared minimum OpenAI and Anthropic SDK versions. Its in-memory HTTP transports must exercise the real SDK serializers and response models without opening a socket, in addition to direct injected-client error cases. New adapter code must remain compatible with those lower bounds or deliberately raise and document the dependency floor.
 

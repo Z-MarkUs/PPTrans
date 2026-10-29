@@ -49,7 +49,7 @@ This alpha is active development, not a release candidate. The attributed v2 sou
 - LibreOffice rendering now treats private-workspace cleanup as a commit barrier: validated PNGs move to separate same-filesystem staging, bounded transient-error retries retire the source/PDF/profile/raster workspace before publication, and late publication-stage cleanup failure rolls back owned final links.
 - PyMuPDF discovery and loading now use its canonical `pymupdf` module name instead of the collision-prone legacy `fitz` alias.
 - Engineering guidance now distinguishes focused tests from the full coverage gate, includes strict typing and security checks consistently, and separates disposable package validation from releasable artifacts; CI directly covers every classified Python minor, and the source-distribution gate requires complete mirrored agent-skill bundles.
-- Supported Python is explicitly bounded to CPython 3.10 through 3.13, and the default pytest configuration blocks in-process Python socket creation; subprocess and OS-level egress remain separately controlled boundaries.
+- Supported Python is explicitly bounded to CPython 3.11 through 3.13, and the default pytest configuration blocks in-process Python socket creation; subprocess and OS-level egress remain separately controlled boundaries.
 - CI now exercises the provider adapters against the declared minimum OpenAI and Anthropic SDK versions, in addition to the normally resolved dependency set.
 - Provider wire-contract tests now pass through the real OpenAI and Anthropic SDK serializers and response models using in-memory HTTP transports, with exact endpoint/schema/retention assertions and no captured credentials or network calls.
 - Paid-provider injected-client protocols now type-check both the real SDK clients and narrow deterministic doubles without weakening the runtime adapter boundary.
@@ -67,6 +67,7 @@ This alpha is active development, not a release candidate. The attributed v2 sou
 
 ### Security
 
+- Pillow now requires `>=13.0.0,<14` to exclude the vulnerable 12.x line. Because Pillow 13 no longer supports Python 3.10, the Python floor, diagnostics, CI matrix, and current support documentation now consistently require Python 3.11. Historical QA records remain unchanged.
 - Model output is data only. The v2 package contains no dynamic execution path for model-generated code.
 - XML parsing disables DTD loading, entity resolution, and network access.
 - Source hashes and structural verification prevent stale or structurally destructive patches from being published as successful output.
